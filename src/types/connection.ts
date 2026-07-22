@@ -38,3 +38,11 @@ export interface LogLine {
   line: string;
   timestamp: number;
 }
+
+export interface ConnectionHistoryEntry {
+  protocol: string;
+  scan_mode: string;
+  timestamp: number;
+  duration_secs: number;
+  success: boolean;
+}

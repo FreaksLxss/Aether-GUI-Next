@@ -1,11 +1,33 @@
+# === Dependencies ===
 node_modules/
+.pnpm-store/
+
+# === Build output ===
 dist/
 dist-ssr/
 *.local
+*.tsbuildinfo
+
+# === Environment / secrets ===
+.env
+.env.*
+!.env.example
+
+# === Logs ===
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+
+# === Tauri / Rust ===
 src-tauri/target/
 src-tauri/gen/
+*.pdb
+*.d
 src-tauri/binaries/aether
 src-tauri/binaries/aether.exe
+src-tauri/binaries/aether-*
 src-tauri/binaries/*.tar.gz
 src-tauri/binaries/*.zip
 src-tauri/binaries/SHA256SUMS.txt
@@ -13,11 +35,25 @@ src-tauri/binaries/SHA256SUMS.txt
 # tokens) here when run with binaries/ as its cwd (e.g. manual testing) —
 # must never be committed.
 src-tauri/binaries/*.toml
-*.log
+
+# === IDE / Editor ===
 .vscode/*
 !.vscode/extensions.json
-.idea
-.DS_Store
+.idea/
+*.swp
+*.swo
+*~
 
-# CI-built bundles downloaded for local testing
+# === OS ===
+.DS_Store
+Thumbs.db
+ehthumbs.db
+Desktop.ini
+
+# === Testing / Coverage ===
+coverage/
+.nyc_output/
+
+# === Misc ===
+.mimocode/
 /ci-artifacts/

@@ -13,6 +13,7 @@ import { IpVersionToggle } from "@/components/IpVersionToggle";
 import { MasqueTransportToggle } from "@/components/MasqueTransportToggle";
 import { NoizeProfileToggle } from "@/components/NoizeProfileToggle";
 import { BindAddressField } from "@/components/BindAddressField";
+import { LogSearch } from "@/components/LogSearch";
 import { useConnectionStore } from "@/state/connectionStore";
 
 function FieldRow({
@@ -62,7 +63,14 @@ export function AdvancedPanel() {
   // Launch flag — locked mid-session like the other profile controls.
   const locked = status.state !== "Idle" && status.state !== "Error";
   const [autoScroll, setAutoScroll] = useState(true);
+  const [logFilter, setLogFilter] = useState("");
   const viewportRef = useRef<HTMLDivElement>(null);
+
+  const filteredLogs = logFilter
+    ? logs.filter((l) =>
+        l.line.toLowerCase().includes(logFilter.toLowerCase()),
+      )
+    : logs;
 
   useEffect(() => {
     if (autoScroll && viewportRef.current) {
@@ -84,39 +92,58 @@ export function AdvancedPanel() {
         </CollapsibleTrigger>
         <CollapsibleContent className="overflow-hidden data-[state=open]:animate-in data-[state=open]:fade-in-0 data-[state=open]:slide-in-from-bottom-1 data-[state=open]:duration-150 data-[state=open]:[animation-timing-function:cubic-bezier(0.16,1,0.3,1)] data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=closed]:duration-100">
           <div className="flex flex-col gap-4 pb-2">
-            <FieldRow
-              label="Protocol"
-              tooltip="MASQUE disguises traffic as normal HTTPS — best against strict censorship. WireGuard is lighter and faster. gool nests two WireGuard tunnels for extra security at a speed cost."
-            >
-              <ProtocolSelect />
-            </FieldRow>
-            <FieldRow label="Scan Mode">
-              <ScanModeToggle />
-            </FieldRow>
-            <FieldRow
-              label="IP Version"
-              tooltip="Which address families to search for working routes. IPv4 is the safest default on most networks."
-            >
-              <IpVersionToggle />
-            </FieldRow>
-            <FieldRow
-              label="MASQUE Transport"
-              tooltip="How the MASQUE tunnel carries traffic. HTTP/3 (QUIC) has the fastest handshake; HTTP/2 (TCP) looks like ordinary HTTPS and works where UDP is blocked or throttled. Only applies to the MASQUE protocol."
-            >
-              <MasqueTransportToggle />
-            </FieldRow>
-            <FieldRow
-              label="Obfuscation"
-              tooltip="Disguises the handshake so DPI can't fingerprint the protocol. Heavier profiles send more decoy traffic — try escalating if the default doesn't connect. Options change based on the selected protocol."
-            >
-              <NoizeProfileToggle />
-            </FieldRow>
-            <FieldRow
-              label="SOCKS5 Proxy"
-              tooltip="The local address Aether's SOCKS5 proxy listens on. Change the port to avoid conflicts, or enable LAN to share the tunnel with other devices on your network."
-            >
-              <BindAddressField />
-            </FieldRow>
+            {/* Protocol section */}
+            <div className="flex flex-col gap-3">
+              <span className="text-[10px] font-medium tracking-wide text-primary uppercase">
+                Protocol
+              </span>
+              <FieldRow
+                label="Protocol"
+                tooltip="MASQUE disguises traffic as normal HTTPS — best against strict censorship. WireGuard is lighter and faster. gool nests two WireGuard tunnels for extra security at a speed cost."
+              >
+                <ProtocolSelect />
+              </FieldRow>
+              <FieldRow label="Scan Mode">
+                <ScanModeToggle />
+              </FieldRow>
+              <FieldRow
+                label="IP Version"
+                tooltip="Which address families to search for working routes. IPv4 is the safest default on most networks."
+              >
+                <IpVersionToggle />
+              </FieldRow>
+              <FieldRow
+                label="MASQUE Transport"
+                tooltip="How the MASQUE tunnel carries traffic. HTTP/3 (QUIC) has the fastest handshake; HTTP/2 (TCP) looks like ordinary HTTPS and works where UDP is blocked or throttled. Only applies to the MASQUE protocol."
+              >
+                <MasqueTransportToggle />
+              </FieldRow>
+              <FieldRow
+                label="Obfuscation"
+                tooltip="Disguises the handshake so DPI can't fingerprint the protocol. Heavier profiles send more decoy traffic — try escalating if the default doesn't connect. Options change based on the selected protocol."
+              >
+                <NoizeProfileToggle />
+              </FieldRow>
+            </div>
+
+            {/* Proxy section */}
+            <div className="flex flex-col gap-3">
+              <span className="text-[10px] font-medium tracking-wide text-primary uppercase">
+                Proxy
+              </span>
+              <FieldRow
+                label="SOCKS5 Proxy"
+                tooltip="The local address Aether's SOCKS5 proxy listens on. Change the port to avoid conflicts, or enable LAN to share the tunnel with other devices on your network."
+              >
+                <BindAddressField />
+              </FieldRow>
+            </div>
+
+            {/* Behavior section */}
+            <div className="flex flex-col gap-3">
+              <span className="text-[10px] font-medium tracking-wide text-primary uppercase">
+                Behavior
+              </span>
 
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-1 text-xs text-muted-foreground">
@@ -139,6 +166,7 @@ export function AdvancedPanel() {
                 aria-label="Quick reconnect"
               />
             </div>
+            </div>
 
             <div className="flex items-center gap-2">
               <div className="h-px flex-1 bg-border" />
@@ -148,19 +176,36 @@ export function AdvancedPanel() {
               <div className="h-px flex-1 bg-border" />
             </div>
 
-            <div
-              ref={viewportRef}
-              onScroll={(e) => {
-                const el = e.currentTarget;
-                setAutoScroll(el.scrollHeight - el.scrollTop - el.clientHeight < 24);
-              }}
-              className="max-h-64 overflow-y-auto rounded-md bg-black/20 p-2 font-mono text-xs text-muted-foreground ring-1 ring-white/10"
-            >
-              {logs.length === 0 ? (
-                <p className="text-status-idle">No output yet.</p>
-              ) : (
-                logs.map((l, i) => <p key={i}>{l.line}</p>)
-              )}
+            <div className="flex flex-col gap-2">
+              <LogSearch value={logFilter} onChange={setLogFilter} />
+              <div
+                ref={viewportRef}
+                onScroll={(e) => {
+                  const el = e.currentTarget;
+                  setAutoScroll(el.scrollHeight - el.scrollTop - el.clientHeight < 24);
+                }}
+                className="max-h-64 overflow-y-auto rounded-md bg-black/20 p-2 font-mono text-xs text-muted-foreground ring-1 ring-white/10"
+              >
+                {filteredLogs.length === 0 ? (
+                  <p className="text-status-idle">
+                    {logFilter ? "No matching lines." : "No output yet."}
+                  </p>
+                ) : (
+                  (() => {
+                    const baseTs = filteredLogs[0]?.timestamp ?? 0;
+                    return filteredLogs.map((l, i) => {
+                      const relMs = l.timestamp - baseTs;
+                      const s = (relMs / 1000).toFixed(1);
+                      return (
+                        <p key={i}>
+                          <span className="text-muted-foreground/50">+{s}s </span>
+                          {l.line}
+                        </p>
+                      );
+                    });
+                  })()
+                )}
+              </div>
             </div>
           </div>
         </CollapsibleContent>

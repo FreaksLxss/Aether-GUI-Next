@@ -2,12 +2,21 @@ import { useEffect } from "react";
 import { AnimatePresence, motion, MotionConfig } from "motion/react";
 import { ConnectButton } from "@/components/ConnectButton";
 import { ConnectionStatusLine } from "@/components/ConnectionStatusLine";
+import { ConnectionInfo } from "@/components/ConnectionInfo";
+import { CopyProxyButton } from "@/components/CopyProxyButton";
+import { PacUrl } from "@/components/PacUrl";
+import { QuickConnect } from "@/components/QuickConnect";
 import { AdvancedPanel } from "@/components/AdvancedPanel";
-import { CloseToTrayToggle } from "@/components/CloseToTrayToggle";
+import { ConnectionHistory } from "@/components/ConnectionHistory";
+import { ProfilePresets } from "@/components/ProfilePresets";
+import { NotificationBanner } from "@/components/NotificationBanner";
+import { SettingsPanel } from "@/components/SettingsPanel";
 import { AmbientBackground } from "@/components/AmbientBackground";
 import { SidecarErrorScreen } from "@/components/SidecarErrorScreen";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { TitleBar } from "@/components/TitleBar";
+import { useKeyboardShortcuts } from "@/hooks/useKeyboardShortcuts";
+import { useConnectionSound } from "@/hooks/useConnectionSound";
 import { initConnectionListeners, useConnectionStore } from "@/state/connectionStore";
 
 const SCREEN_TRANSITION = {
@@ -18,14 +27,29 @@ const SCREEN_TRANSITION = {
 };
 
 function MainScreen() {
+  const isConnected = useConnectionStore((s) => s.status.state === "Connected");
+
   return (
     <div className="relative z-10 flex h-full flex-col items-center overflow-y-auto p-6">
-      <div className="flex flex-1 flex-col items-center justify-center gap-6">
+      <NotificationBanner />
+      <div className="flex flex-1 flex-col items-center justify-center gap-4">
         <ConnectButton />
         <ConnectionStatusLine />
+        <ConnectionInfo />
+        {isConnected && (
+          <div className="flex gap-2">
+            <CopyProxyButton />
+            <PacUrl />
+          </div>
+        )}
+        <QuickConnect />
       </div>
-      <AdvancedPanel />
-      <CloseToTrayToggle />
+      <div className="flex w-full max-w-sm flex-col gap-1 pb-2">
+        <AdvancedPanel />
+        <ProfilePresets />
+        <ConnectionHistory />
+        <SettingsPanel />
+      </div>
     </div>
   );
 }
@@ -34,6 +58,9 @@ export function App() {
   const sidecarError = useConnectionStore((s) => s.sidecarError);
   const retryAfterSidecarError = useConnectionStore((s) => s.retryAfterSidecarError);
   const connect = useConnectionStore((s) => s.connect);
+
+  useKeyboardShortcuts();
+  useConnectionSound();
 
   useEffect(() => {
     const cleanup = initConnectionListeners();

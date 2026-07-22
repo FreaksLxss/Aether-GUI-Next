@@ -4,12 +4,31 @@ import { listen } from "@tauri-apps/api/event";
 import type {
   ConnectionProfile,
   ConnectionStatus,
+  ConnectionHistoryEntry,
   LogLine,
   MasqueNoize,
   WgNoize,
 } from "@/types/connection";
 
 const MAX_LOG_LINES = 500;
+
+async function sendNotification(title: string, body: string) {
+  try {
+    const { isPermissionGranted, requestPermission, sendNotification } = await import(
+      "@tauri-apps/plugin-notification"
+    );
+    let granted = await isPermissionGranted();
+    if (!granted) {
+      const permission = await requestPermission();
+      granted = permission === "granted";
+    }
+    if (granted) {
+      sendNotification({ title, body });
+    }
+  } catch {
+    // Notification plugin not available — silently ignore
+  }
+}
 
 interface ConnectionState {
   status: ConnectionStatus;
@@ -21,6 +40,7 @@ interface ConnectionState {
    * lets the UI show real progress instead of an indefinite spinner. Reset
    * on every fresh attempt since it can differ by protocol/scan mode. */
   scanBudgetSecs: number | null;
+  history: ConnectionHistoryEntry[];
   connect: () => Promise<void>;
   disconnect: () => Promise<void>;
   setProtocol: (protocol: ConnectionProfile["protocol"]) => void;
@@ -32,6 +52,8 @@ interface ConnectionState {
   setWgNoize: (wg_noize: WgNoize) => void;
   setBindAddress: (bind_address: string) => void;
   retryAfterSidecarError: () => void;
+  loadHistory: () => Promise<void>;
+  clearHistory: () => Promise<void>;
 }
 
 export const useConnectionStore = create<ConnectionState>((set, get) => ({
@@ -49,6 +71,7 @@ export const useConnectionStore = create<ConnectionState>((set, get) => ({
   logs: [],
   sidecarError: null,
   scanBudgetSecs: null,
+  history: [],
 
   connect: async () => {
     try {
@@ -104,6 +127,16 @@ export const useConnectionStore = create<ConnectionState>((set, get) => ({
   // after fixing a broken install) — the next connect() call will re-set
   // sidecarError if the binary is still missing.
   retryAfterSidecarError: () => set({ sidecarError: null }),
+
+  loadHistory: async () => {
+    const history = await invoke<ConnectionHistoryEntry[]>("get_history");
+    set({ history });
+  },
+
+  clearHistory: async () => {
+    await invoke("clear_history");
+    set({ history: [] });
+  },
 }));
 
 // Dev-only: lets the 3D backdrop's per-state moods be driven from the WebView2
@@ -138,13 +171,31 @@ export async function initConnectionListeners(): Promise<() => void> {
     }));
   };
 
+  // Notification state tracking — seed with current state so the initial
+  // emit (Idle) on startup doesn't fire a spurious notification.
+  let lastNotifiedState: string | null = useConnectionStore.getState().status.state;
+
   const [unlistenStatus, unlistenLog] = await Promise.all([
     listen<ConnectionStatus>("aether://status", (e) => {
+      const newState = e.payload.state;
       useConnectionStore.setState({
         status: e.payload,
         // Fresh attempt — last attempt's budget no longer applies.
         ...(e.payload.state === "Launching" ? { scanBudgetSecs: null } : {}),
       });
+
+      // Send notifications on significant state changes (frontend-only)
+      if (newState !== lastNotifiedState) {
+        lastNotifiedState = newState;
+        if (newState === "Connected") {
+          sendNotification("Aether-GUI", "Connected successfully");
+        } else if (newState === "Error") {
+          const msg = "state" in e.payload ? (e.payload as { message?: string }).message : "Unknown error";
+          sendNotification("Aether-GUI", `Connection failed: ${msg}`);
+        } else if (newState === "Reconnecting") {
+          sendNotification("Aether-GUI", "Connection lost, reconnecting...");
+        }
+      }
     }),
     listen<LogLine>("aether://log", (e) => {
       pendingLogs.push(e.payload);

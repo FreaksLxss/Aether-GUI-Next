@@ -1,0 +1,66 @@
+import { useState } from "react";
+import { ChevronDown, Settings } from "lucide-react";
+import {
+  Collapsible,
+  CollapsibleContent,
+  CollapsibleTrigger,
+} from "@/components/ui/collapsible";
+import { SystemProxyToggle } from "@/components/SystemProxyToggle";
+import { AlwaysOnTopToggle } from "@/components/AlwaysOnTopToggle";
+import { AutoStartToggle } from "@/components/AutoStartToggle";
+import { MinimizeOnStartupToggle } from "@/components/MinimizeOnStartupToggle";
+import { CloseToTrayToggle } from "@/components/CloseToTrayToggle";
+import { ThemeToggle } from "@/components/ThemeToggle";
+import { ColorTheme } from "@/components/ColorTheme";
+import { SettingsIO } from "@/components/SettingsIO";
+import { AboutDialog } from "@/components/AboutDialog";
+import { UpdateChecker } from "@/components/UpdateChecker";
+
+export function SettingsPanel() {
+  const [open, setOpen] = useState(false);
+
+  return (
+    <div className="w-full">
+      <Collapsible open={open} onOpenChange={setOpen}>
+        <CollapsibleTrigger className="flex w-full items-center justify-center gap-1.5 py-2 text-xs text-muted-foreground outline-none hover:text-foreground focus-visible:ring-2 focus-visible:ring-primary rounded-md">
+          <Settings size={14} />
+          Settings
+          <ChevronDown
+            size={14}
+            className="transition-transform duration-150 data-[state=open]:rotate-180"
+            data-state={open ? "open" : "closed"}
+          />
+        </CollapsibleTrigger>
+        <CollapsibleContent className="overflow-hidden data-[state=open]:animate-in data-[state=open]:fade-in-0 data-[state=open]:slide-in-from-bottom-1 data-[state=open]:duration-150 data-[state=open]:[animation-timing-function:cubic-bezier(0.16,1,0.3,1)] data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=closed]:duration-100">
+          <div className="flex flex-col gap-3 pb-2">
+            {/* System toggles */}
+            <div className="flex flex-col gap-2">
+              <SystemProxyToggle />
+              <AlwaysOnTopToggle />
+              <AutoStartToggle />
+              <MinimizeOnStartupToggle />
+              <CloseToTrayToggle />
+            </div>
+
+            {/* Appearance */}
+            <div className="h-px bg-border" />
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <ThemeToggle />
+                <ColorTheme />
+              </div>
+              <SettingsIO />
+            </div>
+
+            {/* About & Updates */}
+            <div className="h-px bg-border" />
+            <div className="flex items-center justify-between">
+              <AboutDialog />
+              <UpdateChecker />
+            </div>
+          </div>
+        </CollapsibleContent>
+      </Collapsible>
+    </div>
+  );
+}

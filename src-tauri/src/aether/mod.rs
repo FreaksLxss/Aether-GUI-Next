@@ -6,6 +6,7 @@ pub mod status;
 
 use crate::error::AetherError;
 use crate::events::{now_millis, LogEvent, LOG_EVENT, STATUS_EVENT};
+use crate::history::{self, ConnectionEntry};
 use crate::state::ConnectionState;
 use profiles::ConnectionProfile;
 use pty::PtySession;
@@ -24,6 +25,9 @@ pub struct AetherManager {
     /// (a proven-working connection earns a full retry budget for whatever
     /// drops it next), and on a user-requested disconnect.
     retry_count: u32,
+    /// Timestamp (ms since epoch) when we last entered Connected, used to
+    /// compute session duration for connection history.
+    connected_at: Option<u64>,
 }
 
 impl AetherManager {
@@ -33,6 +37,7 @@ impl AetherManager {
             state: ConnectionState::Idle,
             user_requested_stop: false,
             retry_count: 0,
+            connected_at: None,
         }
     }
 
@@ -48,24 +53,35 @@ fn app_data_dir(app: &AppHandle) -> PathBuf {
 }
 
 fn resolve_binary(app: &AppHandle) -> Result<PathBuf, AetherError> {
-    let dir = app
-        .path()
-        .resource_dir()
-        .map_err(|e| AetherError::Internal(e.to_string()))?;
     let name = if cfg!(windows) { "aether.exe" } else { "aether" };
-    let path = dir.join("binaries").join(name);
-    if !path.exists() {
-        return Err(AetherError::BinaryMissing(path.display().to_string()));
+
+    // Check resource dir first (bundled binary from installer)
+    if let Ok(dir) = app.path().resource_dir() {
+        let path = dir.join("binaries").join(name);
+        if path.exists() {
+            fix_exec_bit(&path);
+            return Ok(path);
+        }
     }
-    // Bundlers don't reliably preserve the exec bit on resource files, and a
-    // non-executable core binary would fail every spawn with a cryptic error.
-    #[cfg(unix)]
-    {
-        use std::os::unix::fs::PermissionsExt;
-        let _ = std::fs::set_permissions(&path, std::fs::Permissions::from_mode(0o755));
+
+    // Fall back to app data dir (auto-downloaded binary)
+    let data_path = app_data_dir(app).join("binaries").join(name);
+    if data_path.exists() {
+        fix_exec_bit(&data_path);
+        return Ok(data_path);
     }
-    Ok(path)
+
+    Err(AetherError::BinaryMissing(data_path.display().to_string()))
 }
+
+#[cfg(unix)]
+fn fix_exec_bit(path: &Path) {
+    use std::os::unix::fs::PermissionsExt;
+    let _ = std::fs::set_permissions(path, std::fs::Permissions::from_mode(0o755));
+}
+
+#[cfg(not(unix))]
+fn fix_exec_bit(_path: &Path) {}
 
 fn set_state_and_emit(app: &AppHandle, manager: &Arc<Mutex<AetherManager>>, new_state: ConnectionState) {
     manager.lock().unwrap().state = new_state.clone();
@@ -198,6 +214,20 @@ fn handle_unexpected_failure(
             // it with a retry or an Error state it didn't ask for.
             return;
         }
+        // Record history if we were previously connected.
+        if let Some(connected_at) = mgr.connected_at.take() {
+            let duration = now_millis().saturating_sub(connected_at) / 1000;
+            history::save(
+                &app,
+                &ConnectionEntry {
+                    protocol: format!("{:?}", profile.protocol).to_lowercase(),
+                    scan_mode: format!("{:?}", profile.scan_mode).to_lowercase(),
+                    timestamp: connected_at,
+                    duration_secs: duration,
+                    success: false,
+                },
+            );
+        }
         mgr.session = None;
         mgr.retry_count += 1;
         mgr.retry_count
@@ -284,11 +314,13 @@ fn monitor_connect(
         }
 
         if status::port_is_live(&socks) {
+            let now = now_millis();
             let new_state = ConnectionState::Connected {
                 socks_addr: profile.bind_address.clone(),
-                connected_at_ms: now_millis(),
+                connected_at_ms: now,
             };
             mgr.state = new_state.clone();
+            mgr.connected_at = Some(now);
             // Proven working — a future drop earns a fresh full retry budget
             // rather than inheriting whatever it took to get here.
             mgr.retry_count = 0;
@@ -362,6 +394,21 @@ pub fn request_disconnect(app: &AppHandle, manager: &Arc<Mutex<AetherManager>>) 
         let reconnecting = matches!(mgr.state, ConnectionState::Reconnecting { .. });
         if mgr.session.is_none() && !reconnecting {
             return Err(AetherError::NotConnected);
+        }
+        // Record history for a successful session being closed by the user.
+        if let Some(connected_at) = mgr.connected_at.take() {
+            let duration = now_millis().saturating_sub(connected_at) / 1000;
+            let profile = profiles::load(app);
+            history::save(
+                app,
+                &ConnectionEntry {
+                    protocol: format!("{:?}", profile.protocol).to_lowercase(),
+                    scan_mode: format!("{:?}", profile.scan_mode).to_lowercase(),
+                    timestamp: connected_at,
+                    duration_secs: duration,
+                    success: true,
+                },
+            );
         }
         mgr.user_requested_stop = true;
         mgr.retry_count = 0;
