@@ -1,5 +1,4 @@
 import { useCallback, useEffect, useRef, useState } from "react";
-import { createPortal } from "react-dom";
 import { ChevronDown, Palette } from "lucide-react";
 import { motion, AnimatePresence } from "motion/react";
 
@@ -227,45 +226,8 @@ export function ColorTheme() {
   const [primary, setPrimary] = useState<string | null>(null);
   const [secondary, setSecondary] = useState<string | null>(null);
   const [open, setOpen] = useState(false);
-  const triggerRef = useRef<HTMLButtonElement>(null);
   const panelRef = useRef<HTMLDivElement>(null);
-  const [position, setPosition] = useState({ top: 0, left: 0 });
-
-  const updatePosition = useCallback(() => {
-    if (!triggerRef.current) return;
-    const rect = triggerRef.current.getBoundingClientRect();
-    const panelWidth = 260;
-    const gap = 4;
-
-    let top = rect.bottom + gap;
-    let left = rect.left;
-
-    // Keep within viewport horizontally
-    if (left + panelWidth > window.innerWidth - 8) {
-      left = window.innerWidth - panelWidth - 8;
-    }
-    if (left < 8) left = 8;
-
-    // If would overflow bottom, show above
-    if (top + 200 > window.innerHeight) {
-      top = rect.top - gap;
-      // Will need transform origin adjustment handled by framer
-    }
-
-    setPosition({ top, left });
-  }, []);
-
-  useEffect(() => {
-    if (open) {
-      updatePosition();
-      window.addEventListener("scroll", updatePosition, true);
-      window.addEventListener("resize", updatePosition);
-      return () => {
-        window.removeEventListener("scroll", updatePosition, true);
-        window.removeEventListener("resize", updatePosition);
-      };
-    }
-  }, [open, updatePosition]);
+  const triggerRef = useRef<HTMLButtonElement>(null);
 
   // Close on click outside
   useEffect(() => {
@@ -326,20 +288,35 @@ export function ColorTheme() {
     resetColors();
   };
 
-  const popup = (
-    <AnimatePresence>
-      {open && (
-        <motion.div
-          ref={panelRef}
-          role="dialog"
-          aria-label="Accent color picker"
-          initial={{ opacity: 0, y: -4, scale: 0.97 }}
-          animate={{ opacity: 1, y: 0, scale: 1 }}
-          exit={{ opacity: 0, y: -4, scale: 0.97 }}
-          transition={{ duration: 0.12, ease: [0.16, 1, 0.3, 1] }}
-          className="fixed z-[9000] w-[260px] rounded-lg bg-surface-1 p-3 shadow-xl shadow-black/30 ring-1 ring-white/10"
-          style={{ top: position.top, left: position.left }}
-        >
+  return (
+    <div className="relative w-full">
+      <button
+        ref={triggerRef}
+        onClick={() => setOpen(!open)}
+        className="flex w-full cursor-pointer items-center justify-between rounded-md px-2 py-1.5 text-xs text-muted-foreground transition-colors hover:text-foreground"
+      >
+        <span className="flex items-center gap-1.5">
+          <Palette size={12} />
+          Accent color
+        </span>
+        <ChevronDown
+          size={12}
+          className={`transition-transform duration-150 ${open ? "rotate-180" : ""}`}
+        />
+      </button>
+
+      <AnimatePresence>
+        {open && (
+          <motion.div
+            ref={panelRef}
+            role="dialog"
+            aria-label="Accent color picker"
+            initial={{ opacity: 0, y: 4, scale: 0.97 }}
+            animate={{ opacity: 1, y: 0, scale: 1 }}
+            exit={{ opacity: 0, y: 4, scale: 0.97 }}
+            transition={{ duration: 0.12, ease: [0.16, 1, 0.3, 1] }}
+            className="absolute bottom-full left-0 z-[9000] mb-1 w-[260px] rounded-lg bg-surface-1 p-3 shadow-xl shadow-black/30 ring-1 ring-white/10"
+          >
           <div className="flex flex-col gap-3">
             <div className="flex flex-col gap-1.5">
               <p className="text-[10px] font-medium text-muted-foreground uppercase tracking-wide">
@@ -384,25 +361,6 @@ export function ColorTheme() {
         </motion.div>
       )}
     </AnimatePresence>
-  );
-
-  return (
-    <>
-      <button
-        ref={triggerRef}
-        onClick={() => setOpen(!open)}
-        className="flex w-full cursor-pointer items-center justify-between rounded-md px-2 py-1.5 text-xs text-muted-foreground transition-colors hover:text-foreground"
-      >
-        <span className="flex items-center gap-1.5">
-          <Palette size={12} />
-          Accent color
-        </span>
-        <ChevronDown
-          size={12}
-          className={`transition-transform duration-150 ${open ? "rotate-180" : ""}`}
-        />
-      </button>
-      {createPortal(popup, document.body)}
-    </>
+    </div>
   );
 }
