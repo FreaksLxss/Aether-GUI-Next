@@ -6,7 +6,9 @@ import type {
   ConnectionStatus,
   ConnectionHistoryEntry,
   LogLine,
+  LogLevel,
   MasqueNoize,
+  PerfLevel,
   WgNoize,
 } from "@/types/connection";
 
@@ -51,6 +53,8 @@ interface ConnectionState {
   setMasqueNoize: (masque_noize: MasqueNoize) => void;
   setWgNoize: (wg_noize: WgNoize) => void;
   setBindAddress: (bind_address: string) => void;
+  setLogLevel: (log_level: LogLevel | null) => void;
+  setPerf: (perf: PerfLevel | null) => void;
   retryAfterSidecarError: () => void;
   loadHistory: () => Promise<void>;
   clearHistory: () => Promise<void>;
@@ -67,6 +71,8 @@ export const useConnectionStore = create<ConnectionState>((set, get) => ({
     masque_noize: "firewall",
     wg_noize: "balanced",
     bind_address: "127.0.0.1:1819",
+    log_level: null,
+    perf: null,
   },
   logs: [],
   sidecarError: null,
@@ -122,6 +128,12 @@ export const useConnectionStore = create<ConnectionState>((set, get) => ({
 
   setBindAddress: (bind_address) =>
     set((s) => ({ profile: { ...s.profile, bind_address } })),
+
+  setLogLevel: (log_level) =>
+    set((s) => ({ profile: { ...s.profile, log_level } })),
+
+  setPerf: (perf) =>
+    set((s) => ({ profile: { ...s.profile, perf } })),
 
   // Clears the fallback screen so the user can attempt Connect again (e.g.
   // after fixing a broken install) — the next connect() call will re-set

@@ -105,6 +105,51 @@ impl WgNoize {
     }
 }
 
+/// Aether ≥1.4.0: log verbosity level passed via `--log-level`. Replaces the
+/// old all-or-nothing `--verbose` flag. `--verbose` still works as a shortcut
+/// for debug.
+#[derive(Serialize, Deserialize, Clone, Debug, PartialEq, Eq)]
+#[serde(rename_all = "lowercase")]
+pub enum LogLevel {
+    Error,
+    Warn,
+    Info,
+    Debug,
+    Trace,
+}
+
+impl LogLevel {
+    pub fn as_flag(&self) -> &'static str {
+        match self {
+            LogLevel::Error => "error",
+            LogLevel::Warn => "warn",
+            LogLevel::Info => "info",
+            LogLevel::Debug => "debug",
+            LogLevel::Trace => "trace",
+        }
+    }
+}
+
+/// Aether ≥1.4.0: resource scaling override passed via `--perf`. When omitted,
+/// Aether auto-detects CPU/RAM at startup and scales accordingly.
+#[derive(Serialize, Deserialize, Clone, Debug, PartialEq, Eq)]
+#[serde(rename_all = "lowercase")]
+pub enum PerfLevel {
+    Low,
+    Medium,
+    High,
+}
+
+impl PerfLevel {
+    pub fn as_flag(&self) -> &'static str {
+        match self {
+            PerfLevel::Low => "low",
+            PerfLevel::Medium => "medium",
+            PerfLevel::High => "high",
+        }
+    }
+}
+
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, Eq)]
 pub struct ConnectionProfile {
     pub protocol: Protocol,
@@ -134,6 +179,17 @@ pub struct ConnectionProfile {
     /// 127.0.0.1:1819; users can change the port or bind to 0.0.0.0 for LAN.
     #[serde(default = "default_bind_address")]
     pub bind_address: String,
+    /// Aether ≥1.4.0: log verbosity. Passed as `--log-level <value>`.
+    /// `info` stays quiet; `debug` adds tunnel internals; `trace` adds full
+    /// per-packet detail. When `None`, the flag is omitted (Aether defaults
+    /// to info).
+    #[serde(default)]
+    pub log_level: Option<LogLevel>,
+    /// Aether ≥1.4.0: resource scaling override. Passed as `--perf <value>`.
+    /// When `None`, Aether auto-detects CPU/RAM at startup and scales
+    /// scan concurrency, socket buffers, and queue sizes accordingly.
+    #[serde(default)]
+    pub perf: Option<PerfLevel>,
 }
 
 fn default_true() -> bool {
@@ -192,6 +248,16 @@ impl ConnectionProfile {
         {
             args.push("--bind".into());
             args.push(self.bind_address.clone());
+        }
+        // Aether ≥1.4.0: log level override.
+        if let Some(ref level) = self.log_level {
+            args.push("--log-level".into());
+            args.push(level.as_flag().into());
+        }
+        // Aether ≥1.4.0: resource scaling override.
+        if let Some(ref perf) = self.perf {
+            args.push("--perf".into());
+            args.push(perf.as_flag().into());
         }
         args
     }
@@ -272,6 +338,8 @@ impl Default for ConnectionProfile {
             masque_noize: MasqueNoize::Firewall,
             wg_noize: WgNoize::Balanced,
             bind_address: default_bind_address(),
+            log_level: None,
+            perf: None,
         }
     }
 }

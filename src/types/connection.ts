@@ -15,6 +15,10 @@ export type ScanMode = "turbo" | "balanced" | "thorough" | "stealth" | "ironclad
 export type IpVersion = "v4" | "v6" | "both";
 export type MasqueNoize = "firewall" | "gfw" | "off";
 export type WgNoize = "balanced" | "aggressive" | "light" | "off";
+/** Aether ≥1.4.0: log verbosity level. */
+export type LogLevel = "error" | "warn" | "info" | "debug" | "trace";
+/** Aether ≥1.4.0: resource scaling override. */
+export type PerfLevel = "low" | "medium" | "high";
 
 export interface ConnectionProfile {
   protocol: Protocol;
@@ -32,6 +36,10 @@ export interface ConnectionProfile {
   wg_noize: WgNoize;
   /** Local SOCKS5 listen address (--bind). Default 127.0.0.1:1819. */
   bind_address: string;
+  /** Aether ≥1.4.0: log verbosity (error/warn/info/debug/trace). null = omit flag (Aether defaults to info). */
+  log_level: LogLevel | null;
+  /** Aether ≥1.4.0: resource scaling override (low/medium/high). null = omit flag (Aether auto-detects). */
+  perf: PerfLevel | null;
 }
 
 export interface LogLine {

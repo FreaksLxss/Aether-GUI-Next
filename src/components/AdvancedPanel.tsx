@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState, type ReactNode } from "react";
-import { ChevronDown, Info, Settings2 } from "lucide-react";
+import { ChevronDown, ExternalLink, Info, Settings2 } from "lucide-react";
 import {
   Collapsible,
   CollapsibleContent,
@@ -13,8 +13,11 @@ import { IpVersionToggle } from "@/components/IpVersionToggle";
 import { MasqueTransportToggle } from "@/components/MasqueTransportToggle";
 import { NoizeProfileToggle } from "@/components/NoizeProfileToggle";
 import { BindAddressField } from "@/components/BindAddressField";
+import { LogLevelSelect } from "@/components/LogLevelSelect";
+import { PerfSelect } from "@/components/PerfSelect";
 import { LogSearch } from "@/components/LogSearch";
 import { useConnectionStore } from "@/state/connectionStore";
+import { openLogWindow } from "@/lib/log-window";
 import { cn } from "@/lib/utils";
 
 function FieldRow({
@@ -205,6 +208,18 @@ export function AdvancedPanel({
                 aria-label="Quick reconnect"
               />
             </div>
+            <FieldRow
+              label="Log Level"
+              tooltip="Controls how much Aether prints to the log panel. Info is quiet; Debug adds tunnel internals useful for troubleshooting; Trace adds full per-packet detail."
+            >
+              <LogLevelSelect />
+            </FieldRow>
+            <FieldRow
+              label="Performance"
+              tooltip="Override Aether's automatic resource scaling. Leave on Auto to let it detect your CPU and RAM at startup. Use Low for routers or Pi, High for maximum scan speed."
+            >
+              <PerfSelect />
+            </FieldRow>
             </div>
 
             <div className="flex items-center gap-2">
@@ -216,7 +231,26 @@ export function AdvancedPanel({
             </div>
 
             <div className="flex flex-col gap-2">
-              <LogSearch value={logFilter} onChange={setLogFilter} />
+              <div className="flex items-center gap-1.5">
+                <div className="flex-1">
+                  <LogSearch value={logFilter} onChange={setLogFilter} />
+                </div>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <button
+                      onClick={() => openLogWindow()}
+                      className="flex h-7 items-center gap-1 rounded-lg bg-surface-3 px-2 text-[10px] text-muted-foreground ring-1 ring-inset ring-white/5 transition-all duration-150 hover:bg-surface-4 hover:text-foreground"
+                      aria-label="Open full log in separate window"
+                    >
+                      <ExternalLink size={11} />
+                      Full Log
+                    </button>
+                  </TooltipTrigger>
+                  <TooltipContent>
+                    Open the live log in a separate, resizable window for better inspection.
+                  </TooltipContent>
+                </Tooltip>
+              </div>
               <div
                 ref={viewportRef}
                 onScroll={(e) => {

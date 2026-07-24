@@ -14,6 +14,7 @@
     "core:window:allow-hide",
     "core:window:allow-set-always-on-top",
     "core:window:allow-is-always-on-top",
+    "core:webview:allow-create-webview-window",
     "notification:default",
     "autostart:default",
     "shell:allow-open",
