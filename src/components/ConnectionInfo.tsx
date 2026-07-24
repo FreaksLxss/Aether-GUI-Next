@@ -74,7 +74,7 @@ export function ConnectionInfo() {
         <span className="text-primary">{uptime}</span>
       </div>
       <div className="h-px bg-white/5" />
-      <div className="flex items-center gap-3 text-muted-foreground/70">
+      <div className="flex items-center justify-center gap-3 text-muted-foreground/70">
         <span>{scanMode}</span>
         <span className="text-muted-foreground/30">·</span>
         <span>{obfuscation}</span>
