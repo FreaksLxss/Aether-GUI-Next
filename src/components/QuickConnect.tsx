@@ -27,7 +27,7 @@ const PRESETS: QuickPreset[] = [
   {
     label: "Secure",
     icon: Shield,
-    protocol: "masque",
+    protocol: "auto",
     scanMode: "thorough",
     description: "Maximum security",
   },
@@ -35,13 +35,12 @@ const PRESETS: QuickPreset[] = [
 
 export function QuickConnect({ onMoreOptions }: { onMoreOptions: () => void }) {
   const profile = useConnectionStore((s) => s.profile);
-  const setProtocol = useConnectionStore((s) => s.setProtocol);
   const setScanMode = useConnectionStore((s) => s.setScanMode);
   const status = useConnectionStore((s) => s.status);
   const locked = status.state !== "Idle" && status.state !== "Error";
 
   const isActive = (p: QuickPreset) =>
-    profile.protocol === p.protocol && profile.scan_mode === p.scanMode;
+    profile.protocol === "auto" && profile.scan_mode === p.scanMode;
 
   return (
     <div className="flex gap-2">
@@ -51,10 +50,7 @@ export function QuickConnect({ onMoreOptions }: { onMoreOptions: () => void }) {
         return (
           <button
             key={p.label}
-            onClick={() => {
-              setProtocol(p.protocol);
-              setScanMode(p.scanMode);
-            }}
+            onClick={() => setScanMode(p.scanMode)}
             disabled={locked}
             title={p.description}
             className={`flex cursor-pointer flex-col items-center gap-0.5 rounded-md px-3 py-2 text-[10px] ring-1 transition-all disabled:opacity-50 ${
