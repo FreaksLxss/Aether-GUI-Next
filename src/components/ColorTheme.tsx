@@ -1,5 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
+import { createPortal } from "react-dom";
 import { ChevronDown, Palette } from "lucide-react";
+import { motion, AnimatePresence } from "motion/react";
 
 const PRIMARY_KEY = "aether-custom-primary";
 const SECONDARY_KEY = "aether-custom-secondary";
@@ -19,16 +21,7 @@ const PRIMARY_COLORS: [string, string][] = [
   ["#eab308", "Yellow"],
 ];
 
-const SECONDARY_COLORS: [string, string][] = [
-  ["#242424", "Charcoal"],
-  ["#1e1e1e", "Dark Gray"],
-  ["#2a2a2a", "Graphite"],
-  ["#333333", "Slate"],
-  ["#3b3b3b", "Steel"],
-  ["#404040", "Ash"],
-  ["#4a4a4a", "Medium Gray"],
-  ["#555555", "Silver"],
-];
+const SECONDARY_DEFAULT = "#242424";
 
 function hexToHSL(hex: string): { h: number; s: number; l: number } {
   const r = parseInt(hex.slice(1, 3), 16) / 255;
@@ -61,8 +54,6 @@ function hslToHex(h: number, s: number, l: number): string {
   return `#${f(0)}${f(8)}${f(4)}`;
 }
 
-/** Derive surface tones from a hex color. Returns [surface-1, surface-2, surface-3, surface-4]
- *  from lightest to darkest (for dark theme, lighter = higher elevation). */
 function deriveSurfaces(hex: string): [string, string, string, string] {
   const { h, s } = hexToHSL(hex);
   return [
@@ -73,7 +64,6 @@ function deriveSurfaces(hex: string): [string, string, string, string] {
   ];
 }
 
-/** Derive light-mode surface tones — light backgrounds, dark foregrounds. */
 function deriveLightSurfaces(hex: string): [string, string, string, string] {
   const { h, s } = hexToHSL(hex);
   return [
@@ -84,7 +74,6 @@ function deriveLightSurfaces(hex: string): [string, string, string, string] {
   ];
 }
 
-/** Lighten a dark hex color for use as light-mode secondary/muted. */
 function lightenForLight(hex: string): string {
   const { h, s, l } = hexToHSL(hex);
   return hslToHex(h, Math.min(s, 15), Math.max(l, 85));
@@ -94,7 +83,6 @@ function isDarkMode(): boolean {
   return !document.documentElement.classList.contains("light");
 }
 
-/** Track the last-applied colors so the observer can re-apply on theme change. */
 let lastPrimary: string | null = null;
 let lastSecondary: string | null = null;
 
@@ -105,7 +93,6 @@ export function applyColors(primary: string, secondary: string, dark?: boolean) 
   lastSecondary = secondary;
   const { l: pl } = hexToHSL(primary);
 
-  // Primary — same in both modes
   root.style.setProperty("--primary", primary);
   root.style.setProperty("--ring", primary);
   root.style.setProperty("--color-primary", primary);
@@ -117,7 +104,6 @@ export function applyColors(primary: string, secondary: string, dark?: boolean) 
   root.style.setProperty("--color-status-connecting", primary);
 
   if (isDark) {
-    // Dark mode — secondary as-is, dark surfaces
     root.style.setProperty("--secondary", secondary);
     root.style.setProperty("--color-secondary", secondary);
     root.style.setProperty("--card", secondary);
@@ -144,7 +130,6 @@ export function applyColors(primary: string, secondary: string, dark?: boolean) 
     root.style.setProperty("--color-surface-3", s3);
     root.style.setProperty("--color-surface-4", s4);
   } else {
-    // Light mode — lighten secondary, light surfaces, dark foregrounds
     const lightSec = lightenForLight(secondary);
     root.style.setProperty("--secondary", lightSec);
     root.style.setProperty("--color-secondary", lightSec);
@@ -174,8 +159,6 @@ export function applyColors(primary: string, secondary: string, dark?: boolean) 
   }
 }
 
-// Watch for class changes on <html> (theme toggle) and re-apply custom colors.
-// This guarantees correct light/dark surfaces regardless of React effect timing.
 if (typeof MutationObserver !== "undefined") {
   const observer = new MutationObserver(() => {
     if (lastPrimary && lastSecondary) {
@@ -204,45 +187,38 @@ function resetColors() {
   ]) root.style.removeProperty(p);
 }
 
-function ColorRow({
-  label,
+function ColorSwatches({
   colors,
   selected,
   onSelect,
 }: {
-  label: string;
   colors: [string, string][];
   selected: string | null;
   onSelect: (hex: string) => void;
 }) {
   return (
-    <div className="flex flex-col gap-1.5">
-      <p className="text-[10px] font-medium text-muted-foreground uppercase tracking-wide">
-        {label}
-      </p>
-      <div className="flex flex-wrap gap-1.5">
-        {colors.map(([hex, name]) => (
-          <button
-            key={hex}
-            onClick={() => onSelect(hex)}
-            aria-label={`${label} color: ${name}`}
-            className={`size-7 cursor-pointer rounded-md ring-1 transition-all hover:scale-105 ${
-              selected === hex
-                ? "ring-2 ring-white ring-offset-1 ring-offset-surface-1"
-                : "ring-white/15 hover:ring-white/40"
-            }`}
-            style={{ backgroundColor: hex }}
-          />
-        ))}
-        <input
-          type="color"
-          value={selected ?? colors[0][0]}
-          onChange={(e) => onSelect(e.target.value)}
-          className="size-7 cursor-pointer rounded-md border border-white/10 bg-transparent p-0"
-          aria-label="Custom color picker"
-          title="Custom color"
+    <div className="flex flex-wrap gap-1.5">
+      {colors.map(([hex, name]) => (
+        <button
+          key={hex}
+          onClick={() => onSelect(hex)}
+          aria-label={`Color: ${name}`}
+          className={`size-7 cursor-pointer rounded-md ring-1 transition-all hover:scale-110 ${
+            selected === hex
+              ? "ring-2 ring-white ring-offset-1 ring-offset-surface-1"
+              : "ring-white/15 hover:ring-white/40"
+          }`}
+          style={{ backgroundColor: hex }}
         />
-      </div>
+      ))}
+      <input
+        type="color"
+        value={selected ?? colors[0][0]}
+        onChange={(e) => onSelect(e.target.value)}
+        className="size-7 cursor-pointer rounded-md border border-white/10 bg-transparent p-0"
+        aria-label="Custom color picker"
+        title="Custom color"
+      />
     </div>
   );
 }
@@ -251,23 +227,72 @@ export function ColorTheme() {
   const [primary, setPrimary] = useState<string | null>(null);
   const [secondary, setSecondary] = useState<string | null>(null);
   const [open, setOpen] = useState(false);
+  const triggerRef = useRef<HTMLButtonElement>(null);
   const panelRef = useRef<HTMLDivElement>(null);
+  const [position, setPosition] = useState({ top: 0, left: 0 });
 
-  const handleKeyDown = useCallback(
-    (e: KeyboardEvent) => {
-      if (e.key === "Escape" && open) {
-        setOpen(false);
-      }
-    },
-    [open],
-  );
+  const updatePosition = useCallback(() => {
+    if (!triggerRef.current) return;
+    const rect = triggerRef.current.getBoundingClientRect();
+    const panelWidth = 260;
+    const gap = 4;
+
+    let top = rect.bottom + gap;
+    let left = rect.left;
+
+    // Keep within viewport horizontally
+    if (left + panelWidth > window.innerWidth - 8) {
+      left = window.innerWidth - panelWidth - 8;
+    }
+    if (left < 8) left = 8;
+
+    // If would overflow bottom, show above
+    if (top + 200 > window.innerHeight) {
+      top = rect.top - gap;
+      // Will need transform origin adjustment handled by framer
+    }
+
+    setPosition({ top, left });
+  }, []);
 
   useEffect(() => {
     if (open) {
-      document.addEventListener("keydown", handleKeyDown);
-      return () => document.removeEventListener("keydown", handleKeyDown);
+      updatePosition();
+      window.addEventListener("scroll", updatePosition, true);
+      window.addEventListener("resize", updatePosition);
+      return () => {
+        window.removeEventListener("scroll", updatePosition, true);
+        window.removeEventListener("resize", updatePosition);
+      };
     }
-  }, [open, handleKeyDown]);
+  }, [open, updatePosition]);
+
+  // Close on click outside
+  useEffect(() => {
+    if (!open) return;
+    const handler = (e: MouseEvent) => {
+      if (
+        panelRef.current &&
+        !panelRef.current.contains(e.target as Node) &&
+        triggerRef.current &&
+        !triggerRef.current.contains(e.target as Node)
+      ) {
+        setOpen(false);
+      }
+    };
+    document.addEventListener("mousedown", handler);
+    return () => document.removeEventListener("mousedown", handler);
+  }, [open]);
+
+  // Close on Escape
+  useEffect(() => {
+    if (!open) return;
+    const handler = (e: KeyboardEvent) => {
+      if (e.key === "Escape") setOpen(false);
+    };
+    document.addEventListener("keydown", handler);
+    return () => document.removeEventListener("keydown", handler);
+  }, [open]);
 
   useEffect(() => {
     const p = localStorage.getItem(PRIMARY_KEY);
@@ -275,8 +300,6 @@ export function ColorTheme() {
     if (p && s) {
       setPrimary(p);
       setSecondary(s);
-      // Read theme from localStorage directly — don't rely on DOM class
-      // which may not be set yet if ThemeToggle's effect hasn't run
       const savedTheme = localStorage.getItem("aether-theme");
       const dark = savedTheme ? savedTheme === "dark" : true;
       applyColors(p, s, dark);
@@ -286,7 +309,7 @@ export function ColorTheme() {
   const pickPrimary = (hex: string) => {
     setPrimary(hex);
     localStorage.setItem(PRIMARY_KEY, hex);
-    applyColors(hex, secondary ?? SECONDARY_COLORS[0][0]);
+    applyColors(hex, secondary ?? SECONDARY_DEFAULT);
   };
 
   const pickSecondary = (hex: string) => {
@@ -303,9 +326,70 @@ export function ColorTheme() {
     resetColors();
   };
 
+  const popup = (
+    <AnimatePresence>
+      {open && (
+        <motion.div
+          ref={panelRef}
+          role="dialog"
+          aria-label="Accent color picker"
+          initial={{ opacity: 0, y: -4, scale: 0.97 }}
+          animate={{ opacity: 1, y: 0, scale: 1 }}
+          exit={{ opacity: 0, y: -4, scale: 0.97 }}
+          transition={{ duration: 0.12, ease: [0.16, 1, 0.3, 1] }}
+          className="fixed z-[9000] w-[260px] rounded-lg bg-surface-1 p-3 shadow-xl shadow-black/30 ring-1 ring-white/10"
+          style={{ top: position.top, left: position.left }}
+        >
+          <div className="flex flex-col gap-3">
+            <div className="flex flex-col gap-1.5">
+              <p className="text-[10px] font-medium text-muted-foreground uppercase tracking-wide">
+                Primary
+              </p>
+              <ColorSwatches
+                colors={PRIMARY_COLORS}
+                selected={primary}
+                onSelect={pickPrimary}
+              />
+            </div>
+            <div className="h-px bg-white/5" />
+            <div className="flex flex-col gap-1.5">
+              <p className="text-[10px] font-medium text-muted-foreground uppercase tracking-wide">
+                Secondary
+              </p>
+              <div className="flex items-center gap-2">
+                <input
+                  type="color"
+                  value={secondary ?? SECONDARY_DEFAULT}
+                  onChange={(e) => pickSecondary(e.target.value)}
+                  className="size-8 cursor-pointer rounded-md border border-white/10 bg-transparent p-0"
+                  aria-label="Custom secondary color"
+                />
+                <span className="text-[10px] text-muted-foreground">
+                  {secondary ?? "Default"}
+                </span>
+              </div>
+            </div>
+            {(primary || secondary) && (
+              <>
+                <div className="h-px bg-white/5" />
+                <button
+                  onClick={reset}
+                  className="w-full cursor-pointer rounded-md py-1.5 text-[10px] text-muted-foreground transition-colors hover:bg-white/5 hover:text-foreground"
+                >
+                  Reset to default
+                </button>
+              </>
+            )}
+          </div>
+        </motion.div>
+      )}
+    </AnimatePresence>
+  );
+
   return (
-    <div className="w-full">
+    <>
       <button
+        ref={triggerRef}
         onClick={() => setOpen(!open)}
         className="flex w-full cursor-pointer items-center justify-between rounded-md px-2 py-1.5 text-xs text-muted-foreground transition-colors hover:text-foreground"
       >
@@ -318,47 +402,7 @@ export function ColorTheme() {
           className={`transition-transform duration-150 ${open ? "rotate-180" : ""}`}
         />
       </button>
-
-      {open && (
-        <div
-          ref={panelRef}
-          role="dialog"
-          aria-label="Accent color picker"
-          className="flex flex-col gap-3 rounded-md bg-black/10 p-3 ring-1 ring-white/10"
-        >
-          <ColorRow
-            label="Primary"
-            colors={PRIMARY_COLORS}
-            selected={primary}
-            onSelect={pickPrimary}
-          />
-          <div className="flex flex-col gap-1.5">
-            <p className="text-[10px] font-medium text-muted-foreground uppercase tracking-wide">
-              Secondary
-            </p>
-            <div className="flex items-center gap-2">
-              <input
-                type="color"
-                value={secondary ?? SECONDARY_COLORS[0][0]}
-                onChange={(e) => pickSecondary(e.target.value)}
-                className="size-8 cursor-pointer rounded-md border border-white/10 bg-transparent p-0"
-                aria-label="Custom secondary color"
-              />
-              <span className="text-[10px] text-muted-foreground">
-                {secondary ?? "Default"}
-              </span>
-            </div>
-          </div>
-          {(primary || secondary) && (
-            <button
-              onClick={reset}
-              className="w-full cursor-pointer rounded-md py-1.5 text-[10px] text-muted-foreground transition-colors hover:bg-black/20 hover:text-foreground"
-            >
-              Reset to default
-            </button>
-          )}
-        </div>
-      )}
-    </div>
+      {createPortal(popup, document.body)}
+    </>
   );
 }
