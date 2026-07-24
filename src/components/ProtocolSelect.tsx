@@ -9,10 +9,17 @@ import { useConnectionStore } from "@/state/connectionStore";
 import type { Protocol } from "@/types/connection";
 
 const LABELS: Record<Protocol, string> = {
-  auto: "Auto (recommended)",
+  auto: "Auto",
   masque: "MASQUE",
   wireguard: "WireGuard",
-  gool: "WARP-in-WARP (gool)",
+  gool: "WARP-in-WARP",
+};
+
+const DESCRIPTIONS: Record<Protocol, string> = {
+  auto: "Recommended — lets Aether pick the best protocol",
+  masque: "Disguises traffic as HTTPS — best against strict censorship",
+  wireguard: "Lighter and faster, good for less restrictive networks",
+  gool: "Double WireGuard tunnel for extra security at a speed cost",
 };
 
 /**
@@ -38,15 +45,22 @@ export function ProtocolSelect() {
     >
       <SelectTrigger
         size="sm"
-        className="w-full border-transparent bg-transparent text-muted-foreground shadow-none hover:bg-surface-2"
+        className="w-full rounded-lg bg-surface-3 px-3 py-2 text-[10px] text-foreground ring-1 ring-inset ring-white/5 transition-all duration-150 hover:bg-surface-4 focus-visible:ring-primary disabled:opacity-50"
         aria-label="Protocol"
       >
         <SelectValue />
       </SelectTrigger>
-      <SelectContent>
+      <SelectContent className="rounded-lg bg-surface-2 ring-1 ring-white/10">
         {(Object.keys(LABELS) as Protocol[]).map((p) => (
-          <SelectItem key={p} value={p}>
-            {LABELS[p]}
+          <SelectItem
+            key={p}
+            value={p}
+            className="rounded-md text-xs focus:bg-primary/20 focus:text-foreground"
+          >
+            <div className="flex flex-col">
+              <span>{LABELS[p]}</span>
+              <span className="text-[9px] text-muted-foreground">{DESCRIPTIONS[p]}</span>
+            </div>
           </SelectItem>
         ))}
       </SelectContent>

@@ -225,7 +225,7 @@ export function AdvancedPanel({
                 }}
                 role="log"
                 aria-label="Aether connection logs"
-                className="max-h-64 overflow-y-auto rounded-md bg-black/20 p-2 font-mono text-xs text-muted-foreground ring-1 ring-white/10"
+                className="max-h-64 overflow-y-auto rounded-lg bg-surface-3 p-2 font-mono text-[10px] text-muted-foreground ring-1 ring-inset ring-white/5"
               >
                 {filteredLogs.length === 0 ? (
                   logFilter ? (

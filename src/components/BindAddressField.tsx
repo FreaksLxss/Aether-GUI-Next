@@ -46,10 +46,10 @@ export function BindAddressField() {
             timerRef.current = setTimeout(() => setInvalid(false), 1000);
           }
         }}
-        className={`h-9 w-20 rounded-md bg-black/20 px-2 text-center text-xs text-foreground ring-1 outline-none transition-shadow duration-150 disabled:opacity-50 ${
+        className={`h-9 w-20 rounded-lg bg-surface-3 px-2 text-center text-[10px] text-foreground ring-1 ring-inset outline-none transition-all duration-150 hover:bg-surface-4 disabled:opacity-50 ${
           invalid
             ? "ring-status-error focus-visible:ring-status-error"
-            : "ring-white/10 focus-visible:ring-primary"
+            : "ring-white/5 focus-visible:ring-primary"
         }`}
         aria-label="SOCKS5 port"
       />

@@ -17,7 +17,7 @@ export function LogSearch({ value, onChange }: Props) {
         value={value}
         onChange={(e) => onChange(e.target.value)}
         placeholder="Filter logs…"
-        className="h-7 w-full rounded-md bg-black/20 pl-7 pr-6 text-xs text-foreground ring-1 ring-white/10 outline-none placeholder:text-muted-foreground/50 focus:ring-primary"
+        className="h-7 w-full rounded-lg bg-surface-3 pl-7 pr-6 text-[10px] text-foreground ring-1 ring-inset ring-white/5 outline-none transition-all duration-150 placeholder:text-muted-foreground/50 hover:bg-surface-4 focus-visible:ring-primary"
       />
       {value && (
         <button
