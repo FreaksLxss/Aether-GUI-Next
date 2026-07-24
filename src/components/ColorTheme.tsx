@@ -47,9 +47,65 @@ function hexToHSL(hex: string): { h: number; s: number; l: number } {
   return { h: Math.round(h * 360), s: Math.round(s * 100), l: Math.round(l * 100) };
 }
 
-function applyColors(primary: string, secondary: string) {
+function hslToHex(h: number, s: number, l: number): string {
+  s /= 100;
+  l /= 100;
+  const a = s * Math.min(l, 1 - l);
+  const f = (n: number) => {
+    const k = (n + h / 30) % 12;
+    const color = l - a * Math.max(Math.min(k - 3, 9 - k, 1), -1);
+    return Math.round(255 * color)
+      .toString(16)
+      .padStart(2, "0");
+  };
+  return `#${f(0)}${f(8)}${f(4)}`;
+}
+
+/** Derive surface tones from a hex color. Returns [surface-1, surface-2, surface-3, surface-4]
+ *  from lightest to darkest (for dark theme, lighter = higher elevation). */
+function deriveSurfaces(hex: string): [string, string, string, string] {
+  const { h, s } = hexToHSL(hex);
+  return [
+    hslToHex(h, Math.min(s, 20), 10),
+    hslToHex(h, Math.min(s, 18), 12),
+    hslToHex(h, Math.min(s, 15), 15),
+    hslToHex(h, Math.min(s, 12), 18),
+  ];
+}
+
+/** Derive light-mode surface tones — light backgrounds, dark foregrounds. */
+function deriveLightSurfaces(hex: string): [string, string, string, string] {
+  const { h, s } = hexToHSL(hex);
+  return [
+    hslToHex(h, Math.min(s, 10), 98),
+    hslToHex(h, Math.min(s, 8), 94),
+    hslToHex(h, Math.min(s, 6), 90),
+    hslToHex(h, Math.min(s, 5), 85),
+  ];
+}
+
+/** Lighten a dark hex color for use as light-mode secondary/muted. */
+function lightenForLight(hex: string): string {
+  const { h, s, l } = hexToHSL(hex);
+  return hslToHex(h, Math.min(s, 15), Math.max(l, 85));
+}
+
+function isDarkMode(): boolean {
+  return !document.documentElement.classList.contains("light");
+}
+
+/** Track the last-applied colors so the observer can re-apply on theme change. */
+let lastPrimary: string | null = null;
+let lastSecondary: string | null = null;
+
+export function applyColors(primary: string, secondary: string, dark?: boolean) {
   const root = document.documentElement;
+  const isDark = dark ?? isDarkMode();
+  lastPrimary = primary;
+  lastSecondary = secondary;
   const { l: pl } = hexToHSL(primary);
+
+  // Primary — same in both modes
   root.style.setProperty("--primary", primary);
   root.style.setProperty("--ring", primary);
   root.style.setProperty("--color-primary", primary);
@@ -59,18 +115,92 @@ function applyColors(primary: string, secondary: string) {
   root.style.setProperty("--primary-foreground", pl > 50 ? "#0d0d0f" : "#f2f2f2");
   root.style.setProperty("--status-connecting", primary);
   root.style.setProperty("--color-status-connecting", primary);
-  root.style.setProperty("--secondary", secondary);
-  root.style.setProperty("--color-secondary", secondary);
-  root.style.setProperty("--color-accent", secondary);
+
+  if (isDark) {
+    // Dark mode — secondary as-is, dark surfaces
+    root.style.setProperty("--secondary", secondary);
+    root.style.setProperty("--color-secondary", secondary);
+    root.style.setProperty("--card", secondary);
+    root.style.setProperty("--color-card", secondary);
+    root.style.setProperty("--popover", secondary);
+    root.style.setProperty("--color-popover", secondary);
+    root.style.setProperty("--muted", secondary);
+    root.style.setProperty("--color-muted", secondary);
+    root.style.setProperty("--accent", secondary);
+    root.style.setProperty("--color-accent", secondary);
+    root.style.setProperty("--card-foreground", "#f2f2f2");
+    root.style.setProperty("--popover-foreground", "#f2f2f2");
+    root.style.setProperty("--secondary-foreground", "#f2f2f2");
+    root.style.setProperty("--muted-foreground", "#a3a3a3");
+    root.style.setProperty("--accent-foreground", "#f2f2f2");
+
+    const [s1, s2, s3, s4] = deriveSurfaces(secondary);
+    root.style.setProperty("--surface-1", s1);
+    root.style.setProperty("--surface-2", s2);
+    root.style.setProperty("--surface-3", s3);
+    root.style.setProperty("--surface-4", s4);
+    root.style.setProperty("--color-surface-1", s1);
+    root.style.setProperty("--color-surface-2", s2);
+    root.style.setProperty("--color-surface-3", s3);
+    root.style.setProperty("--color-surface-4", s4);
+  } else {
+    // Light mode — lighten secondary, light surfaces, dark foregrounds
+    const lightSec = lightenForLight(secondary);
+    root.style.setProperty("--secondary", lightSec);
+    root.style.setProperty("--color-secondary", lightSec);
+    root.style.setProperty("--card", "#ffffff");
+    root.style.setProperty("--color-card", "#ffffff");
+    root.style.setProperty("--popover", "#ffffff");
+    root.style.setProperty("--color-popover", "#ffffff");
+    root.style.setProperty("--muted", lightSec);
+    root.style.setProperty("--color-muted", lightSec);
+    root.style.setProperty("--accent", lightenForLight(secondary));
+    root.style.setProperty("--color-accent", lightenForLight(secondary));
+    root.style.setProperty("--card-foreground", "#171717");
+    root.style.setProperty("--popover-foreground", "#171717");
+    root.style.setProperty("--secondary-foreground", "#171717");
+    root.style.setProperty("--muted-foreground", "#525252");
+    root.style.setProperty("--accent-foreground", "#171717");
+
+    const [s1, s2, s3, s4] = deriveLightSurfaces(secondary);
+    root.style.setProperty("--surface-1", s1);
+    root.style.setProperty("--surface-2", s2);
+    root.style.setProperty("--surface-3", s3);
+    root.style.setProperty("--surface-4", s4);
+    root.style.setProperty("--color-surface-1", s1);
+    root.style.setProperty("--color-surface-2", s2);
+    root.style.setProperty("--color-surface-3", s3);
+    root.style.setProperty("--color-surface-4", s4);
+  }
+}
+
+// Watch for class changes on <html> (theme toggle) and re-apply custom colors.
+// This guarantees correct light/dark surfaces regardless of React effect timing.
+if (typeof MutationObserver !== "undefined") {
+  const observer = new MutationObserver(() => {
+    if (lastPrimary && lastSecondary) {
+      applyColors(lastPrimary, lastSecondary);
+    }
+  });
+  observer.observe(document.documentElement, {
+    attributes: true,
+    attributeFilter: ["class"],
+  });
 }
 
 function resetColors() {
+  lastPrimary = null;
+  lastSecondary = null;
   const root = document.documentElement;
   for (const p of [
     "--primary", "--ring", "--color-primary", "--color-ring",
     "--color-sidebar-primary", "--color-sidebar-ring",
     "--primary-foreground", "--status-connecting", "--color-status-connecting",
-    "--secondary", "--color-secondary", "--color-accent",
+    "--secondary", "--color-secondary", "--card", "--color-card",
+    "--popover", "--color-popover", "--muted", "--color-muted",
+    "--accent", "--color-accent",
+    "--surface-1", "--surface-2", "--surface-3", "--surface-4",
+    "--color-surface-1", "--color-surface-2", "--color-surface-3", "--color-surface-4",
   ]) root.style.removeProperty(p);
 }
 
@@ -145,7 +275,11 @@ export function ColorTheme() {
     if (p && s) {
       setPrimary(p);
       setSecondary(s);
-      applyColors(p, s);
+      // Read theme from localStorage directly — don't rely on DOM class
+      // which may not be set yet if ThemeToggle's effect hasn't run
+      const savedTheme = localStorage.getItem("aether-theme");
+      const dark = savedTheme ? savedTheme === "dark" : true;
+      applyColors(p, s, dark);
     }
   }, []);
 

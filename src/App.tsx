@@ -1,4 +1,4 @@
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { AnimatePresence, motion, MotionConfig } from "motion/react";
 import { ConnectButton } from "@/components/ConnectButton";
 import { ConnectionStatusLine } from "@/components/ConnectionStatusLine";
@@ -15,6 +15,7 @@ import { AmbientBackground } from "@/components/AmbientBackground";
 import { SidecarErrorScreen } from "@/components/SidecarErrorScreen";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { TitleBar } from "@/components/TitleBar";
+import { CloseDialog } from "@/components/CloseDialog";
 import { useKeyboardShortcuts } from "@/hooks/useKeyboardShortcuts";
 import { useConnectionSound } from "@/hooks/useConnectionSound";
 import { initConnectionListeners, useConnectionStore } from "@/state/connectionStore";
@@ -26,8 +27,14 @@ const SCREEN_TRANSITION = {
   transition: { duration: 0.16, ease: [0.22, 1, 0.36, 1] as const },
 };
 
+export type AccordionPanel = "advanced" | "presets" | "history" | "settings" | null;
+
 function MainScreen() {
   const isConnected = useConnectionStore((s) => s.status.state === "Connected");
+  const [activePanel, setActivePanel] = useState<AccordionPanel>(null);
+
+  const togglePanel = (panel: AccordionPanel) =>
+    setActivePanel((prev) => (prev === panel ? null : panel));
 
   return (
     <div className="relative z-10 flex h-full flex-col items-center overflow-y-auto p-6">
@@ -44,11 +51,12 @@ function MainScreen() {
         )}
         <QuickConnect />
       </div>
-      <div className="flex w-full max-w-sm flex-col gap-1 pb-2">
-        <AdvancedPanel />
-        <ProfilePresets />
-        <ConnectionHistory />
-        <SettingsPanel />
+      <div className="mt-auto flex w-full max-w-sm flex-col gap-1.5 pt-2 pb-2">
+        <div className="h-px w-full bg-border/50" />
+        <AdvancedPanel open={activePanel === "advanced"} onToggle={() => togglePanel("advanced")} />
+        <ProfilePresets open={activePanel === "presets"} onToggle={() => togglePanel("presets")} />
+        <ConnectionHistory open={activePanel === "history"} onToggle={() => togglePanel("history")} />
+        <SettingsPanel open={activePanel === "settings"} onToggle={() => togglePanel("settings")} />
       </div>
     </div>
   );
@@ -73,6 +81,7 @@ export function App() {
     <TooltipProvider>
       <MotionConfig reducedMotion="user">
         <div className="relative flex h-svh w-full flex-col overflow-hidden bg-background">
+          <CloseDialog />
           <AmbientBackground />
           <TitleBar />
           <div className="relative min-h-0 flex-1">

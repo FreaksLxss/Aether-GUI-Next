@@ -76,6 +76,15 @@ export function AboutDialog() {
                   <ExternalLink size={10} />
                   Aether engine on GitHub
                 </button>
+                <button
+                  onClick={() =>
+                    void open("https://github.com/FreaksLxss/Aether-GUI-Remake")
+                  }
+                  className="flex cursor-pointer items-center gap-1.5 text-xs text-muted-foreground hover:text-foreground"
+                >
+                  <ExternalLink size={10} />
+                  Further Improvements
+                </button>
               </div>
 
               <p className="mt-4 text-[10px] text-muted-foreground/60">

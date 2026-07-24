@@ -12,6 +12,7 @@ import {
   CollapsibleTrigger,
 } from "@/components/ui/collapsible";
 import { useConnectionStore } from "@/state/connectionStore";
+import { cn } from "@/lib/utils";
 import type { ConnectionProfile } from "@/types/connection";
 
 interface ProfilePreset {
@@ -20,7 +21,13 @@ interface ProfilePreset {
   created_at: number;
 }
 
-export function ProfilePresets() {
+export function ProfilePresets({
+  open,
+  onToggle,
+}: {
+  open: boolean;
+  onToggle: () => void;
+}) {
   const profile = useConnectionStore((s) => s.profile);
   const setProtocol = useConnectionStore((s) => s.setProtocol);
   const setScanMode = useConnectionStore((s) => s.setScanMode);
@@ -33,7 +40,6 @@ export function ProfilePresets() {
   const status = useConnectionStore((s) => s.status);
 
   const [presets, setPresets] = useState<ProfilePreset[]>([]);
-  const [open, setOpen] = useState(false);
   const [newName, setNewName] = useState("");
   const locked = status.state !== "Idle" && status.state !== "Error";
 
@@ -72,21 +78,36 @@ export function ProfilePresets() {
 
   return (
     <div className="w-full">
-      <Collapsible open={open} onOpenChange={setOpen}>
-        <CollapsibleTrigger className="flex w-full cursor-pointer items-center justify-center gap-1.5 py-2 text-xs text-muted-foreground outline-none hover:text-foreground focus-visible:ring-2 focus-visible:ring-primary rounded-md">
-          <Bookmark size={14} />
-          Presets
-          <span className="text-[10px] text-muted-foreground/60">
-            ({presets.length})
-          </span>
-          <ChevronDown
-            size={14}
-            className="transition-transform duration-150 data-[state=open]:rotate-180"
-            data-state={open ? "open" : "closed"}
-          />
-        </CollapsibleTrigger>
-        <CollapsibleContent className="overflow-hidden data-[state=open]:animate-in data-[state=open]:fade-in-0 data-[state=open]:slide-in-from-bottom-1 data-[state=open]:duration-150 data-[state=open]:[animation-timing-function:cubic-bezier(0.16,1,0.3,1)] data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=closed]:slide-out-to-bottom-1 data-[state=closed]:duration-100">
-          <div className="flex flex-col gap-1.5 pb-2">
+      <Collapsible open={open} onOpenChange={onToggle}>
+        <div
+          className={cn(
+            "rounded-lg transition-colors duration-150",
+            open
+              ? "bg-surface-2 ring-1 ring-white/5"
+              : "bg-surface-2 hover:bg-surface-3",
+          )}
+        >
+          <CollapsibleTrigger
+            className={cn(
+              "flex w-full cursor-pointer items-center gap-2.5 px-3 py-2.5 text-xs outline-none transition-colors duration-150 focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-inset",
+              open
+                ? "text-foreground"
+                : "text-muted-foreground hover:text-foreground",
+            )}
+          >
+            <Bookmark size={14} />
+            Presets
+            <span className="text-[10px] text-muted-foreground/60">
+              ({presets.length})
+            </span>
+            <ChevronDown
+              size={14}
+              className="ml-auto transition-transform duration-150 data-[state=open]:rotate-180"
+              data-state={open ? "open" : "closed"}
+            />
+          </CollapsibleTrigger>
+          <CollapsibleContent className="data-[state=open]:animate-in data-[state=open]:fade-in-0 data-[state=open]:slide-in-from-top-1 data-[state=open]:duration-150 data-[state=open]:[animation-timing-function:cubic-bezier(0.16,1,0.3,1)] data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=closed]:slide-out-to-top-1 data-[state=closed]:duration-100">
+            <div className="flex flex-col gap-1.5 border-t border-white/5 px-3 pt-3 pb-3">
             {/* Save current as preset */}
             <div className="flex gap-1.5">
               <input
@@ -138,6 +159,7 @@ export function ProfilePresets() {
             )}
           </div>
         </CollapsibleContent>
+        </div>
       </Collapsible>
     </div>
   );

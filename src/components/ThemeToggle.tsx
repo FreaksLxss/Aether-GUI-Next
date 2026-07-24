@@ -1,7 +1,12 @@
 import { useEffect, useState } from "react";
 import { Moon, Sun } from "lucide-react";
+import { applyColors } from "@/components/ColorTheme";
 
 const THEME_KEY = "aether-theme";
+const PRIMARY_KEY = "aether-custom-primary";
+const SECONDARY_KEY = "aether-custom-secondary";
+const DEFAULT_PRIMARY = "#f2711c";
+const DEFAULT_SECONDARY = "#242424";
 
 export function ThemeToggle() {
   const [dark, setDark] = useState(true);
@@ -18,6 +23,13 @@ export function ThemeToggle() {
     setDark(next);
     localStorage.setItem(THEME_KEY, next ? "dark" : "light");
     applyTheme(next);
+    // Re-apply custom colors for the new theme mode — pass `next` explicitly
+    // so applyColors knows the target mode without reading the DOM
+    const p = localStorage.getItem(PRIMARY_KEY);
+    const s = localStorage.getItem(SECONDARY_KEY);
+    if (p && s) {
+      applyColors(p, s, next);
+    }
   };
 
   return (
