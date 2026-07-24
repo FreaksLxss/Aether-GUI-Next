@@ -37,7 +37,7 @@ const SHAKE_VARIANTS: Variants = {
 const RING_SHADOW: Record<Phase, string> = {
   idle: "0 0 0 3px var(--color-status-idle)",
   connecting: "0 0 0 3px var(--color-status-connecting)",
-  connected: "0 0 0 1px color-mix(in oklch, var(--color-status-connected) 40%, transparent)",
+  connected: "0 0 0 1px color-mix(in oklch, var(--color-primary) 40%, transparent)",
   error: "0 0 0 3px var(--color-status-error)",
 };
 
@@ -53,7 +53,7 @@ const RING_ANIM: Record<Phase, string> = {
 const GLOW: Partial<Record<Phase, string>> = {
   connecting:
     "0 0 20px 3px color-mix(in oklch, var(--color-status-connecting) 50%, transparent)",
-  connected: "0 0 32px 6px var(--color-status-connected)",
+  connected: "0 0 32px 6px var(--color-primary)",
 };
 
 const ICONS: Record<Phase, typeof Power> = {
@@ -142,7 +142,7 @@ export function ConnectButton() {
             style={{
               borderColor:
                 phase === "connected"
-                  ? "var(--color-status-connected)"
+                  ? "var(--color-primary)"
                   : "var(--color-status-connecting)",
             }}
             initial={{ scale: 0.9, opacity: 0.55 }}
@@ -169,7 +169,7 @@ export function ConnectButton() {
               phase === "connecting"
                 ? "animate-spin text-status-connecting"
                 : phase === "connected"
-                  ? "text-status-connected"
+                  ? "text-primary"
                   : phase === "error"
                     ? "text-status-error"
                     : "text-status-idle"

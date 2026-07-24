@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { invoke } from "@tauri-apps/api/core";
 import { getCurrentWindow } from "@tauri-apps/api/window";
 import { X, Minus, Power } from "lucide-react";
 import { motion, AnimatePresence } from "motion/react";
@@ -37,12 +38,15 @@ export function CloseDialog() {
   // Register the setter so handleClose can trigger us
   setShowFn = setShow;
 
-  const handleChoice = (choice: CloseChoice) => {
+  const handleChoice = async (choice: CloseChoice) => {
     localStorage.setItem(CLOSE_CHOICE_KEY, choice ?? "close");
     setShow(false);
+    // Sync the "minimize to tray" toggle in Settings so it reflects the choice
     if (choice === "tray") {
+      await invoke("set_close_to_tray", { enabled: true }).catch(() => {});
       void appWindow.hide();
     } else {
+      await invoke("set_close_to_tray", { enabled: false }).catch(() => {});
       void appWindow.close();
     }
   };
