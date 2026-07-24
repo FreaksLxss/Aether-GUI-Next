@@ -1,6 +1,8 @@
 import { useState } from "react";
+import { motion, AnimatePresence } from "motion/react";
 import { writeText } from "@tauri-apps/plugin-clipboard-manager";
 import { Check, Link } from "lucide-react";
+import { Button } from "@/components/ui/button";
 import { useConnectionStore } from "@/state/connectionStore";
 
 export function PacUrl() {
@@ -24,22 +26,40 @@ export function PacUrl() {
   };
 
   return (
-    <button
+    <Button
+      variant="outline"
+      size="sm"
       onClick={handleCopy}
-      className="flex cursor-pointer items-center gap-1.5 rounded-md bg-black/20 px-2.5 py-1.5 text-[10px] text-muted-foreground ring-1 ring-white/10 transition-colors hover:bg-black/30 hover:text-foreground"
+      className="h-7 gap-1.5 text-[10px] text-muted-foreground"
       title="Copy PAC auto-config URL — paste into your browser or system proxy settings for automatic SOCKS5 routing"
     >
-      {copied ? (
-        <>
-          <Check size={10} className="text-status-connected" />
-          PAC URL copied!
-        </>
-      ) : (
-        <>
-          <Link size={10} />
-          Copy PAC URL
-        </>
-      )}
-    </button>
+      <AnimatePresence mode="wait">
+        {copied ? (
+          <motion.span
+            key="check"
+            initial={{ scale: 0.5, opacity: 0 }}
+            animate={{ scale: 1, opacity: 1 }}
+            exit={{ scale: 0.5, opacity: 0 }}
+            transition={{ duration: 0.15, ease: "easeOut" }}
+            className="flex items-center gap-1.5"
+          >
+            <Check size={10} className="text-status-connected" />
+            PAC URL copied!
+          </motion.span>
+        ) : (
+          <motion.span
+            key="link"
+            initial={{ scale: 0.5, opacity: 0 }}
+            animate={{ scale: 1, opacity: 1 }}
+            exit={{ scale: 0.5, opacity: 0 }}
+            transition={{ duration: 0.15, ease: "easeOut" }}
+            className="flex items-center gap-1.5"
+          >
+            <Link size={10} />
+            Copy PAC URL
+          </motion.span>
+        )}
+      </AnimatePresence>
+    </Button>
   );
 }

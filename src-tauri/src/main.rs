@@ -74,13 +74,22 @@ fn main() {
                         Some((x, y, w, h))
                     })
                 {
-                    if let Some(window) = app.get_webview_window("main") {
-                        let _ = window.set_position(tauri::Position::Physical(
-                            tauri::PhysicalPosition::new(x as i32, y as i32),
-                        ));
-                        let _ = window.set_size(tauri::Size::Physical(
-                            tauri::PhysicalSize::new(w as u32, h as u32),
-                        ));
+                    // Ignore obviously invalid positions (off-screen, zero-size)
+                    let valid = w > 100.0
+                        && h > 100.0
+                        && x > -10_000.0
+                        && y > -10_000.0
+                        && x < 20_000.0
+                        && y < 20_000.0;
+                    if valid {
+                        if let Some(window) = app.get_webview_window("main") {
+                            let _ = window.set_position(tauri::Position::Physical(
+                                tauri::PhysicalPosition::new(x as i32, y as i32),
+                            ));
+                            let _ = window.set_size(tauri::Size::Physical(
+                                tauri::PhysicalSize::new(w as u32, h as u32),
+                            ));
+                        }
                     }
                 }
             }

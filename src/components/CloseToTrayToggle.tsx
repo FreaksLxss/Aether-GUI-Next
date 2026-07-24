@@ -8,16 +8,20 @@ export function CloseToTrayToggle() {
   const [loaded, setLoaded] = useState(false);
 
   useEffect(() => {
+    let active = true;
     invoke<boolean>("get_close_to_tray").then((v) => {
-      setEnabled(v);
-      setLoaded(true);
+      if (active) {
+        setEnabled(v);
+        setLoaded(true);
+      }
     });
+    return () => { active = false; };
   }, []);
 
   if (!loaded) return null;
 
   return (
-    <div className="flex w-full items-center justify-between">
+    <div className="flex w-full items-center justify-between rounded-md px-1.5 py-1 transition-colors duration-150 hover:bg-white/[0.03]">
       <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
         <PanelRightClose size={12} />
         Minimize to tray

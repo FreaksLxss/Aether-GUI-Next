@@ -1,4 +1,5 @@
 import { ChevronRight, Zap, Shield, Gauge } from "lucide-react";
+import { Button } from "@/components/ui/button";
 import { useConnectionStore } from "@/state/connectionStore";
 
 interface QuickPreset {
@@ -48,30 +49,34 @@ export function QuickConnect({ onMoreOptions }: { onMoreOptions: () => void }) {
         const Icon = p.icon;
         const active = isActive(p);
         return (
-          <button
+          <Button
             key={p.label}
+            variant={active ? "default" : "outline"}
+            size="sm"
             onClick={() => setScanMode(p.scanMode)}
             disabled={locked}
             title={p.description}
-            className={`flex cursor-pointer flex-col items-center gap-0.5 rounded-md px-3 py-2 text-[10px] ring-1 transition-all disabled:opacity-50 ${
+            className={`flex h-auto flex-col gap-0.5 px-3 py-2 text-[10px] transition-all duration-200 ease-out ${
               active
-                ? "bg-primary/20 text-primary ring-primary/40"
-                : "bg-black/20 text-muted-foreground ring-white/10 hover:bg-black/30 hover:text-foreground"
+                ? "bg-primary/20 text-primary ring-primary/40 hover:bg-primary/25 shadow-sm shadow-primary/10"
+                : ""
             }`}
           >
             <Icon size={12} />
             {p.label}
-          </button>
+          </Button>
         );
       })}
-      <button
+      <Button
+        variant="outline"
+        size="icon"
         onClick={onMoreOptions}
         disabled={locked}
         title="More options"
-        className="flex cursor-pointer flex-col items-center justify-center rounded-md px-2 py-2 text-[10px] ring-1 transition-all disabled:opacity-50 bg-black/20 text-muted-foreground ring-white/10 hover:bg-black/30 hover:text-foreground"
+        className="h-auto w-auto px-2 py-2"
       >
         <ChevronRight size={12} />
-      </button>
+      </Button>
     </div>
   );
 }

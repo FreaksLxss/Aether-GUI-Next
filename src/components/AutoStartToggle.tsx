@@ -33,7 +33,7 @@ export function AutoStartToggle() {
   };
 
   return (
-    <div className="flex w-full items-center justify-between">
+    <div className="flex w-full items-center justify-between rounded-md px-1.5 py-1 transition-colors duration-150 hover:bg-white/[0.03]">
       <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
         <Rocket size={12} />
         Launch at startup

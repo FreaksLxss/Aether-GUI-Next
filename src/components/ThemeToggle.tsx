@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { Moon, Sun } from "lucide-react";
+import { Button } from "@/components/ui/button";
 import { applyColors } from "@/components/ColorTheme";
 
 const THEME_KEY = "aether-theme";
@@ -21,8 +22,6 @@ export function ThemeToggle() {
     setDark(next);
     localStorage.setItem(THEME_KEY, next ? "dark" : "light");
     applyTheme(next);
-    // Re-apply custom colors for the new theme mode — pass `next` explicitly
-    // so applyColors knows the target mode without reading the DOM
     const p = localStorage.getItem(PRIMARY_KEY);
     const s = localStorage.getItem(SECONDARY_KEY);
     if (p && s) {
@@ -31,14 +30,16 @@ export function ThemeToggle() {
   };
 
   return (
-    <button
+    <Button
+      variant="ghost"
+      size="sm"
       onClick={toggle}
-      className="flex cursor-pointer items-center gap-1.5 text-xs text-muted-foreground transition-colors hover:text-foreground"
+      className="h-7 gap-1.5 px-2 text-xs text-muted-foreground"
       title={dark ? "Switch to light theme" : "Switch to dark theme"}
     >
       {dark ? <Moon size={12} /> : <Sun size={12} />}
       {dark ? "Dark" : "Light"}
-    </button>
+    </Button>
   );
 }
 

@@ -1,11 +1,10 @@
 import { useEffect, useState } from "react";
 import { invoke } from "@tauri-apps/api/core";
-import {
-  Bookmark,
-  ChevronDown,
-  Plus,
-  Trash2,
-} from "lucide-react";
+import { Bookmark, ChevronDown, Plus, Trash2 } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Separator } from "@/components/ui/separator";
+import { ScrollArea } from "@/components/ui/scroll-area";
 import {
   Collapsible,
   CollapsibleContent,
@@ -72,6 +71,7 @@ export function ProfilePresets({
   };
 
   const deletePreset = async (name: string) => {
+    if (!confirm(`Delete preset "${name}"?`)) return;
     await invoke("delete_preset", { name });
     await loadPresets();
   };
@@ -81,84 +81,92 @@ export function ProfilePresets({
       <Collapsible open={open} onOpenChange={onToggle}>
         <div
           className={cn(
-            "rounded-lg transition-colors duration-150",
+            "rounded-lg transition-all duration-200 ease-out",
             open
-              ? "bg-surface-2 ring-1 ring-white/5"
-              : "bg-surface-2 hover:bg-surface-3",
+              ? "bg-surface-2 ring-1 ring-white/5 shadow-sm shadow-black/10"
+              : "bg-surface-2 hover:bg-surface-3 hover:shadow-sm hover:shadow-black/5",
           )}
         >
           <CollapsibleTrigger
             className={cn(
-              "flex w-full cursor-pointer items-center gap-2.5 px-3 py-2.5 text-xs outline-none transition-colors duration-150 focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-inset",
+              "flex w-full cursor-pointer items-center gap-2 px-3 py-2 text-xs outline-none transition-all duration-150 focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-inset",
               open
                 ? "text-foreground"
                 : "text-muted-foreground hover:text-foreground",
             )}
           >
-            <Bookmark size={14} />
+            <Bookmark size={13} />
             Presets
             <span className="text-[10px] text-muted-foreground/60">
               ({presets.length})
             </span>
             <ChevronDown
-              size={14}
+              size={13}
               className="ml-auto transition-transform duration-150 data-[state=open]:rotate-180"
               data-state={open ? "open" : "closed"}
             />
           </CollapsibleTrigger>
-          <CollapsibleContent className="data-[state=open]:animate-in data-[state=open]:fade-in-0 data-[state=open]:slide-in-from-top-1 data-[state=open]:duration-150 data-[state=open]:[animation-timing-function:cubic-bezier(0.16,1,0.3,1)] data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=closed]:slide-out-to-top-1 data-[state=closed]:duration-100">
-            <div className="flex flex-col gap-1.5 border-t border-white/5 px-3 pt-3 pb-3">
-            {/* Save current as preset */}
-            <div className="flex gap-1.5">
-              <input
-                type="text"
-                value={newName}
-                onChange={(e) => setNewName(e.target.value)}
-                placeholder="Preset name…"
-                disabled={locked}
-                onKeyDown={(e) => {
-                  if (e.key === "Enter") savePreset();
-                }}
-                className="h-8 flex-1 rounded-md bg-black/20 px-2 text-xs text-foreground ring-1 ring-white/10 outline-none placeholder:text-muted-foreground/50 focus-visible:ring-primary disabled:opacity-50"
-              />
-              <button
-                onClick={savePreset}
-                disabled={locked || !newName.trim()}
-                className="flex h-8 cursor-pointer items-center gap-1 rounded-md bg-primary px-2.5 text-xs font-medium text-primary-foreground transition-colors hover:bg-primary/90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary disabled:opacity-50"
-              >
-                <Plus size={12} />
-                Save
-              </button>
-            </div>
-
-            {presets.length === 0 ? (
-              <p className="py-1 text-center text-xs text-status-idle">
-                No presets saved yet.
-              </p>
-            ) : (
-              presets.map((p) => (
-                <div
-                  key={p.name}
-                  className="flex items-center justify-between rounded-md bg-black/10 px-2 py-1.5"
+          <CollapsibleContent className="data-[state=open]:animate-in data-[state=open]:fade-in-0 data-[state=open]:slide-in-from-top-1 data-[state=open]:duration-200 data-[state=open]:[animation-timing-function:cubic-bezier(0.16,1,0.3,1)] data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=closed]:slide-out-to-top-1 data-[state=closed]:duration-150">
+            <Separator className="bg-white/5" />
+            <div className="flex flex-col gap-1.5 px-3 pt-2 pb-2.5">
+              <div className="flex gap-1.5">
+                <Input
+                  type="text"
+                  value={newName}
+                  onChange={(e) => setNewName(e.target.value)}
+                  placeholder="Preset name…"
+                  disabled={locked}
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter") savePreset();
+                  }}
+                  className="h-8 flex-1 bg-black/20 text-xs ring-white/10 focus-visible:ring-primary"
+                />
+                <Button
+                  size="sm"
+                  onClick={savePreset}
+                  disabled={locked || !newName.trim()}
+                  className="h-8 gap-1 px-2.5 text-xs"
                 >
-                  <button
-                    onClick={() => applyPreset(p)}
-                    disabled={locked}
-                    className="flex-1 cursor-pointer text-left text-xs text-foreground hover:text-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary rounded disabled:opacity-50"
-                  >
-                    {p.name}
-                  </button>
-                  <button
-                    onClick={() => void deletePreset(p.name)}
-                    className="ml-2 flex h-7 w-7 cursor-pointer items-center justify-center rounded text-muted-foreground/60 transition-colors hover:text-destructive focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
-                  >
-                    <Trash2 size={12} />
-                  </button>
+                  <Plus size={12} />
+                  Save
+                </Button>
+              </div>
+
+              {presets.length === 0 ? (
+                <div className="flex flex-col items-center gap-1.5 py-3 text-status-idle">
+                  <Bookmark size={16} className="opacity-40" />
+                  <p className="text-xs">No presets saved yet.</p>
                 </div>
-              ))
-            )}
-          </div>
-        </CollapsibleContent>
+              ) : (
+                <ScrollArea className="max-h-40">
+                  <div className="flex flex-col gap-1">
+                    {presets.map((p) => (
+                      <div
+                        key={p.name}
+                        className="flex items-center justify-between rounded-md bg-black/10 px-2 py-1.5"
+                      >
+                        <button
+                          onClick={() => applyPreset(p)}
+                          disabled={locked}
+                          className="flex-1 cursor-pointer text-left text-xs text-foreground hover:text-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary rounded disabled:opacity-50"
+                        >
+                          {p.name}
+                        </button>
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          onClick={() => void deletePreset(p.name)}
+                          className="h-7 w-7 text-muted-foreground/60 hover:text-destructive"
+                        >
+                          <Trash2 size={12} />
+                        </Button>
+                      </div>
+                    ))}
+                  </div>
+                </ScrollArea>
+              )}
+            </div>
+          </CollapsibleContent>
         </div>
       </Collapsible>
     </div>

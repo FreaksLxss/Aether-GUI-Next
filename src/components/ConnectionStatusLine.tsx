@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { AnimatePresence, motion } from "motion/react";
+import { Progress } from "@/components/ui/progress";
 import { useConnectionStore } from "@/state/connectionStore";
 import { useWindowFocused } from "@/state/windowFocus";
 
@@ -25,61 +26,35 @@ function useElapsed(sinceMs: number | null): { formatted: string; totalSeconds: 
   return { formatted: `${h}:${m}:${s}`, totalSeconds: total };
 }
 
-/** Thin progress track under the status text, shown only while Connecting.
- * Determinate (fills toward Aether's own reported scan budget) once that
- * budget is known; an indeterminate sweep before then, so there's always
- * visible motion rather than a dead bar. */
+/** Determinate progress toward Aether's scan budget, or indeterminate sweep. */
 function ScanProgressBar({ percent }: { percent: number | null }) {
-  // The indeterminate sweep freezes while the window is unfocused — an
-  // infinite loop keeps the compositor at 60fps in the background (see
-  // state/windowFocus.ts), and scanning is exactly when users tab away.
   const focused = useWindowFocused();
   return (
-    <div className="h-1 w-40 overflow-hidden rounded-full bg-surface-2">
+    <div className="relative h-1 w-40 overflow-hidden rounded-full bg-surface-2">
       {percent == null ? (
         <motion.div
-          className="h-full w-1/3 rounded-full bg-status-connecting"
+          className="absolute inset-y-0 left-0 w-1/3 rounded-full bg-status-connecting"
           animate={focused ? { x: ["-100%", "220%"] } : { x: "50%", opacity: 0.6 }}
           transition={
             focused ? { duration: 1.1, repeat: Infinity, ease: "easeInOut" } : { duration: 0.3 }
           }
         />
       ) : (
-        <motion.div
-          className="h-full rounded-full bg-status-connecting"
-          animate={{ width: `${percent}%` }}
-          transition={{ duration: 0.4, ease: "easeOut" }}
+        <Progress
+          value={percent}
+          className="h-full bg-transparent [&>div]:bg-status-connecting"
         />
       )}
     </div>
   );
 }
 
-/**
- * All status text stays in the two neutral greys (--foreground /
- * --muted-foreground) regardless of connection state — only the
- * ConnectButton's ring/icon carries status color. This sidesteps every
- * marginal-contrast case a semantic status color would hit as small text
- * (verified during design: idle-grey as text measures 4.02:1, just under
- * AA's 4.5:1 minimum).
- */
 export function ConnectionStatusLine() {
   const status = useConnectionStore((s) => s.status);
   const scanBudgetSecs = useConnectionStore((s) => s.scanBudgetSecs);
-  const connectedAt = status.state === "Connected" ? status.connected_at_ms : null;
-  const elapsed = useElapsed(connectedAt).formatted;
 
-  // Route discovery can legitimately take up to ~2.5 minutes with nothing
-  // else changing on screen — a running timer (and, once Aether reports its
-  // own scan budget in its log stream, a real percentage) is the difference
-  // between "still working" and "looks hung", tracked from the moment a
-  // fresh attempt starts (Launching) through the whole Connecting wait.
-  // This reads the wall clock (Date.now()) on a specific state transition,
-  // which is an external-system read, not a state mirror — a genuine effect,
-  // not something derivable during render.
   const [attemptStartedAt, setAttemptStartedAt] = useState<number | null>(null);
-  /* eslint-disable react-hooks/set-state-in-effect -- capturing Date.now()
-   * at the moment of transition; can't be computed during render. */
+  /* eslint-disable react-hooks/set-state-in-effect */
   useEffect(() => {
     if (status.state === "Launching") setAttemptStartedAt(Date.now());
     else if (status.state === "Idle") setAttemptStartedAt(null);
@@ -89,8 +64,6 @@ export function ConnectionStatusLine() {
   const { formatted: attemptElapsed, totalSeconds: attemptSeconds } = useElapsed(
     isAttempting ? attemptStartedAt : null,
   );
-  // Capped below 100 until the backend actually reports Connected — hitting
-  // 100% here would claim done before the state machine agrees.
   const scanPercent =
     scanBudgetSecs != null
       ? Math.min(99, Math.round((attemptSeconds / scanBudgetSecs) * 100))
@@ -121,7 +94,7 @@ export function ConnectionStatusLine() {
       break;
     case "Connected":
       primary = "Connected";
-      secondary = elapsed;
+      secondary = "";
       break;
     case "Disconnecting":
       primary = "Disconnecting…";

@@ -1,6 +1,7 @@
 import { invoke } from "@tauri-apps/api/core";
 import { save, open } from "@tauri-apps/plugin-dialog";
 import { Download, Upload } from "lucide-react";
+import { Button } from "@/components/ui/button";
 import type { ConnectionProfile } from "@/types/connection";
 
 interface SettingsExport {
@@ -67,23 +68,27 @@ export function SettingsIO() {
   };
 
   return (
-    <div className="flex gap-2">
-      <button
+    <div className="flex gap-1.5">
+      <Button
+        variant="ghost"
+        size="sm"
         onClick={handleExport}
-        className="flex cursor-pointer items-center gap-1 rounded-md bg-black/20 px-2 py-1 text-[10px] text-muted-foreground ring-1 ring-white/10 transition-colors hover:bg-black/30 hover:text-foreground"
+        className="h-7 gap-1 px-2 text-[10px] text-muted-foreground"
         title="Export settings"
       >
         <Download size={10} />
         Export
-      </button>
-      <button
+      </Button>
+      <Button
+        variant="ghost"
+        size="sm"
         onClick={handleImport}
-        className="flex cursor-pointer items-center gap-1 rounded-md bg-black/20 px-2 py-1 text-[10px] text-muted-foreground ring-1 ring-white/10 transition-colors hover:bg-black/30 hover:text-foreground"
+        className="h-7 gap-1 px-2 text-[10px] text-muted-foreground"
         title="Import settings"
       >
         <Upload size={10} />
         Import
-      </button>
+      </Button>
     </div>
   );
 }

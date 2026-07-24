@@ -34,12 +34,12 @@ export function SidecarErrorScreen({ message, onRetry }: Props) {
   };
 
   return (
-    <div className="flex h-full flex-col items-center justify-center gap-4 p-6 text-center">
-      <AlertTriangle size={40} className="text-status-error" />
-      <h1 className="text-base font-medium text-foreground">
+    <div className="flex h-full flex-col items-center justify-center gap-3 p-6 text-center">
+      <AlertTriangle size={36} className="text-status-error" />
+      <h1 className="text-sm font-medium text-foreground">
         Aether engine failed to start
       </h1>
-      <p className="max-w-xs font-mono text-xs text-muted-foreground">{message}</p>
+      <p className="max-w-xs font-mono text-[11px] text-muted-foreground">{message}</p>
 
       {isMissing ? (
         <div className="flex flex-col items-center gap-2">

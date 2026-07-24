@@ -38,7 +38,7 @@ viewport.addEventListener("scroll", () => {
 autoScrollBtn.addEventListener("click", () => {
   autoScroll = true;
   autoScrollBtn.classList.add("active");
-  viewport.scrollTop = viewport.scrollHeight;
+  viewport.scrollTo({ top: viewport.scrollHeight, behavior: "smooth" });
 });
 
 clearBtn.addEventListener("click", () => {
@@ -116,7 +116,7 @@ function render() {
     : "";
 
   if (autoScroll) {
-    viewport.scrollTop = viewport.scrollHeight;
+    viewport.scrollTo({ top: viewport.scrollHeight, behavior: "smooth" });
   }
 }
 

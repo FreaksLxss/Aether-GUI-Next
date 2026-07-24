@@ -1,6 +1,8 @@
 import { useState } from "react";
+import { motion, AnimatePresence } from "motion/react";
 import { writeText } from "@tauri-apps/plugin-clipboard-manager";
 import { Check, Copy } from "lucide-react";
+import { Button } from "@/components/ui/button";
 import { useConnectionStore } from "@/state/connectionStore";
 
 export function CopyProxyButton() {
@@ -22,22 +24,40 @@ export function CopyProxyButton() {
   };
 
   return (
-    <button
+    <Button
+      variant="outline"
+      size="sm"
       onClick={handleCopy}
-      className="flex cursor-pointer items-center gap-1.5 rounded-md bg-black/20 px-2.5 py-1.5 text-xs font-mono text-muted-foreground ring-1 ring-white/10 transition-colors hover:bg-black/30 hover:text-foreground"
+      className="h-7 gap-1.5 font-mono text-xs text-muted-foreground"
       title={`Copy SOCKS5 proxy address (${addr}) for manual configuration`}
     >
-      {copied ? (
-        <>
-          <Check size={12} className="text-status-connected" />
-          Copied!
-        </>
-      ) : (
-        <>
-          <Copy size={12} />
-          {addr}
-        </>
-      )}
-    </button>
+      <AnimatePresence mode="wait">
+        {copied ? (
+          <motion.span
+            key="check"
+            initial={{ scale: 0.5, opacity: 0 }}
+            animate={{ scale: 1, opacity: 1 }}
+            exit={{ scale: 0.5, opacity: 0 }}
+            transition={{ duration: 0.15, ease: "easeOut" }}
+            className="flex items-center gap-1.5"
+          >
+            <Check size={12} className="text-status-connected" />
+            Copied!
+          </motion.span>
+        ) : (
+          <motion.span
+            key="copy"
+            initial={{ scale: 0.5, opacity: 0 }}
+            animate={{ scale: 1, opacity: 1 }}
+            exit={{ scale: 0.5, opacity: 0 }}
+            transition={{ duration: 0.15, ease: "easeOut" }}
+            className="flex items-center gap-1.5"
+          >
+            <Copy size={12} />
+            {addr}
+          </motion.span>
+        )}
+      </AnimatePresence>
+    </Button>
   );
 }

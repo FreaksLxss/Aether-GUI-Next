@@ -1,6 +1,12 @@
-import { useEffect, useRef, useState } from "react";
-import { ChevronDown, Palette } from "lucide-react";
-import { motion, AnimatePresence } from "motion/react";
+import { useEffect, useState } from "react";
+import { Palette } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Separator } from "@/components/ui/separator";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
 
 const PRIMARY_KEY = "aether-custom-primary";
 const SECONDARY_KEY = "aether-custom-secondary";
@@ -225,36 +231,6 @@ function ColorSwatches({
 export function ColorTheme() {
   const [primary, setPrimary] = useState<string | null>(null);
   const [secondary, setSecondary] = useState<string | null>(null);
-  const [open, setOpen] = useState(false);
-  const panelRef = useRef<HTMLDivElement>(null);
-  const triggerRef = useRef<HTMLButtonElement>(null);
-
-  // Close on click outside
-  useEffect(() => {
-    if (!open) return;
-    const handler = (e: MouseEvent) => {
-      if (
-        panelRef.current &&
-        !panelRef.current.contains(e.target as Node) &&
-        triggerRef.current &&
-        !triggerRef.current.contains(e.target as Node)
-      ) {
-        setOpen(false);
-      }
-    };
-    document.addEventListener("mousedown", handler);
-    return () => document.removeEventListener("mousedown", handler);
-  }, [open]);
-
-  // Close on Escape
-  useEffect(() => {
-    if (!open) return;
-    const handler = (e: KeyboardEvent) => {
-      if (e.key === "Escape") setOpen(false);
-    };
-    document.addEventListener("keydown", handler);
-    return () => document.removeEventListener("keydown", handler);
-  }, [open]);
 
   useEffect(() => {
     const p = localStorage.getItem(PRIMARY_KEY);
@@ -289,78 +265,67 @@ export function ColorTheme() {
   };
 
   return (
-    <div className="relative w-full">
-      <button
-        ref={triggerRef}
-        onClick={() => setOpen(!open)}
-        className="flex w-full cursor-pointer items-center justify-between rounded-md px-2 py-1.5 text-xs text-muted-foreground transition-colors hover:text-foreground"
-      >
-        <span className="flex items-center gap-1.5">
+    <Popover>
+      <PopoverTrigger asChild>
+        <Button
+          variant="ghost"
+          size="sm"
+          className="h-7 shrink-0 justify-start gap-1.5 px-2 text-xs text-muted-foreground"
+        >
           <Palette size={12} />
           Accent color
-        </span>
-        <ChevronDown
-          size={12}
-          className={`transition-transform duration-150 ${open ? "rotate-180" : ""}`}
-        />
-      </button>
-
-      <AnimatePresence>
-        {open && (
-          <motion.div
-            ref={panelRef}
-            role="dialog"
-            aria-label="Accent color picker"
-            initial={{ opacity: 0, y: 4, scale: 0.97 }}
-            animate={{ opacity: 1, y: 0, scale: 1 }}
-            exit={{ opacity: 0, y: 4, scale: 0.97 }}
-            transition={{ duration: 0.12, ease: [0.16, 1, 0.3, 1] }}
-            className="absolute bottom-full left-0 z-[9000] mb-1 w-[260px] rounded-lg bg-surface-1 p-3 shadow-xl shadow-black/30 ring-1 ring-white/10"
-          >
-          <div className="flex flex-col gap-3">
-            <div className="flex flex-col gap-1.5">
-              <p className="text-[10px] font-medium text-muted-foreground uppercase tracking-wide">
-                Primary
-              </p>
-              <ColorSwatches
-                colors={PRIMARY_COLORS}
-                selected={primary}
-                onSelect={pickPrimary}
-              />
-            </div>
-            <div className="h-px bg-white/5" />
-            <div className="flex flex-col gap-1.5">
-              <p className="text-[10px] font-medium text-muted-foreground uppercase tracking-wide">
-                Secondary
-              </p>
-              <div className="flex items-center gap-2">
-                <input
-                  type="color"
-                  value={secondary ?? SECONDARY_DEFAULT}
-                  onChange={(e) => pickSecondary(e.target.value)}
-                  className="size-8 cursor-pointer rounded-md border border-white/10 bg-transparent p-0"
-                  aria-label="Custom secondary color"
-                />
-                <span className="text-[10px] text-muted-foreground">
-                  {secondary ?? "Default"}
-                </span>
-              </div>
-            </div>
-            {(primary || secondary) && (
-              <>
-                <div className="h-px bg-white/5" />
-                <button
-                  onClick={reset}
-                  className="w-full cursor-pointer rounded-md py-1.5 text-[10px] text-muted-foreground transition-colors hover:bg-white/5 hover:text-foreground"
-                >
-                  Reset to default
-                </button>
-              </>
-            )}
+        </Button>
+      </PopoverTrigger>
+      <PopoverContent
+        side="top"
+        align="start"
+        sideOffset={4}
+        className="w-[260px] p-3"
+      >
+        <div className="flex flex-col gap-3">
+          <div className="flex flex-col gap-1.5">
+            <p className="text-[10px] font-medium text-muted-foreground uppercase tracking-wide">
+              Primary
+            </p>
+            <ColorSwatches
+              colors={PRIMARY_COLORS}
+              selected={primary}
+              onSelect={pickPrimary}
+            />
           </div>
-        </motion.div>
-      )}
-    </AnimatePresence>
-    </div>
+          <Separator className="bg-white/5" />
+          <div className="flex flex-col gap-1.5">
+            <p className="text-[10px] font-medium text-muted-foreground uppercase tracking-wide">
+              Secondary
+            </p>
+            <div className="flex items-center gap-2">
+              <input
+                type="color"
+                value={secondary ?? SECONDARY_DEFAULT}
+                onChange={(e) => pickSecondary(e.target.value)}
+                className="size-8 cursor-pointer rounded-md border border-white/10 bg-transparent p-0"
+                aria-label="Custom secondary color"
+              />
+              <span className="text-[10px] text-muted-foreground">
+                {secondary ?? "Default"}
+              </span>
+            </div>
+          </div>
+          {(primary || secondary) && (
+            <>
+              <Separator className="bg-white/5" />
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={reset}
+                className="h-7 text-[10px] text-muted-foreground"
+              >
+                Reset to default
+              </Button>
+            </>
+          )}
+        </div>
+      </PopoverContent>
+    </Popover>
   );
 }

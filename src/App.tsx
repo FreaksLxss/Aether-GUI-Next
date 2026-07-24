@@ -45,22 +45,22 @@ function MainScreen() {
   };
 
   return (
-    <div className="relative z-10 flex h-full flex-col items-center overflow-y-auto p-6">
+    <div className="relative z-10 flex h-full flex-col items-center overflow-y-auto px-5 pt-4 pb-3">
       <NotificationBanner />
-      <div className="flex flex-1 flex-col items-center justify-center gap-4">
+      <div className="flex flex-1 flex-col items-center justify-center gap-3">
         <ConnectButton />
         <ConnectionStatusLine />
         <ConnectionInfo />
         {isConnected && (
-          <div className="flex gap-2">
+          <div className="flex gap-1.5">
             <CopyProxyButton />
             <PacUrl />
           </div>
         )}
         <QuickConnect onMoreOptions={openAdvancedHighlightScan} />
       </div>
-      <div className="mt-auto flex w-full max-w-sm flex-col gap-1.5 pt-2 pb-2">
-        <div className="h-px w-full bg-border/50" />
+      <div className="mt-auto flex w-full max-w-sm flex-col gap-1 pt-1">
+        <div className="h-px w-full bg-border/40" />
         <AdvancedPanel open={activePanel === "advanced"} onToggle={() => togglePanel("advanced")} highlightScanMode={highlightScanMode} />
         <ProfilePresets open={activePanel === "presets"} onToggle={() => togglePanel("presets")} />
         <ConnectionHistory open={activePanel === "history"} onToggle={() => togglePanel("history")} />

@@ -64,10 +64,10 @@ const ICONS: Record<Phase, typeof Power> = {
 };
 
 const ARIA_LABEL: Record<Phase, string> = {
-  idle: "Connect",
-  connecting: "Cancel connecting",
-  connected: "Disconnect",
-  error: "Retry connection",
+  idle: "Connect (Ctrl+Shift+C)",
+  connecting: "Cancel connecting (Ctrl+Shift+C)",
+  connected: "Disconnect (Ctrl+Shift+C)",
+  error: "Retry connection (Ctrl+Shift+C)",
 };
 
 export function ConnectButton() {
