@@ -88,7 +88,7 @@ export function SettingsPanel({
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-2">
                   <AboutDialog />
-                  <span className="text-[9px] text-muted-foreground/40">further improvements by freaky:3</span>
+                  <span className="pt-0.5 text-[9px] text-muted-foreground/40">further improvements by freaky:3</span>
                 </div>
                 <UpdateChecker />
               </div>
