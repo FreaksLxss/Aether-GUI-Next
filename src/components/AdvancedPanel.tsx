@@ -58,9 +58,11 @@ function FieldRow({
 export function AdvancedPanel({
   open,
   onToggle,
+  highlightScanMode = false,
 }: {
   open: boolean;
   onToggle: () => void;
+  highlightScanMode?: boolean;
 }) {
   const logs = useConnectionStore((s) => s.logs);
   const status = useConnectionStore((s) => s.status);
@@ -71,6 +73,14 @@ export function AdvancedPanel({
   const [autoScroll, setAutoScroll] = useState(true);
   const [logFilter, setLogFilter] = useState("");
   const viewportRef = useRef<HTMLDivElement>(null);
+  const scanModeRef = useRef<HTMLDivElement>(null);
+
+  // Scroll to and highlight the scan mode section when requested
+  useEffect(() => {
+    if (highlightScanMode && open && scanModeRef.current) {
+      scanModeRef.current.scrollIntoView({ behavior: "smooth", block: "center" });
+    }
+  }, [highlightScanMode, open]);
 
   const filteredLogs = logFilter
     ? logs.filter((l) =>
@@ -124,9 +134,17 @@ export function AdvancedPanel({
               >
                 <ProtocolSelect />
               </FieldRow>
-              <FieldRow label="Scan Mode">
-                <ScanModeToggle />
-              </FieldRow>
+              <div
+                ref={scanModeRef}
+                className={cn(
+                  "rounded-md transition-all duration-300",
+                  highlightScanMode && "bg-primary/10 ring-1 ring-primary/30",
+                )}
+              >
+                <FieldRow label="Scan Mode">
+                  <ScanModeToggle />
+                </FieldRow>
+              </div>
               <FieldRow
                 label="IP Version"
                 tooltip="Which address families to search for working routes. IPv4 is the safest default on most networks."

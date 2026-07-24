@@ -32,9 +32,17 @@ export type AccordionPanel = "advanced" | "presets" | "history" | "settings" | n
 function MainScreen() {
   const isConnected = useConnectionStore((s) => s.status.state === "Connected");
   const [activePanel, setActivePanel] = useState<AccordionPanel>(null);
+  const [highlightScanMode, setHighlightScanMode] = useState(false);
 
   const togglePanel = (panel: AccordionPanel) =>
     setActivePanel((prev) => (prev === panel ? null : panel));
+
+  const openAdvancedHighlightScan = () => {
+    setHighlightScanMode(true);
+    setActivePanel("advanced");
+    // Clear highlight after animation
+    setTimeout(() => setHighlightScanMode(false), 2000);
+  };
 
   return (
     <div className="relative z-10 flex h-full flex-col items-center overflow-y-auto p-6">
@@ -49,11 +57,11 @@ function MainScreen() {
             <PacUrl />
           </div>
         )}
-        <QuickConnect />
+        <QuickConnect onMoreOptions={openAdvancedHighlightScan} />
       </div>
       <div className="mt-auto flex w-full max-w-sm flex-col gap-1.5 pt-2 pb-2">
         <div className="h-px w-full bg-border/50" />
-        <AdvancedPanel open={activePanel === "advanced"} onToggle={() => togglePanel("advanced")} />
+        <AdvancedPanel open={activePanel === "advanced"} onToggle={() => togglePanel("advanced")} highlightScanMode={highlightScanMode} />
         <ProfilePresets open={activePanel === "presets"} onToggle={() => togglePanel("presets")} />
         <ConnectionHistory open={activePanel === "history"} onToggle={() => togglePanel("history")} />
         <SettingsPanel open={activePanel === "settings"} onToggle={() => togglePanel("settings")} />
