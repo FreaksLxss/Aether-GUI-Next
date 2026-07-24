@@ -40,7 +40,7 @@ export function AboutDialog() {
                     Aether-GUI
                   </h2>
                   <p className="mt-0.5 text-xs text-muted-foreground">
-                    v0.6.0
+                    v0.7.0
                   </p>
                 </div>
                 <button
