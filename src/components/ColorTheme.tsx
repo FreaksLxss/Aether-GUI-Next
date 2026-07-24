@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { ChevronDown, Palette } from "lucide-react";
 import { motion, AnimatePresence } from "motion/react";
 
