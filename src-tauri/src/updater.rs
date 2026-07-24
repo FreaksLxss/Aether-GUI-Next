@@ -1,7 +1,7 @@
 use serde::Serialize;
 use std::path::PathBuf;
 
-const GUI_REPO: &str = "MatinSenPai/Aether-GUI";
+const GUI_REPO: &str = "FreaksLxss/Aether-GUI-Remake";
 const AETHER_REPO: &str = "CluvexStudio/Aether";
 
 #[derive(Serialize, Clone, Debug)]
@@ -36,10 +36,14 @@ pub async fn check_for_update(current_version: &str) -> Result<UpdateInfo, Strin
         .as_str()
         .unwrap_or("v0.0.0")
         .trim_start_matches('v');
-    let html_url = release["html_url"]
-        .as_str()
-        .unwrap_or("")
-        .to_string();
+
+    // Find download URL — prefer .exe, then .msi, then fall back to release page
+    let download_url = find_download_url(&release).unwrap_or_else(|| {
+        release["html_url"]
+            .as_str()
+            .unwrap_or("")
+            .to_string()
+    });
 
     let available = is_newer(current_version, tag);
 
@@ -47,8 +51,25 @@ pub async fn check_for_update(current_version: &str) -> Result<UpdateInfo, Strin
         available,
         latest_version: tag.to_string(),
         current_version: current_version.to_string(),
-        download_url: html_url,
+        download_url,
     })
+}
+
+/// Search release assets for an .exe or .msi installer.
+fn find_download_url(release: &serde_json::Value) -> Option<String> {
+    let assets = release["assets"].as_array()?;
+    // Prefer .exe, then .msi
+    for ext in &[".exe", ".msi"] {
+        if let Some(asset) = assets.iter().find(|a| {
+            a["name"]
+                .as_str()
+                .map(|n| n.to_lowercase().ends_with(ext))
+                .unwrap_or(false)
+        }) {
+            return asset["browser_download_url"].as_str().map(String::from);
+        }
+    }
+    None
 }
 
 /// Download the Aether binary for the current platform into `dest_dir`.

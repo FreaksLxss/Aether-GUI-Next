@@ -28,7 +28,7 @@ export function UpdateChecker() {
     setChecking(true);
     try {
       const info = await invoke<UpdateInfo>("check_update", {
-        currentVersion: "0.5.0",
+        currentVersion: "0.6.0",
       });
       if (info.available) setUpdate(info);
     } catch {
