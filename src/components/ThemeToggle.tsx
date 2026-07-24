@@ -5,8 +5,6 @@ import { applyColors } from "@/components/ColorTheme";
 const THEME_KEY = "aether-theme";
 const PRIMARY_KEY = "aether-custom-primary";
 const SECONDARY_KEY = "aether-custom-secondary";
-const DEFAULT_PRIMARY = "#f2711c";
-const DEFAULT_SECONDARY = "#242424";
 
 export function ThemeToggle() {
   const [dark, setDark] = useState(true);

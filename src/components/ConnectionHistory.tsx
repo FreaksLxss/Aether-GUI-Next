@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef } from "react";
 import { ChevronDown, Clock, Trash2 } from "lucide-react";
 import {
   Collapsible,
