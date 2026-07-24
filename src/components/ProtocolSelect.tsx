@@ -37,7 +37,7 @@ export function ProtocolSelect() {
       disabled={locked}
     >
       <SelectTrigger
-        className="w-full h-11 justify-start gap-2 rounded-lg bg-surface-3 px-3 text-xs text-foreground ring-1 ring-inset ring-white/5 transition-all duration-150 hover:bg-surface-4 hover:ring-white/10 focus-visible:ring-primary disabled:opacity-50 [&>span]:flex-1 [&>span]:text-left [&>svg]:ml-auto"
+        className="w-full justify-start gap-2 rounded-lg bg-surface-3 px-3 text-xs text-foreground ring-1 ring-inset ring-white/5 transition-all duration-150 hover:bg-surface-4 hover:ring-white/10 focus-visible:ring-primary disabled:opacity-50 [&>span]:flex-1 [&>span]:text-left [&>svg]:ml-auto"
         aria-label="Protocol"
       >
         <SelectValue />
