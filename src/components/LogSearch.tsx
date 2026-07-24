@@ -22,7 +22,7 @@ export function LogSearch({ value, onChange }: Props) {
       {value && (
         <button
           onClick={() => onChange("")}
-          className="absolute right-1.5 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+          className="absolute right-1.5 top-1/2 -translate-y-1/2 cursor-pointer text-muted-foreground hover:text-foreground"
         >
           <X size={12} />
         </button>

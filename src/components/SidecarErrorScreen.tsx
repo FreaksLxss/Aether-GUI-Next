@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { invoke } from "@tauri-apps/api/core";
 import { AlertTriangle, Download, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -15,6 +15,11 @@ export function SidecarErrorScreen({ message, onRetry }: Props) {
   const isMissing = message.toLowerCase().includes("binary not found");
   const [downloading, setDownloading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const primaryRef = useRef<HTMLButtonElement>(null);
+
+  useEffect(() => {
+    primaryRef.current?.focus();
+  }, []);
 
   const handleDownload = async () => {
     setDownloading(true);
@@ -39,6 +44,7 @@ export function SidecarErrorScreen({ message, onRetry }: Props) {
       {isMissing ? (
         <div className="flex flex-col items-center gap-2">
           <Button
+            ref={primaryRef}
             onClick={handleDownload}
             disabled={downloading}
             className="gap-2"
@@ -60,7 +66,7 @@ export function SidecarErrorScreen({ message, onRetry }: Props) {
           )}
         </div>
       ) : (
-        <Button variant="outline" onClick={onRetry}>
+        <Button ref={primaryRef} variant="outline" onClick={onRetry}>
           Retry
         </Button>
       )}

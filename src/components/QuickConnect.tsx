@@ -57,7 +57,7 @@ export function QuickConnect() {
             }}
             disabled={locked}
             title={p.description}
-            className={`flex flex-col items-center gap-0.5 rounded-md px-3 py-1.5 text-[10px] ring-1 transition-all disabled:opacity-50 ${
+            className={`flex cursor-pointer flex-col items-center gap-0.5 rounded-md px-3 py-2 text-[10px] ring-1 transition-all disabled:opacity-50 ${
               active
                 ? "bg-primary/20 text-primary ring-primary/40"
                 : "bg-black/20 text-muted-foreground ring-white/10 hover:bg-black/30 hover:text-foreground"

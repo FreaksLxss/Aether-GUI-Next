@@ -42,7 +42,7 @@ export function UpdateChecker() {
       <button
         onClick={check}
         disabled={checking}
-        className="flex items-center gap-1 text-[10px] text-muted-foreground/60 transition-colors hover:text-muted-foreground disabled:opacity-50"
+        className="flex items-center gap-1 text-xs text-muted-foreground/60 transition-colors hover:text-muted-foreground disabled:opacity-50"
         title="Check for updates"
       >
         <RefreshCw size={10} className={checking ? "animate-spin" : ""} />
@@ -56,7 +56,10 @@ export function UpdateChecker() {
       <motion.div
         initial={{ opacity: 0, height: 0 }}
         animate={{ opacity: 1, height: "auto" }}
-        className="w-full max-w-sm overflow-hidden rounded-md bg-surface-3 ring-1 ring-white/10"
+        exit={{ opacity: 0, height: 0 }}
+        transition={{ duration: 0.15 }}
+        aria-live="polite"
+        className="w-full overflow-hidden rounded-md bg-surface-3 ring-1 ring-white/10"
       >
         <div className="flex items-center gap-2 p-2.5">
           <Download size={14} className="shrink-0 text-primary" />
@@ -67,13 +70,13 @@ export function UpdateChecker() {
           </div>
           <button
             onClick={() => void open(update.download_url)}
-            className="shrink-0 rounded bg-primary px-2 py-0.5 text-[10px] font-medium text-primary-foreground hover:opacity-90"
+            className="shrink-0 cursor-pointer rounded bg-primary px-3 py-1.5 text-xs font-medium text-primary-foreground transition-colors hover:bg-primary/90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
           >
             Download
           </button>
           <button
             onClick={() => setUpdate(null)}
-            className="shrink-0 px-1 text-[10px] text-muted-foreground hover:text-foreground"
+            className="shrink-0 cursor-pointer px-2 py-1 text-xs text-muted-foreground transition-colors hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary rounded"
           >
             Dismiss
           </button>

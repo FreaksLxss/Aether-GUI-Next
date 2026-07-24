@@ -1,18 +1,33 @@
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { ChevronDown, Palette } from "lucide-react";
 
 const PRIMARY_KEY = "aether-custom-primary";
 const SECONDARY_KEY = "aether-custom-secondary";
 
-const PRIMARY_COLORS = [
-  "#f2711c", "#ea580c", "#dc2626", "#e11d48",
-  "#a855f7", "#6366f1", "#3b82f6", "#06b6d4",
-  "#14b8a6", "#22c55e", "#84cc16", "#eab308",
+const PRIMARY_COLORS: [string, string][] = [
+  ["#f2711c", "Orange"],
+  ["#ea580c", "Deep Orange"],
+  ["#dc2626", "Red"],
+  ["#e11d48", "Rose"],
+  ["#a855f7", "Purple"],
+  ["#6366f1", "Indigo"],
+  ["#3b82f6", "Blue"],
+  ["#06b6d4", "Cyan"],
+  ["#14b8a6", "Teal"],
+  ["#22c55e", "Green"],
+  ["#84cc16", "Lime"],
+  ["#eab308", "Yellow"],
 ];
 
-const SECONDARY_COLORS = [
-  "#242424", "#1e1e1e", "#2a2a2a", "#333333",
-  "#3b3b3b", "#404040", "#4a4a4a", "#555555",
+const SECONDARY_COLORS: [string, string][] = [
+  ["#242424", "Charcoal"],
+  ["#1e1e1e", "Dark Gray"],
+  ["#2a2a2a", "Graphite"],
+  ["#333333", "Slate"],
+  ["#3b3b3b", "Steel"],
+  ["#404040", "Ash"],
+  ["#4a4a4a", "Medium Gray"],
+  ["#555555", "Silver"],
 ];
 
 function hexToHSL(hex: string): { h: number; s: number; l: number } {
@@ -66,7 +81,7 @@ function ColorRow({
   onSelect,
 }: {
   label: string;
-  colors: string[];
+  colors: [string, string][];
   selected: string | null;
   onSelect: (hex: string) => void;
 }) {
@@ -76,23 +91,25 @@ function ColorRow({
         {label}
       </p>
       <div className="flex flex-wrap gap-1.5">
-        {colors.map((c) => (
+        {colors.map(([hex, name]) => (
           <button
-            key={c}
-            onClick={() => onSelect(c)}
-            className={`size-6 rounded-md ring-1 transition-all hover:scale-105 ${
-              selected === c
+            key={hex}
+            onClick={() => onSelect(hex)}
+            aria-label={`${label} color: ${name}`}
+            className={`size-7 cursor-pointer rounded-md ring-1 transition-all hover:scale-105 ${
+              selected === hex
                 ? "ring-2 ring-white ring-offset-1 ring-offset-surface-1"
                 : "ring-white/15 hover:ring-white/40"
             }`}
-            style={{ backgroundColor: c }}
+            style={{ backgroundColor: hex }}
           />
         ))}
         <input
           type="color"
-          value={selected ?? colors[0]}
+          value={selected ?? colors[0][0]}
           onChange={(e) => onSelect(e.target.value)}
-          className="size-6 cursor-pointer rounded-md border border-white/10 bg-transparent p-0"
+          className="size-7 cursor-pointer rounded-md border border-white/10 bg-transparent p-0"
+          aria-label="Custom color picker"
           title="Custom color"
         />
       </div>
@@ -104,6 +121,23 @@ export function ColorTheme() {
   const [primary, setPrimary] = useState<string | null>(null);
   const [secondary, setSecondary] = useState<string | null>(null);
   const [open, setOpen] = useState(false);
+  const panelRef = useRef<HTMLDivElement>(null);
+
+  const handleKeyDown = useCallback(
+    (e: KeyboardEvent) => {
+      if (e.key === "Escape" && open) {
+        setOpen(false);
+      }
+    },
+    [open],
+  );
+
+  useEffect(() => {
+    if (open) {
+      document.addEventListener("keydown", handleKeyDown);
+      return () => document.removeEventListener("keydown", handleKeyDown);
+    }
+  }, [open, handleKeyDown]);
 
   useEffect(() => {
     const p = localStorage.getItem(PRIMARY_KEY);
@@ -118,13 +152,13 @@ export function ColorTheme() {
   const pickPrimary = (hex: string) => {
     setPrimary(hex);
     localStorage.setItem(PRIMARY_KEY, hex);
-    applyColors(hex, secondary ?? "#242424");
+    applyColors(hex, secondary ?? SECONDARY_COLORS[0][0]);
   };
 
   const pickSecondary = (hex: string) => {
     setSecondary(hex);
     localStorage.setItem(SECONDARY_KEY, hex);
-    applyColors(primary ?? "#f2711c", hex);
+    applyColors(primary ?? PRIMARY_COLORS[0][0], hex);
   };
 
   const reset = () => {
@@ -139,7 +173,7 @@ export function ColorTheme() {
     <div className="w-full">
       <button
         onClick={() => setOpen(!open)}
-        className="flex w-full items-center justify-between rounded-md px-2 py-1.5 text-xs text-muted-foreground transition-colors hover:text-foreground"
+        className="flex w-full cursor-pointer items-center justify-between rounded-md px-2 py-1.5 text-xs text-muted-foreground transition-colors hover:text-foreground"
       >
         <span className="flex items-center gap-1.5">
           <Palette size={12} />
@@ -152,7 +186,12 @@ export function ColorTheme() {
       </button>
 
       {open && (
-        <div className="flex flex-col gap-3 rounded-md bg-black/10 p-3 ring-1 ring-white/10">
+        <div
+          ref={panelRef}
+          role="dialog"
+          aria-label="Accent color picker"
+          className="flex flex-col gap-3 rounded-md bg-black/10 p-3 ring-1 ring-white/10"
+        >
           <ColorRow
             label="Primary"
             colors={PRIMARY_COLORS}
@@ -168,7 +207,7 @@ export function ColorTheme() {
           {(primary || secondary) && (
             <button
               onClick={reset}
-              className="w-full rounded-md py-1.5 text-[10px] text-muted-foreground transition-colors hover:bg-black/20 hover:text-foreground"
+              className="w-full cursor-pointer rounded-md py-1.5 text-[10px] text-muted-foreground transition-colors hover:bg-black/20 hover:text-foreground"
             >
               Reset to default
             </button>

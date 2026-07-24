@@ -29,9 +29,13 @@ function formatTime(ts: number): string {
 
 function HistoryEntry({ entry }: { entry: ConnectionHistoryEntry }) {
   return (
-    <div className="flex items-center justify-between rounded-md bg-black/10 px-2 py-1.5 text-xs">
+    <li
+      className="flex items-center justify-between rounded-md bg-black/10 px-2 py-1.5 text-xs"
+      aria-label={`${entry.success ? "Connected" : "Failed"} via ${entry.protocol}, ${entry.scan_mode} mode, lasted ${formatDuration(entry.duration_secs)}`}
+    >
       <div className="flex items-center gap-2">
         <span
+          aria-hidden="true"
           className={`inline-block size-1.5 rounded-full ${
             entry.success ? "bg-status-connected" : "bg-status-error"
           }`}
@@ -47,7 +51,7 @@ function HistoryEntry({ entry }: { entry: ConnectionHistoryEntry }) {
         </span>
         <span className="text-[10px]">{formatTime(entry.timestamp)}</span>
       </div>
-    </div>
+    </li>
   );
 }
 
@@ -75,9 +79,9 @@ export function ConnectionHistory() {
   }, [open, loadHistory]);
 
   return (
-    <div className="w-full max-w-sm">
+    <div className="w-full">
       <Collapsible open={open} onOpenChange={setOpen}>
-        <CollapsibleTrigger className="flex w-full items-center justify-center gap-1.5 py-2 text-xs text-muted-foreground outline-none hover:text-foreground focus-visible:ring-2 focus-visible:ring-primary rounded-md">
+        <CollapsibleTrigger className="flex w-full cursor-pointer items-center justify-center gap-1.5 py-2 text-xs text-muted-foreground outline-none hover:text-foreground focus-visible:ring-2 focus-visible:ring-primary rounded-md">
           <Clock size={14} />
           History
           <span className="text-[10px] text-muted-foreground/60">
@@ -89,7 +93,7 @@ export function ConnectionHistory() {
             data-state={open ? "open" : "closed"}
           />
         </CollapsibleTrigger>
-        <CollapsibleContent className="overflow-hidden data-[state=open]:animate-in data-[state=open]:fade-in-0 data-[state=open]:slide-in-from-bottom-1 data-[state=open]:duration-150 data-[state=open]:[animation-timing-function:cubic-bezier(0.16,1,0.3,1)] data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=closed]:duration-100">
+        <CollapsibleContent className="overflow-hidden data-[state=open]:animate-in data-[state=open]:fade-in-0 data-[state=open]:slide-in-from-bottom-1 data-[state=open]:duration-150 data-[state=open]:[animation-timing-function:cubic-bezier(0.16,1,0.3,1)] data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=closed]:slide-out-to-bottom-1 data-[state=closed]:duration-100">
           <div className="flex flex-col gap-1.5 pb-2">
             {history.length === 0 ? (
               <p className="py-2 text-center text-xs text-status-idle">
@@ -97,14 +101,16 @@ export function ConnectionHistory() {
               </p>
             ) : (
               <>
-                {history.map((entry, i) => (
-                  <HistoryEntry key={`${entry.timestamp}-${i}`} entry={entry} />
-                ))}
+                <ul className="flex flex-col gap-1.5">
+                  {history.map((entry, i) => (
+                    <HistoryEntry key={`${entry.timestamp}-${i}`} entry={entry} />
+                  ))}
+                </ul>
                 <button
                   onClick={() => void clearHistory()}
-                  className="flex items-center justify-center gap-1 py-1.5 text-[10px] text-muted-foreground/60 transition-colors hover:text-destructive"
+                  className="flex min-h-7 cursor-pointer items-center justify-center gap-1 rounded py-1.5 text-xs text-muted-foreground transition-colors hover:text-destructive focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
                 >
-                  <Trash2 size={10} />
+                  <Trash2 size={12} />
                   Clear history
                 </button>
               </>

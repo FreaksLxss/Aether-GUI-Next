@@ -71,9 +71,9 @@ export function ProfilePresets() {
   };
 
   return (
-    <div className="w-full max-w-sm">
+    <div className="w-full">
       <Collapsible open={open} onOpenChange={setOpen}>
-        <CollapsibleTrigger className="flex w-full items-center justify-center gap-1.5 py-2 text-xs text-muted-foreground outline-none hover:text-foreground focus-visible:ring-2 focus-visible:ring-primary rounded-md">
+        <CollapsibleTrigger className="flex w-full cursor-pointer items-center justify-center gap-1.5 py-2 text-xs text-muted-foreground outline-none hover:text-foreground focus-visible:ring-2 focus-visible:ring-primary rounded-md">
           <Bookmark size={14} />
           Presets
           <span className="text-[10px] text-muted-foreground/60">
@@ -85,7 +85,7 @@ export function ProfilePresets() {
             data-state={open ? "open" : "closed"}
           />
         </CollapsibleTrigger>
-        <CollapsibleContent className="overflow-hidden data-[state=open]:animate-in data-[state=open]:fade-in-0 data-[state=open]:slide-in-from-bottom-1 data-[state=open]:duration-150 data-[state=open]:[animation-timing-function:cubic-bezier(0.16,1,0.3,1)] data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=closed]:duration-100">
+        <CollapsibleContent className="overflow-hidden data-[state=open]:animate-in data-[state=open]:fade-in-0 data-[state=open]:slide-in-from-bottom-1 data-[state=open]:duration-150 data-[state=open]:[animation-timing-function:cubic-bezier(0.16,1,0.3,1)] data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=closed]:slide-out-to-bottom-1 data-[state=closed]:duration-100">
           <div className="flex flex-col gap-1.5 pb-2">
             {/* Save current as preset */}
             <div className="flex gap-1.5">
@@ -98,12 +98,12 @@ export function ProfilePresets() {
                 onKeyDown={(e) => {
                   if (e.key === "Enter") savePreset();
                 }}
-                className="h-7 flex-1 rounded-md bg-black/20 px-2 text-xs text-foreground ring-1 ring-white/10 outline-none placeholder:text-muted-foreground/50 focus:ring-primary disabled:opacity-50"
+                className="h-8 flex-1 rounded-md bg-black/20 px-2 text-xs text-foreground ring-1 ring-white/10 outline-none placeholder:text-muted-foreground/50 focus-visible:ring-primary disabled:opacity-50"
               />
               <button
                 onClick={savePreset}
                 disabled={locked || !newName.trim()}
-                className="flex h-7 items-center gap-1 rounded-md bg-primary/20 px-2 text-xs text-primary hover:bg-primary/30 disabled:opacity-50"
+                className="flex h-8 cursor-pointer items-center gap-1 rounded-md bg-primary px-2.5 text-xs font-medium text-primary-foreground transition-colors hover:bg-primary/90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary disabled:opacity-50"
               >
                 <Plus size={12} />
                 Save
@@ -123,15 +123,15 @@ export function ProfilePresets() {
                   <button
                     onClick={() => applyPreset(p)}
                     disabled={locked}
-                    className="flex-1 text-left text-xs text-foreground hover:text-primary disabled:opacity-50"
+                    className="flex-1 cursor-pointer text-left text-xs text-foreground hover:text-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary rounded disabled:opacity-50"
                   >
                     {p.name}
                   </button>
                   <button
                     onClick={() => void deletePreset(p.name)}
-                    className="ml-2 text-muted-foreground/60 hover:text-destructive"
+                    className="ml-2 flex h-7 w-7 cursor-pointer items-center justify-center rounded text-muted-foreground/60 transition-colors hover:text-destructive focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
                   >
-                    <Trash2 size={10} />
+                    <Trash2 size={12} />
                   </button>
                 </div>
               ))

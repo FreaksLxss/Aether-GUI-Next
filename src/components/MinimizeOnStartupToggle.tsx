@@ -24,9 +24,13 @@ export function MinimizeOnStartupToggle() {
       </div>
       <Switch
         checked={enabled}
-        onCheckedChange={(on) => {
+        onCheckedChange={async (on) => {
           setEnabled(on);
-          void invoke("set_minimize_on_startup", { enabled: on });
+          try {
+            await invoke("set_minimize_on_startup", { enabled: on });
+          } catch {
+            setEnabled(!on);
+          }
         }}
         aria-label="Start minimized to tray"
       />

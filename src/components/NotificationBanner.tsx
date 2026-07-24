@@ -35,6 +35,7 @@ export function NotificationBanner() {
     <AnimatePresence>
       {visible && (
         <motion.div
+          role="status"
           initial={{ opacity: 0, y: -8, height: 0 }}
           animate={{ opacity: 1, y: 0, height: "auto" }}
           exit={{ opacity: 0, y: -8, height: 0 }}
@@ -53,13 +54,13 @@ export function NotificationBanner() {
               <div className="mt-2 flex gap-2">
                 <button
                   onClick={() => dismiss(true)}
-                  className="rounded bg-primary px-2 py-0.5 text-[10px] font-medium text-primary-foreground hover:opacity-90"
+                  className="cursor-pointer rounded bg-primary px-2 py-0.5 text-[10px] font-medium text-primary-foreground hover:opacity-90"
                 >
                   Allow
                 </button>
                 <button
                   onClick={() => dismiss(false)}
-                  className="rounded px-2 py-0.5 text-[10px] text-muted-foreground hover:text-foreground"
+                  className="cursor-pointer rounded px-2 py-0.5 text-[10px] text-muted-foreground hover:text-foreground"
                 >
                   No thanks
                 </button>
@@ -67,7 +68,7 @@ export function NotificationBanner() {
             </div>
             <button
               onClick={() => dismiss(false)}
-              className="shrink-0 text-muted-foreground hover:text-foreground"
+              className="shrink-0 cursor-pointer text-muted-foreground hover:text-foreground"
             >
               <X size={12} />
             </button>

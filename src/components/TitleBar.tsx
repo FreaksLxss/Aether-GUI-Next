@@ -13,21 +13,21 @@ export function TitleBar() {
     >
       <button
         aria-label="Minimize"
-        className="grid h-full w-13 place-items-center text-muted-foreground hover:bg-surface-2 hover:text-foreground"
+        className="grid h-full w-13 cursor-pointer place-items-center text-muted-foreground hover:bg-surface-2 hover:text-foreground"
         onClick={() => void appWindow.minimize()}
       >
         <Minus className="size-4" />
       </button>
       <button
         aria-label="Maximize"
-        className="grid h-full w-13 place-items-center text-muted-foreground hover:bg-surface-2 hover:text-foreground"
+        className="grid h-full w-13 cursor-pointer place-items-center text-muted-foreground hover:bg-surface-2 hover:text-foreground"
         onClick={() => void appWindow.toggleMaximize()}
       >
         <Maximize2 className="size-3.5" />
       </button>
       <button
         aria-label="Close"
-        className="grid h-full w-13 place-items-center text-muted-foreground hover:bg-destructive hover:text-white"
+        className="grid h-full w-13 cursor-pointer place-items-center text-muted-foreground hover:bg-destructive hover:text-white"
         onClick={() => void appWindow.close()}
       >
         <X className="size-4" />

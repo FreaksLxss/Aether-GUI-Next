@@ -16,7 +16,7 @@ export function AmbientBackground() {
   const playState = { animationPlayState: focused ? ("running" as const) : ("paused" as const) };
 
   return (
-    <div className="pointer-events-none absolute inset-0 z-0 overflow-hidden">
+    <div aria-hidden="true" className="pointer-events-none absolute inset-0 z-0 overflow-hidden">
       <div
         className="anim-orb-a absolute size-65 rounded-full"
         style={{

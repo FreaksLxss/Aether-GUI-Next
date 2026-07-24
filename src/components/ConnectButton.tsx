@@ -104,7 +104,7 @@ export function ConnectButton() {
       whileTap={{ scale: 0.97 }}
       animate={phase === "error" ? "error" : "rest"}
       variants={SHAKE_VARIANTS}
-      className="relative flex size-40 items-center justify-center rounded-full text-foreground outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background motion-reduce:transition-none"
+      className="relative flex size-40 cursor-pointer items-center justify-center rounded-full text-foreground outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background motion-reduce:transition-none"
     >
       {/* Disc + status ring. will-change promotes it to its own compositor
         * layer so the breathing/pulse loop composites without repainting the

@@ -24,8 +24,8 @@ export function CopyProxyButton() {
   return (
     <button
       onClick={handleCopy}
-      className="flex items-center gap-1.5 rounded-md bg-black/20 px-2.5 py-1.5 text-xs font-mono text-muted-foreground ring-1 ring-white/10 transition-colors hover:bg-black/30 hover:text-foreground"
-      title={`Copy ${addr}`}
+      className="flex cursor-pointer items-center gap-1.5 rounded-md bg-black/20 px-2.5 py-1.5 text-xs font-mono text-muted-foreground ring-1 ring-white/10 transition-colors hover:bg-black/30 hover:text-foreground"
+      title={`Copy SOCKS5 proxy address (${addr}) for manual configuration`}
     >
       {copied ? (
         <>

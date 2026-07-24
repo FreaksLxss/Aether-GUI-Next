@@ -10,7 +10,7 @@ export function AboutDialog() {
     <>
       <button
         onClick={() => setOpen(true)}
-        className="flex items-center gap-1 text-[10px] text-muted-foreground/60 transition-colors hover:text-muted-foreground"
+        className="flex items-center gap-1.5 cursor-pointer text-[10px] text-muted-foreground/60 transition-colors hover:text-muted-foreground"
         title="About Aether-GUI"
       >
         <Info size={10} />
@@ -45,7 +45,7 @@ export function AboutDialog() {
                 </div>
                 <button
                   onClick={() => setOpen(false)}
-                  className="text-muted-foreground hover:text-foreground"
+                  className="cursor-pointer text-muted-foreground hover:text-foreground"
                 >
                   <X size={14} />
                 </button>
@@ -62,7 +62,7 @@ export function AboutDialog() {
                   onClick={() =>
                     void open("https://github.com/MatinSenPai/Aether-GUI")
                   }
-                  className="flex items-center gap-1.5 text-xs text-muted-foreground hover:text-foreground"
+                  className="flex cursor-pointer items-center gap-1.5 text-xs text-muted-foreground hover:text-foreground"
                 >
                   <ExternalLink size={10} />
                   Aether-GUI on GitHub
@@ -71,7 +71,7 @@ export function AboutDialog() {
                   onClick={() =>
                     void open("https://github.com/CluvexStudio/Aether")
                   }
-                  className="flex items-center gap-1.5 text-xs text-muted-foreground hover:text-foreground"
+                  className="flex cursor-pointer items-center gap-1.5 text-xs text-muted-foreground hover:text-foreground"
                 >
                   <ExternalLink size={10} />
                   Aether engine on GitHub

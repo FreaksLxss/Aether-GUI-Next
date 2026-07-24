@@ -26,8 +26,8 @@ export function PacUrl() {
   return (
     <button
       onClick={handleCopy}
-      className="flex items-center gap-1.5 rounded-md bg-black/20 px-2.5 py-1.5 text-[10px] text-muted-foreground ring-1 ring-white/10 transition-colors hover:bg-black/30 hover:text-foreground"
-      title="Copy PAC proxy URL for browser settings"
+      className="flex cursor-pointer items-center gap-1.5 rounded-md bg-black/20 px-2.5 py-1.5 text-[10px] text-muted-foreground ring-1 ring-white/10 transition-colors hover:bg-black/30 hover:text-foreground"
+      title="Copy PAC auto-config URL — paste into your browser or system proxy settings for automatic SOCKS5 routing"
     >
       {copied ? (
         <>

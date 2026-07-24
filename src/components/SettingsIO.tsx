@@ -70,7 +70,7 @@ export function SettingsIO() {
     <div className="flex gap-2">
       <button
         onClick={handleExport}
-        className="flex items-center gap-1 rounded-md bg-black/20 px-2 py-1 text-[10px] text-muted-foreground ring-1 ring-white/10 transition-colors hover:bg-black/30 hover:text-foreground"
+        className="flex cursor-pointer items-center gap-1 rounded-md bg-black/20 px-2 py-1 text-[10px] text-muted-foreground ring-1 ring-white/10 transition-colors hover:bg-black/30 hover:text-foreground"
         title="Export settings"
       >
         <Download size={10} />
@@ -78,7 +78,7 @@ export function SettingsIO() {
       </button>
       <button
         onClick={handleImport}
-        className="flex items-center gap-1 rounded-md bg-black/20 px-2 py-1 text-[10px] text-muted-foreground ring-1 ring-white/10 transition-colors hover:bg-black/30 hover:text-foreground"
+        className="flex cursor-pointer items-center gap-1 rounded-md bg-black/20 px-2 py-1 text-[10px] text-muted-foreground ring-1 ring-white/10 transition-colors hover:bg-black/30 hover:text-foreground"
         title="Import settings"
       >
         <Upload size={10} />

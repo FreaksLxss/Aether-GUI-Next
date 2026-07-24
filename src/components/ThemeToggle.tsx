@@ -23,7 +23,7 @@ export function ThemeToggle() {
   return (
     <button
       onClick={toggle}
-      className="flex items-center gap-1.5 text-xs text-muted-foreground transition-colors hover:text-foreground"
+      className="flex cursor-pointer items-center gap-1.5 text-xs text-muted-foreground transition-colors hover:text-foreground"
       title={dark ? "Switch to light theme" : "Switch to dark theme"}
     >
       {dark ? <Moon size={12} /> : <Sun size={12} />}

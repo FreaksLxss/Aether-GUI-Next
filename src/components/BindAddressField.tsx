@@ -1,3 +1,4 @@
+import { useRef, useState } from "react";
 import { useConnectionStore } from "@/state/connectionStore";
 import { Switch } from "@/components/ui/switch";
 
@@ -16,6 +17,8 @@ export function BindAddressField() {
   const setBindAddress = useConnectionStore((s) => s.setBindAddress);
   const status = useConnectionStore((s) => s.status);
   const locked = status.state !== "Idle" && status.state !== "Error";
+  const [invalid, setInvalid] = useState(false);
+  const timerRef = useRef<ReturnType<typeof setTimeout>>(null);
 
   const { host, port } = splitAddr(bind);
   const lan = host === ANY;
@@ -36,9 +39,18 @@ export function BindAddressField() {
         }}
         onBlur={() => {
           const n = Number(port);
-          if (!port || n < 1 || n > 65535) rebuild(host, DEFAULT_PORT);
+          if (!port || n < 1 || n > 65535) {
+            rebuild(host, DEFAULT_PORT);
+            setInvalid(true);
+            if (timerRef.current) clearTimeout(timerRef.current);
+            timerRef.current = setTimeout(() => setInvalid(false), 1000);
+          }
         }}
-        className="h-8 w-20 rounded-md bg-black/20 px-2 text-center text-xs text-foreground ring-1 ring-white/10 outline-none focus:ring-primary disabled:opacity-50"
+        className={`h-9 w-20 rounded-md bg-black/20 px-2 text-center text-xs text-foreground ring-1 outline-none transition-shadow duration-150 disabled:opacity-50 ${
+          invalid
+            ? "ring-status-error focus-visible:ring-status-error"
+            : "ring-white/10 focus-visible:ring-primary"
+        }`}
         aria-label="SOCKS5 port"
       />
       <div className="flex items-center gap-1.5">

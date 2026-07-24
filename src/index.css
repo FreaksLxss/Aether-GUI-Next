@@ -109,7 +109,7 @@
     --popover: #ffffff;
     --popover-foreground: #171717;
     --primary: #ea580c;
-    --primary-foreground: #ffffff;
+    --primary-foreground: #0d0d0f;
     --secondary: #e5e5e5;
     --secondary-foreground: #171717;
     --muted: #e5e5e5;
@@ -242,5 +242,16 @@
 }
 ::-webkit-scrollbar-corner {
   background: transparent;
+}
+
+/* Light-mode scrollbar overrides — white thumb is invisible on light bg. */
+.light * {
+  scrollbar-color: rgba(0, 0, 0, 0.18) transparent;
+}
+.light ::-webkit-scrollbar-thumb {
+  background: rgba(0, 0, 0, 0.18);
+}
+.light ::-webkit-scrollbar-thumb:hover {
+  background: rgba(0, 0, 0, 0.3);
 }
 

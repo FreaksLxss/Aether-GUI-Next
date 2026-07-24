@@ -22,7 +22,7 @@ export function SettingsPanel() {
   return (
     <div className="w-full">
       <Collapsible open={open} onOpenChange={setOpen}>
-        <CollapsibleTrigger className="flex w-full items-center justify-center gap-1.5 py-2 text-xs text-muted-foreground outline-none hover:text-foreground focus-visible:ring-2 focus-visible:ring-primary rounded-md">
+        <CollapsibleTrigger className="flex w-full cursor-pointer items-center justify-center gap-1.5 py-2 text-xs text-muted-foreground outline-none hover:text-foreground focus-visible:ring-2 focus-visible:ring-primary rounded-md">
           <Settings size={14} />
           Settings
           <ChevronDown
@@ -31,10 +31,13 @@ export function SettingsPanel() {
             data-state={open ? "open" : "closed"}
           />
         </CollapsibleTrigger>
-        <CollapsibleContent className="overflow-hidden data-[state=open]:animate-in data-[state=open]:fade-in-0 data-[state=open]:slide-in-from-bottom-1 data-[state=open]:duration-150 data-[state=open]:[animation-timing-function:cubic-bezier(0.16,1,0.3,1)] data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=closed]:duration-100">
+        <CollapsibleContent className="overflow-hidden data-[state=open]:animate-in data-[state=open]:fade-in-0 data-[state=open]:slide-in-from-bottom-1 data-[state=open]:duration-150 data-[state=open]:[animation-timing-function:cubic-bezier(0.16,1,0.3,1)] data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=closed]:slide-out-to-bottom-1 data-[state=closed]:duration-100">
           <div className="flex flex-col gap-3 pb-2">
             {/* System toggles */}
             <div className="flex flex-col gap-2">
+              <span className="text-[10px] font-medium tracking-wide text-primary uppercase">
+                System
+              </span>
               <SystemProxyToggle />
               <AlwaysOnTopToggle />
               <AutoStartToggle />
@@ -44,19 +47,29 @@ export function SettingsPanel() {
 
             {/* Appearance */}
             <div className="h-px bg-border" />
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-3">
-                <ThemeToggle />
-                <ColorTheme />
+            <div className="flex flex-col gap-2">
+              <span className="text-[10px] font-medium tracking-wide text-primary uppercase">
+                Appearance
+              </span>
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-3">
+                  <ThemeToggle />
+                  <ColorTheme />
+                </div>
+                <SettingsIO />
               </div>
-              <SettingsIO />
             </div>
 
             {/* About & Updates */}
             <div className="h-px bg-border" />
-            <div className="flex items-center justify-between">
-              <AboutDialog />
-              <UpdateChecker />
+            <div className="flex flex-col gap-2">
+              <span className="text-[10px] font-medium tracking-wide text-primary uppercase">
+                About
+              </span>
+              <div className="flex items-center justify-between">
+                <AboutDialog />
+                <UpdateChecker />
+              </div>
             </div>
           </div>
         </CollapsibleContent>

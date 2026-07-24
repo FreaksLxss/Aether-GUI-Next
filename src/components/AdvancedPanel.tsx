@@ -79,9 +79,9 @@ export function AdvancedPanel() {
   }, [logs, autoScroll]);
 
   return (
-    <div className="w-full max-w-sm">
+    <div className="w-full">
       <Collapsible open={open} onOpenChange={setOpen}>
-        <CollapsibleTrigger className="flex w-full items-center justify-center gap-1.5 py-2 text-xs text-muted-foreground outline-none hover:text-foreground focus-visible:ring-2 focus-visible:ring-primary rounded-md">
+        <CollapsibleTrigger className="flex w-full cursor-pointer items-center justify-center gap-1.5 py-2 text-xs text-muted-foreground outline-none hover:text-foreground focus-visible:ring-2 focus-visible:ring-primary rounded-md">
           <Settings2 size={14} />
           Advanced
           <ChevronDown
@@ -90,7 +90,7 @@ export function AdvancedPanel() {
             data-state={open ? "open" : "closed"}
           />
         </CollapsibleTrigger>
-        <CollapsibleContent className="overflow-hidden data-[state=open]:animate-in data-[state=open]:fade-in-0 data-[state=open]:slide-in-from-bottom-1 data-[state=open]:duration-150 data-[state=open]:[animation-timing-function:cubic-bezier(0.16,1,0.3,1)] data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=closed]:duration-100">
+        <CollapsibleContent className="overflow-hidden data-[state=open]:animate-in data-[state=open]:fade-in-0 data-[state=open]:slide-in-from-bottom-1 data-[state=open]:duration-150 data-[state=open]:[animation-timing-function:cubic-bezier(0.16,1,0.3,1)] data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=closed]:slide-out-to-bottom-1 data-[state=closed]:duration-100">
           <div className="flex flex-col gap-4 pb-2">
             {/* Protocol section */}
             <div className="flex flex-col gap-3">
@@ -184,12 +184,20 @@ export function AdvancedPanel() {
                   const el = e.currentTarget;
                   setAutoScroll(el.scrollHeight - el.scrollTop - el.clientHeight < 24);
                 }}
+                role="log"
+                aria-label="Aether connection logs"
                 className="max-h-64 overflow-y-auto rounded-md bg-black/20 p-2 font-mono text-xs text-muted-foreground ring-1 ring-white/10"
               >
                 {filteredLogs.length === 0 ? (
-                  <p className="text-status-idle">
-                    {logFilter ? "No matching lines." : "No output yet."}
-                  </p>
+                  logFilter ? (
+                    <p className="text-status-idle">No matching lines.</p>
+                  ) : (
+                    <div className="flex flex-col gap-1.5">
+                      <div className="h-3 w-3/4 animate-pulse rounded bg-white/5" />
+                      <div className="h-3 w-1/2 animate-pulse rounded bg-white/5" />
+                      <div className="h-3 w-2/3 animate-pulse rounded bg-white/5" />
+                    </div>
+                  )
                 ) : (
                   (() => {
                     const baseTs = filteredLogs[0]?.timestamp ?? 0;

@@ -24,9 +24,13 @@ export function AlwaysOnTopToggle() {
       </div>
       <Switch
         checked={enabled}
-        onCheckedChange={(on) => {
+        onCheckedChange={async (on) => {
           setEnabled(on);
-          void invoke("set_always_on_top", { enabled: on });
+          try {
+            await invoke("set_always_on_top", { enabled: on });
+          } catch {
+            setEnabled(!on);
+          }
         }}
         aria-label="Keep window always on top"
       />
