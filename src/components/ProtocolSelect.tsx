@@ -8,12 +8,12 @@ import {
 import { useConnectionStore } from "@/state/connectionStore";
 import type { Protocol } from "@/types/connection";
 
-const LABELS: Record<Protocol, string> = {
-  auto: "Auto (recommended)",
-  masque: "MASQUE",
-  wireguard: "WireGuard",
-  gool: "WARP-in-WARP (gool)",
-};
+const OPTIONS: { value: Protocol; label: string; desc: string }[] = [
+  { value: "auto", label: "Auto", desc: "Recommended — Aether picks the best protocol" },
+  { value: "masque", label: "MASQUE", desc: "Disguises traffic as HTTPS" },
+  { value: "wireguard", label: "WireGuard", desc: "Lighter and faster" },
+  { value: "gool", label: "WARP-in-WARP", desc: "Double tunnel, maximum security" },
+];
 
 /**
  * Defaults to "Auto" rather than a bare protocol choice: Aether's own
@@ -38,15 +38,22 @@ export function ProtocolSelect() {
     >
       <SelectTrigger
         size="sm"
-        className="w-full border-transparent bg-transparent text-muted-foreground shadow-none hover:bg-surface-3"
+        className="w-full rounded-lg bg-surface-3 px-3 py-2 text-[10px] text-foreground ring-1 ring-inset ring-white/5 transition-all duration-150 hover:bg-surface-4 hover:ring-white/10 focus-visible:ring-primary disabled:opacity-50"
         aria-label="Protocol"
       >
         <SelectValue />
       </SelectTrigger>
-      <SelectContent>
-        {(Object.keys(LABELS) as Protocol[]).map((p) => (
-          <SelectItem key={p} value={p}>
-            {LABELS[p]}
+      <SelectContent className="rounded-lg bg-surface-2 p-1 ring-1 ring-white/10">
+        {OPTIONS.map((opt) => (
+          <SelectItem
+            key={opt.value}
+            value={opt.value}
+            className="cursor-pointer rounded-md px-2.5 py-2 text-xs outline-none transition-colors focus:bg-primary/15 focus:text-foreground data-[highlighted]:bg-primary/15"
+          >
+            <div className="flex flex-col gap-0.5">
+              <span className="font-medium">{opt.label}</span>
+              <span className="text-[9px] text-muted-foreground">{opt.desc}</span>
+            </div>
           </SelectItem>
         ))}
       </SelectContent>
