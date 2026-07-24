@@ -332,12 +332,23 @@ export function ColorTheme() {
             selected={primary}
             onSelect={pickPrimary}
           />
-          <ColorRow
-            label="Secondary"
-            colors={SECONDARY_COLORS}
-            selected={secondary}
-            onSelect={pickSecondary}
-          />
+          <div className="flex flex-col gap-1.5">
+            <p className="text-[10px] font-medium text-muted-foreground uppercase tracking-wide">
+              Secondary
+            </p>
+            <div className="flex items-center gap-2">
+              <input
+                type="color"
+                value={secondary ?? SECONDARY_COLORS[0][0]}
+                onChange={(e) => pickSecondary(e.target.value)}
+                className="size-8 cursor-pointer rounded-md border border-white/10 bg-transparent p-0"
+                aria-label="Custom secondary color"
+              />
+              <span className="text-[10px] text-muted-foreground">
+                {secondary ?? "Default"}
+              </span>
+            </div>
+          </div>
           {(primary || secondary) && (
             <button
               onClick={reset}
