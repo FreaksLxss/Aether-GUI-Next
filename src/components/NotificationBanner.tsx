@@ -1,7 +1,6 @@
 import { useEffect, useState } from "react";
 import { Bell, X } from "lucide-react";
 import { motion, AnimatePresence } from "motion/react";
-import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 
 const DISMISSED_KEY = "aether-notif-banner-dismissed";
@@ -39,30 +38,35 @@ export function NotificationBanner() {
           animate={{ opacity: 1, y: 0, height: "auto" }}
           exit={{ opacity: 0, y: -8, height: 0 }}
           transition={{ duration: 0.2 }}
+          className="w-full overflow-hidden"
         >
-          <Alert className="bg-surface-3">
-            <Bell className="size-4 text-primary" />
-            <AlertTitle className="text-xs font-medium">Enable notifications?</AlertTitle>
-            <AlertDescription className="text-[10px] text-muted-foreground">
-              Get notified when the tunnel connects or drops.
-            </AlertDescription>
-            <div className="mt-2 flex items-center gap-2">
-              <Button size="sm" onClick={() => dismiss(true)} className="h-6 px-2 text-[10px]">
-                Allow
-              </Button>
-              <Button size="sm" variant="ghost" onClick={() => dismiss(false)} className="h-6 px-2 text-[10px] text-muted-foreground">
-                No thanks
-              </Button>
-              <Button
-                size="icon"
-                variant="ghost"
-                onClick={() => dismiss(false)}
-                className="ml-auto h-5 w-5 text-muted-foreground hover:text-foreground"
-              >
-                <X size={12} />
-              </Button>
+          <div className="flex items-start gap-2.5 rounded-lg bg-surface-3 px-3 py-2.5 ring-1 ring-inset ring-white/5">
+            <Bell size={14} className="mt-0.5 shrink-0 text-primary" />
+            <div className="flex-1 min-w-0">
+              <p className="text-xs font-medium text-foreground">
+                Enable notifications?
+              </p>
+              <p className="mt-0.5 text-[10px] text-muted-foreground">
+                Get notified when the tunnel connects or drops.
+              </p>
+              <div className="mt-2 flex items-center gap-1.5">
+                <Button size="sm" onClick={() => dismiss(true)} className="h-6 px-2.5 text-[10px]">
+                  Allow
+                </Button>
+                <Button size="sm" variant="ghost" onClick={() => dismiss(false)} className="h-6 px-2 text-[10px] text-muted-foreground">
+                  No thanks
+                </Button>
+              </div>
             </div>
-          </Alert>
+            <Button
+              size="icon"
+              variant="ghost"
+              onClick={() => dismiss(false)}
+              className="mt-0.5 h-5 w-5 shrink-0 text-muted-foreground hover:text-foreground"
+            >
+              <X size={12} />
+            </Button>
+          </div>
         </motion.div>
       )}
     </AnimatePresence>
