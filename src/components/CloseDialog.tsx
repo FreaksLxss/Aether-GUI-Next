@@ -12,15 +12,35 @@ import {
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 
+const CLOSE_CHOICE_KEY = "aether-close-choice";
+
 const appWindow = getCurrentWindow();
 
 type CloseChoice = "close" | "tray" | null;
 
+function getSavedChoice(): CloseChoice {
+  const v = localStorage.getItem(CLOSE_CHOICE_KEY);
+  if (v === "close" || v === "tray") return v;
+  return null;
+}
+
 let setShowFn: ((show: boolean) => void) | null = null;
 
-/** Called by TitleBar close button. Always shows the dialog. */
+/** Called by TitleBar close button. Shows dialog if no choice saved, otherwise acts directly. */
 export function handleClose() {
-  setShowFn?.(true);
+  const choice = getSavedChoice();
+  if (choice === "tray") {
+    void appWindow.hide();
+  } else if (choice === "close") {
+    void appWindow.close();
+  } else {
+    setShowFn?.(true);
+  }
+}
+
+/** Called by CloseToTrayToggle to sync the saved choice. */
+export function syncCloseChoice(enabled: boolean) {
+  localStorage.setItem(CLOSE_CHOICE_KEY, enabled ? "tray" : "close");
 }
 
 export function CloseDialog() {
@@ -29,6 +49,7 @@ export function CloseDialog() {
   setShowFn = setShow;
 
   const handleChoice = async (choice: CloseChoice) => {
+    localStorage.setItem(CLOSE_CHOICE_KEY, choice ?? "close");
     setShow(false);
     if (choice === "tray") {
       await invoke("set_close_to_tray", { enabled: true }).catch(() => {});

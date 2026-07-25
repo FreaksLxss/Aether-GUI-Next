@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useLayoutEffect, useState } from "react";
 import { AnimatePresence, motion, MotionConfig } from "motion/react";
 import { ConnectButton } from "@/components/ConnectButton";
 import { ConnectionStatusLine } from "@/components/ConnectionStatusLine";
@@ -77,6 +77,28 @@ export function App() {
 
   useKeyboardShortcuts();
   useConnectionSound();
+
+  // Apply saved theme synchronously before first paint to prevent flash
+  useLayoutEffect(() => {
+    const savedTheme = localStorage.getItem("aether-theme");
+    const isDark = savedTheme ? savedTheme === "dark" : true;
+    const root = document.documentElement;
+    if (isDark) {
+      root.classList.remove("light");
+      root.classList.add("dark");
+    } else {
+      root.classList.remove("dark");
+      root.classList.add("light");
+    }
+    // Apply saved accent colors
+    const p = localStorage.getItem("aether-custom-primary");
+    const s = localStorage.getItem("aether-custom-secondary");
+    if (p && s) {
+      import("@/components/ColorTheme").then(({ applyColors }) => {
+        applyColors(p, s, isDark);
+      });
+    }
+  }, []);
 
   useEffect(() => {
     const cleanup = initConnectionListeners();

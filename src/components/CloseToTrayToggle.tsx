@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { invoke } from "@tauri-apps/api/core";
 import { PanelRightClose } from "lucide-react";
 import { Switch } from "@/components/ui/switch";
+import { syncCloseChoice } from "@/components/CloseDialog";
 
 export function CloseToTrayToggle() {
   const [enabled, setEnabled] = useState(false);
@@ -30,10 +31,12 @@ export function CloseToTrayToggle() {
         checked={enabled}
         onCheckedChange={async (on) => {
           setEnabled(on);
+          syncCloseChoice(on);
           try {
             await invoke("set_close_to_tray", { enabled: on });
           } catch {
             setEnabled(!on);
+            syncCloseChoice(!on);
           }
         }}
         aria-label="Minimize to system tray instead of closing"
