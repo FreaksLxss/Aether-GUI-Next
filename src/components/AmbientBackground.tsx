@@ -35,7 +35,7 @@ export function AmbientBackground() {
           left: -80,
           opacity: 0.1,
           background:
-            "radial-gradient(circle, var(--color-status-connected) 0%, transparent 70%)",
+            "radial-gradient(circle, var(--color-primary) 0%, transparent 70%)",
           willChange: "transform, opacity",
           ...playState,
         }}

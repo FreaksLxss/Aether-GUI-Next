@@ -47,8 +47,13 @@ function MainScreen() {
   return (
     <div className="relative z-10 flex h-full flex-col items-center overflow-y-auto px-5 pt-4 pb-3">
       <NotificationBanner />
-      <div className="flex flex-1 flex-col items-center justify-center gap-3">
+      {/* Button centered in a fixed-height area — height never changes
+          so the button position is rock-stable regardless of what's below */}
+      <div className="flex h-60 shrink-0 items-center justify-center">
         <ConnectButton />
+      </div>
+      {/* Status + details flow below the fixed button area */}
+      <div className="flex flex-col items-center gap-3">
         <ConnectionStatusLine />
         <ConnectionInfo />
         {isConnected && (
