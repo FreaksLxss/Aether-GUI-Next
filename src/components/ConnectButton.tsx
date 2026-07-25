@@ -146,12 +146,12 @@ export function ConnectButton() {
             colorTwo={accent.secondary}
             speed={1.5}
             ringCount={3}
-            attenuation={8}
+            attenuation={document.documentElement.classList.contains("light") ? 14 : 8}
             lineThickness={1}
             baseRadius={0.10}
             radiusStep={0.09}
             scaleRate={0.1}
-            opacity={0.9}
+            opacity={document.documentElement.classList.contains("light") ? 0.45 : 0.9}
             noiseAmount={0}
             rotation={15}
             ringGap={1.3}
