@@ -16,16 +16,11 @@ import { SidecarErrorScreen } from "@/components/SidecarErrorScreen";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { TitleBar } from "@/components/TitleBar";
 import { CloseDialog } from "@/components/CloseDialog";
+import { useSquircleClip } from "@/hooks/useSquircleMask";
 import { useKeyboardShortcuts } from "@/hooks/useKeyboardShortcuts";
 import { useConnectionSound } from "@/hooks/useConnectionSound";
 import { initConnectionListeners, useConnectionStore } from "@/state/connectionStore";
-
-const SCREEN_TRANSITION = {
-  initial: { opacity: 0, y: 8 },
-  animate: { opacity: 1, y: 0 },
-  exit: { opacity: 0, y: -4 },
-  transition: { duration: 0.16, ease: [0.22, 1, 0.36, 1] as const },
-};
+import { SCREEN_FADE } from "@/lib/motion";
 
 export type AccordionPanel = "advanced" | "presets" | "history" | "settings" | null;
 
@@ -64,8 +59,14 @@ function MainScreen() {
         )}
         <QuickConnect onMoreOptions={openAdvancedHighlightScan} />
       </div>
-      <div className="mt-auto flex w-full max-w-sm flex-col gap-1 pt-1">
-        <div className="h-px w-full bg-border/40" />
+      <div className="mt-auto flex w-full max-w-sm flex-col gap-1.5 pt-3">
+        <div className="flex items-center gap-2 px-1">
+          <div className="h-px flex-1 bg-white/5" />
+          <span className="text-[10px] font-medium tracking-widest text-muted-foreground/70 uppercase">
+            Options
+          </span>
+          <div className="h-px flex-1 bg-white/5" />
+        </div>
         <AdvancedPanel open={activePanel === "advanced"} onToggle={() => togglePanel("advanced")} highlightScanMode={highlightScanMode} />
         <ProfilePresets open={activePanel === "presets"} onToggle={() => togglePanel("presets")} />
         <ConnectionHistory open={activePanel === "history"} onToggle={() => togglePanel("history")} />
@@ -99,7 +100,7 @@ export function App() {
     const p = localStorage.getItem("aether-custom-primary");
     const s = localStorage.getItem("aether-custom-secondary");
     if (p && s) {
-      import("@/components/ColorTheme").then(({ applyColors }) => {
+      import("@/lib/theme").then(({ applyColors }) => {
         applyColors(p, s, isDark);
       });
     }
@@ -112,17 +113,19 @@ export function App() {
     };
   }, []);
 
+  const shellRef = useSquircleClip(22);
+
   return (
     <TooltipProvider>
       <MotionConfig reducedMotion="user">
-        <div className="relative flex h-svh w-full flex-col overflow-hidden bg-background">
+        <div ref={shellRef} className="window-shell flex flex-col bg-background">
           <CloseDialog />
           <AmbientBackground />
           <TitleBar />
           <div className="relative min-h-0 flex-1">
             <AnimatePresence mode="sync">
               {sidecarError ? (
-                <motion.div key="error" className="absolute inset-0 z-10" {...SCREEN_TRANSITION}>
+                <motion.div key="error" className="absolute inset-0 z-10" {...SCREEN_FADE}>
                   <SidecarErrorScreen
                     message={sidecarError}
                     onRetry={() => {
@@ -132,7 +135,7 @@ export function App() {
                   />
                 </motion.div>
               ) : (
-                <motion.div key="main" className="absolute inset-0" {...SCREEN_TRANSITION}>
+                <motion.div key="main" className="absolute inset-0" {...SCREEN_FADE}>
                   <MainScreen />
                 </motion.div>
               )}

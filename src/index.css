@@ -62,6 +62,7 @@
     --color-chart-3: var(--chart-3);
     --color-chart-2: var(--chart-2);
     --color-chart-1: var(--chart-1);
+    --shadow-glass: var(--shadow-glass);
 }
 
 /* Dark theme (default) — the app starts dark; .light class toggles to light. */
@@ -107,6 +108,40 @@
     --chart-3: oklch(0.439 0 0);
     --chart-4: oklch(0.371 0 0);
     --chart-5: oklch(0.269 0 0);
+
+    /* Frosted-glass material (Apple-style translucent layers). Components
+       reference the --glass-* tokens through the .glass-* utilities below;
+       the blur + saturation is what lets the ambient orbs read through. */
+    --glass-blur: 26px;
+    --glass-saturate: 1.6;
+    --glass-bg: color-mix(in srgb, var(--surface-2) 58%, transparent);
+    --glass-bg-strong: color-mix(in srgb, var(--surface-3) 80%, transparent);
+    --glass-bg-float: color-mix(in srgb, var(--surface-3) 86%, transparent);
+    --glass-ring: rgba(255, 255, 255, 0.1);
+    --glass-highlight: rgba(255, 255, 255, 0.06);
+    --shadow-glass: 0 12px 40px -12px rgba(0, 0, 0, 0.55),
+      inset 0 1px 0 0 rgba(255, 255, 255, 0.05);
+
+    /* Rounded window frame (transparent native window + CSS rounding). */
+    --window-radius: 18px;
+    --window-ring: rgba(255, 255, 255, 0.09);
+    --window-highlight: rgba(255, 255, 255, 0.06);
+}
+
+@media (prefers-reduced-transparency: reduce) {
+  :root {
+    --glass-blur: 0px;
+    --glass-saturate: 1;
+    --glass-bg: var(--surface-2);
+    --glass-bg-strong: var(--surface-3);
+    --glass-bg-float: var(--surface-3);
+    --glass-ring: rgba(255, 255, 255, 0.08);
+  }
+  :root.light {
+    --glass-bg: #fafafa;
+    --glass-bg-strong: #ffffff;
+    --glass-bg-float: #ffffff;
+  }
 }
 
 /* Light theme — overrides CSS variables when .light is on <html>. */
@@ -137,6 +172,18 @@
     --status-connecting: #ea580c;
     --status-error: #dc2626;
     --status-idle: #9ca3af;
+    --glass-blur: 22px;
+    --glass-saturate: 1.4;
+    --glass-bg: color-mix(in srgb, #ffffff 66%, transparent);
+    --glass-bg-strong: color-mix(in srgb, #ffffff 82%, transparent);
+    --glass-bg-float: color-mix(in srgb, #ffffff 92%, transparent);
+    --glass-ring: rgba(0, 0, 0, 0.08);
+    --glass-highlight: rgba(255, 255, 255, 0.7);
+    --shadow-glass: 0 12px 40px -14px rgba(0, 0, 0, 0.18),
+      inset 0 1px 0 0 rgba(255, 255, 255, 0.8);
+    --window-radius: 18px;
+    --window-ring: rgba(0, 0, 0, 0.08);
+    --window-highlight: rgba(255, 255, 255, 0.7);
 }
 
 .light .bg-background { background-color: var(--background); }
@@ -144,6 +191,7 @@
 .light .bg-surface-2 { background-color: var(--surface-2); }
 .light .text-muted-foreground { color: var(--muted-foreground); }
 .light .ring-white\/10 { --tw-ring-color: rgba(0, 0, 0, 0.08); }
+.light .ring-white\/5 { --tw-ring-color: rgba(0, 0, 0, 0.06); }
 .light .bg-black\/20 { background-color: rgba(0, 0, 0, 0.06); }
 .light .bg-black\/10 { background-color: rgba(0, 0, 0, 0.04); }
 .light [data-tauri-drag-region] { color: var(--foreground); }
@@ -153,7 +201,11 @@
     @apply border-border outline-ring/50;
     }
   body {
-    @apply bg-background text-foreground;
+    @apply text-foreground;
+    background: transparent;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    font-optical-sizing: auto;
     }
   html,
   body,
@@ -161,14 +213,55 @@
     height: 100%;
     overflow: hidden;
     overscroll-behavior: none;
+    background: transparent;
     }
   html {
     @apply font-sans;
     }
+  ::selection {
+    background: color-mix(in srgb, var(--primary) 30%, transparent);
+  }
 }
 
 /* Smooth transitions for interactive elements */
 @layer utilities {
+  .window-shell {
+    /* iOS/macOS-style rounded window over a transparent native window. The
+       shell fills the whole window edge-to-edge (no gutter), so only the
+       transparent corner pixels of the radius show the desktop. Framing is
+       drawn with an inset ring + inner top highlight so it survives the window
+       bounds clipping that would otherwise cut off an external shadow. */
+    position: relative;
+    width: 100%;
+    height: 100dvh;
+    border-radius: var(--window-radius);
+    overflow: hidden;
+    border: 1px solid var(--window-ring);
+    box-shadow: inset 0 1px 0 0 var(--window-highlight);
+  }
+
+  .glass {
+    background-color: var(--glass-bg);
+    -webkit-backdrop-filter: blur(var(--glass-blur)) saturate(var(--glass-saturate));
+    backdrop-filter: blur(var(--glass-blur)) saturate(var(--glass-saturate));
+  }
+  .glass-strong {
+    background: var(--glass-bg-strong);
+    -webkit-backdrop-filter: blur(var(--glass-blur)) saturate(var(--glass-saturate));
+    backdrop-filter: blur(var(--glass-blur)) saturate(var(--glass-saturate));
+  }
+  .glass-float {
+    background: var(--glass-bg-float);
+    -webkit-backdrop-filter: blur(var(--glass-blur)) saturate(var(--glass-saturate));
+    backdrop-filter: blur(var(--glass-blur)) saturate(var(--glass-saturate));
+  }
+  .text-balance {
+    text-wrap: balance;
+  }
+  .tracking-tight-display {
+    letter-spacing: -0.025em;
+  }
+
   .transition-smooth {
     transition-property: color, background-color, border-color, box-shadow, opacity, transform;
     transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
@@ -191,6 +284,31 @@
   .active-press:active {
     transform: scale(0.98);
   }
+}
+
+/* Thin, adaptive scrollbar — translucent thumb that works on glass and in
+   both themes without hard-coded colors. */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: color-mix(in srgb, var(--foreground) 22%, transparent) transparent;
+}
+::-webkit-scrollbar {
+  width: 4px;
+  height: 4px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+::-webkit-scrollbar-thumb {
+  background: color-mix(in srgb, var(--foreground) 18%, transparent);
+  border-radius: 999px;
+  border: 1px solid transparent;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: color-mix(in srgb, var(--foreground) 32%, transparent);
+}
+::-webkit-scrollbar-corner {
+  background: transparent;
 }
 
 /* Radix's Collapsible exposes the measured content height as this CSS var
@@ -218,6 +336,10 @@
 @keyframes glow-pulse {
   0%, 100% { transform: scale(1); opacity: 0.55; }
   50% { transform: scale(1.04); opacity: 1; }
+}
+@keyframes scan-sweep {
+  0%, 20% { transform: translateX(-110%); }
+  100% { transform: translateX(360%); }
 }
 @keyframes orb-drift-a {
   0%, 100% { transform: translate(0, 0); opacity: 0.14; }
@@ -247,45 +369,11 @@
 .anim-glow-slow { animation: glow-pulse 2.4s ease-in-out infinite; }
 .anim-orb-a { animation: orb-drift-a 10s ease-in-out infinite; }
 .anim-orb-b { animation: orb-drift-b 13s ease-in-out infinite; }
+.anim-scan-sweep { animation: scan-sweep 1.2s ease-in-out infinite; }
 
 /* The decorative loops (idle breathing, background orbs) honor reduced
    motion; the connecting/connected pulses are active state feedback and are
    deliberately left running (matches the original Motion behavior). */
 @media (prefers-reduced-motion: reduce) {
-  .anim-ring-breathe, .anim-orb-a, .anim-orb-b { animation: none; }
-}
-
-/* Custom scrollbar — thin, minimal, matches the dark UI. WebKit/Blink
-   (Chromium/Edge) and standard Firefox scrollbar properties. */
-* {
-  scrollbar-width: thin;
-  scrollbar-color: rgba(255, 255, 255, 0.12) transparent;
-}
-::-webkit-scrollbar {
-  width: 6px;
-  height: 6px;
-}
-::-webkit-scrollbar-track {
-  background: transparent;
-}
-::-webkit-scrollbar-thumb {
-  background: rgba(255, 255, 255, 0.12);
-  border-radius: 3px;
-}
-::-webkit-scrollbar-thumb:hover {
-  background: rgba(255, 255, 255, 0.22);
-}
-::-webkit-scrollbar-corner {
-  background: transparent;
-}
-
-/* Light-mode scrollbar overrides — white thumb is invisible on light bg. */
-.light * {
-  scrollbar-color: rgba(0, 0, 0, 0.18) transparent;
-}
-.light ::-webkit-scrollbar-thumb {
-  background: rgba(0, 0, 0, 0.18);
-}
-.light ::-webkit-scrollbar-thumb:hover {
-  background: rgba(0, 0, 0, 0.3);
+  .anim-ring-breathe, .anim-orb-a, .anim-orb-b, .anim-scan-sweep { animation: none; }
 }

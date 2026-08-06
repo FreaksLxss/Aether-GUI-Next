@@ -13,7 +13,11 @@ impl TunAdapter {
     /// Create a new wintun adapter with the given name and IP address.
     /// `address` should be in CIDR notation, e.g. "10.0.0.2/24".
     /// `resource_dir` is the Tauri resource directory where bundled files are extracted.
-    pub fn create(name: &str, address: &str, resource_dir: Option<&std::path::Path>) -> Result<Self, String> {
+    pub fn create(
+        name: &str,
+        address: &str,
+        resource_dir: Option<&std::path::Path>,
+    ) -> Result<Self, String> {
         // Parse the CIDR address
         let (ip, _prefix_len) = parse_cidr(address)?;
 
@@ -23,10 +27,8 @@ impl TunAdapter {
         // Try to open existing adapter, or create a new one
         let adapter = match wintun::Adapter::open(&wintun, name) {
             Ok(a) => a,
-            Err(_) => {
-                wintun::Adapter::create(&wintun, name, "Aether", None)
-                    .map_err(|e| format!("failed to create wintun adapter: {e}"))?
-            }
+            Err(_) => wintun::Adapter::create(&wintun, name, "Aether", None)
+                .map_err(|e| format!("failed to create wintun adapter: {e}"))?,
         };
 
         // Set the IP address on the adapter
@@ -133,7 +135,8 @@ fn load_wintun(resource_dir: Option<&std::path::Path>) -> Result<wintun::Wintun,
     }
 
     // Fallback: try current directory
-    unsafe { wintun::load() }.map_err(|e| format!("failed to load wintun.dll from any location: {e}"))
+    unsafe { wintun::load() }
+        .map_err(|e| format!("failed to load wintun.dll from any location: {e}"))
 }
 
 /// Parse a CIDR string like "10.0.0.2/24" into (ip, prefix_len).

@@ -49,8 +49,14 @@ fn main() {
                     .store("settings.json")
                     .ok()
                     .and_then(|s| {
-                        let minimize = s.get("minimize_on_startup").and_then(|v| v.as_bool()).unwrap_or(false);
-                        let close_to_tray = s.get("close_to_tray").and_then(|v| v.as_bool()).unwrap_or(false);
+                        let minimize = s
+                            .get("minimize_on_startup")
+                            .and_then(|v| v.as_bool())
+                            .unwrap_or(false);
+                        let close_to_tray = s
+                            .get("close_to_tray")
+                            .and_then(|v| v.as_bool())
+                            .unwrap_or(false);
                         Some(minimize && close_to_tray)
                     })
                     .unwrap_or(false);
@@ -139,11 +145,7 @@ fn main() {
                 if let Ok(pos) = window.outer_position() {
                     if let Ok(size) = window.outer_size() {
                         use tauri_plugin_store::StoreExt;
-                        if let Ok(store) = window
-                            .clone()
-                            .app_handle()
-                            .store("settings.json")
-                        {
+                        if let Ok(store) = window.clone().app_handle().store("settings.json") {
                             let pos = serde_json::json!({
                                 "x": pos.x,
                                 "y": pos.y,

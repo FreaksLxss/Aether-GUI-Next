@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { invoke } from "@tauri-apps/api/core";
 import { PanelRightClose } from "lucide-react";
 import { Switch } from "@/components/ui/switch";
-import { syncCloseChoice } from "@/components/CloseDialog";
+import { syncCloseChoice } from "@/lib/close";
 
 export function CloseToTrayToggle() {
   const [enabled, setEnabled] = useState(false);

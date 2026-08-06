@@ -32,7 +32,7 @@ export function IpVersionToggle() {
           value={v}
           size="sm"
           aria-label={LABELS[v]}
-          className="flex-1 rounded-md text-[10px] text-muted-foreground transition-all duration-150 hover:text-foreground data-[state=on]:bg-primary data-[state=on]:text-primary-foreground data-[state=on]:shadow-sm data-[state=on]:shadow-primary/20"
+          className="flex-1 rounded-md text-[10px] text-muted-foreground transition-all duration-150 hover:text-foreground data-[state=on]:bg-primary data-[state=on]:text-primary-foreground data-[state=on]:shadow-sm data-[state=on]:shadow-primary/20 data-[state=on]:ring-1 data-[state=on]:ring-inset data-[state=on]:ring-primary-foreground/80"
         >
           {LABELS[v]}
         </ToggleGroupItem>

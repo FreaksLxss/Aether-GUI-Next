@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { Bell, X } from "lucide-react";
 import { motion, AnimatePresence } from "motion/react";
 import { Button } from "@/components/ui/button";
+import { SPRING_FAST } from "@/lib/motion";
 
 const DISMISSED_KEY = "aether-notif-banner-dismissed";
 
@@ -37,10 +38,10 @@ export function NotificationBanner() {
           initial={{ opacity: 0, y: -8, height: 0 }}
           animate={{ opacity: 1, y: 0, height: "auto" }}
           exit={{ opacity: 0, y: -8, height: 0 }}
-          transition={{ duration: 0.2 }}
+          transition={SPRING_FAST}
           className="w-full overflow-hidden"
         >
-          <div className="flex items-start gap-2.5 rounded-lg bg-surface-3 px-3 py-2.5 ring-1 ring-inset ring-white/5">
+          <div className="glass-strong flex items-start gap-2.5 rounded-xl px-3 py-2.5 shadow-glass ring-1 ring-inset ring-white/10">
             <Bell size={14} className="mt-0.5 shrink-0 text-primary" />
             <div className="flex-1 min-w-0">
               <p className="text-xs font-medium text-foreground">

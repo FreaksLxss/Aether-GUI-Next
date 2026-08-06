@@ -45,8 +45,7 @@ pub fn save_preset(app: &AppHandle, name: &str, profile: &ConnectionProfile) -> 
     );
     presets.truncate(MAX_PRESETS);
 
-    let value = serde_json::to_value(&presets)
-        .map_err(|e| format!("Failed to serialize: {e}"))?;
+    let value = serde_json::to_value(&presets).map_err(|e| format!("Failed to serialize: {e}"))?;
     store.set(STORE_KEY, value);
     let _ = store.save();
     Ok(())

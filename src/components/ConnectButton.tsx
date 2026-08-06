@@ -1,11 +1,12 @@
 import { useEffect, useRef, useState } from "react";
-import { createPortal } from "react-dom";
 import { AnimatePresence, motion, type Variants } from "motion/react";
 import { AlertTriangle, Check, Loader2, Power } from "lucide-react";
 import { useConnectionStore } from "@/state/connectionStore";
 import { useWindowFocused } from "@/state/windowFocus";
 import type { ConnectionStatus } from "@/types/connection";
 import MagicRings from "@/components/MagicRings";
+import { cn } from "@/lib/utils";
+import { SPRING_FAST } from "@/lib/motion";
 
 type Phase = "idle" | "connecting" | "connected" | "error";
 
@@ -99,6 +100,8 @@ export function ConnectButton() {
     if (phase !== "connecting") return;
     const el = wrapRef.current;
     if (!el) return;
+    const raw = getAccentColor();
+    setAccent({ primary: raw, secondary: lightenHex(raw, 0.35) });
     let raf: number;
     const tick = () => {
       const rect = el.getBoundingClientRect();
@@ -107,13 +110,6 @@ export function ConnectButton() {
     };
     raf = requestAnimationFrame(tick);
     return () => cancelAnimationFrame(raf);
-  }, [phase]);
-
-  useEffect(() => {
-    if (phase === "connecting") {
-      const raw = getAccentColor();
-      setAccent({ primary: raw, secondary: lightenHex(raw, 0.35) });
-    }
   }, [phase]);
 
   const playState = { animationPlayState: focused ? ("running" as const) : ("paused" as const) };
@@ -126,48 +122,43 @@ export function ConnectButton() {
     }
   };
 
-  const rings = createPortal(
-    <AnimatePresence>
-      {phase === "connecting" && (
-        <motion.div
-          key="magic-rings"
-          aria-hidden
-          className="pointer-events-none fixed inset-0 z-[1]"
-          style={{
-            transform: `translate(${center.x - winSize.w / 2}px, ${center.y - winSize.h / 2}px)`,
-          }}
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          exit={{ opacity: 0 }}
-          transition={{ duration: 0.5, ease: "easeInOut" }}
-        >
-          <MagicRings
-            color={accent.primary}
-            colorTwo={accent.secondary}
-            speed={1.5}
-            ringCount={3}
-            attenuation={document.documentElement.classList.contains("light") ? 14 : 8}
-            lineThickness={1}
-            baseRadius={0.10}
-            radiusStep={0.09}
-            scaleRate={0.1}
-            opacity={document.documentElement.classList.contains("light") ? 0.45 : 0.9}
-            noiseAmount={0}
-            rotation={15}
-            ringGap={1.3}
-            fadeIn={1}
-            fadeOut={0.4}
-            parallax={0.1}
-          />
-        </motion.div>
-      )}
-    </AnimatePresence>,
-    document.body,
-  );
-
   return (
     <>
-      {rings}
+      <AnimatePresence>
+        {phase === "connecting" && (
+          <motion.div
+            key="magic-rings"
+            aria-hidden
+            className="pointer-events-none fixed inset-0 z-[1]"
+            style={{
+              transform: `translate(${center.x - winSize.w / 2}px, ${center.y - winSize.h / 2}px)`,
+            }}
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.5, ease: "easeInOut" }}
+          >
+            <MagicRings
+              color={accent.primary}
+              colorTwo={accent.secondary}
+              speed={1.5}
+              ringCount={3}
+              attenuation={document.documentElement.classList.contains("light") ? 14 : 8}
+              lineThickness={1}
+              baseRadius={0.10}
+              radiusStep={0.09}
+              scaleRate={0.1}
+              opacity={document.documentElement.classList.contains("light") ? 0.45 : 0.9}
+              noiseAmount={0}
+              rotation={15}
+              ringGap={1.3}
+              fadeIn={1}
+              fadeOut={0.4}
+              parallax={0.1}
+            />
+          </motion.div>
+        )}
+      </AnimatePresence>
 
       <div ref={wrapRef} className="relative flex size-40 items-center justify-center">
         <motion.button
@@ -175,18 +166,50 @@ export function ConnectButton() {
           aria-label={ARIA_LABEL[phase]}
           onClick={handleClick}
           disabled={status.state === "Disconnecting"}
-          whileTap={{ scale: 0.97 }}
+          whileTap={{ scale: 0.95 }}
+          whileHover={{ scale: 1.02 }}
+          transition={SPRING_FAST}
           animate={phase === "error" ? "error" : "rest"}
           variants={SHAKE_VARIANTS}
-          className="relative z-10 flex size-40 cursor-pointer items-center justify-center rounded-full bg-surface-2 text-foreground outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background motion-reduce:transition-none"
+          className="group relative z-10 flex size-40 cursor-pointer items-center justify-center rounded-full outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background motion-reduce:transition-none"
         >
+          {/* Frosted glass disc */}
+          <span
+            aria-hidden
+            className="glass absolute inset-0 rounded-full shadow-glass"
+          />
+          {/* Inner status tint */}
+          <span
+            aria-hidden
+            className={cn(
+              "absolute inset-0 rounded-full transition-colors duration-300",
+              phase === "connected"
+                ? "bg-primary/10"
+                : phase === "connecting"
+                  ? "bg-status-connecting/10"
+                  : phase === "error"
+                    ? "bg-status-error/10"
+                    : "bg-white/[0.02]",
+            )}
+          />
+          {/* Status glow ring */}
+          <span
+            aria-hidden
+            className={cn(
+              "absolute rounded-full transition-colors duration-500",
+              phase === "connected" ? "inset-0" : "-inset-1",
+              phase === "connected" && "ring-1 ring-primary/30",
+              phase === "connecting" && "ring-2 ring-status-connecting/40",
+              phase === "error" && "ring-2 ring-status-error/40",
+            )}
+          />
           <AnimatePresence mode="wait">
             <motion.span
               key={phase}
               initial={{ opacity: 0, scale: 0.8 }}
               animate={{ opacity: 1, scale: 1 }}
               exit={{ opacity: 0, scale: 0.8 }}
-              transition={{ duration: 0.1, ease: [0.4, 0, 0.2, 1] }}
+              transition={SPRING_FAST}
               className="relative flex items-center justify-center"
             >
               <Icon

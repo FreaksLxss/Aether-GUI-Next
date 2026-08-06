@@ -1,14 +1,14 @@
-use std::collections::HashMap;
-use std::io::{Read, Write};
-use std::net::{SocketAddr, TcpStream};
-use std::sync::Arc;
-use std::time::Duration;
 use parking_lot::Mutex;
 use pnet_packet::ip::IpNextHeaderProtocols;
 use pnet_packet::ipv4::{self, Ipv4Packet, MutableIpv4Packet};
 use pnet_packet::tcp::{MutableTcpPacket, TcpPacket};
 use pnet_packet::udp::UdpPacket;
 use pnet_packet::Packet;
+use std::collections::HashMap;
+use std::io::{Read, Write};
+use std::net::{SocketAddr, TcpStream};
+use std::sync::Arc;
+use std::time::Duration;
 
 use super::adapter::TunAdapter;
 use super::dns;
@@ -26,9 +26,9 @@ struct FlowKey {
 
 #[derive(Clone, Copy, Debug, PartialEq)]
 enum TcpState {
-    SynReceived,  // We sent SYN-ACK, waiting for client ACK
-    Established,  // Handshake done, data flowing
-    CloseWait,    // Remote (SOCKS5) sent FIN
+    SynReceived, // We sent SYN-ACK, waiting for client ACK
+    Established, // Handshake done, data flowing
+    CloseWait,   // Remote (SOCKS5) sent FIN
     Closed,
 }
 
@@ -36,11 +36,11 @@ struct Flow {
     stream: TcpStream,
     state: TcpState,
     // Sequence numbers from the client's perspective
-    client_seq: u32,   // Last seq we received from client
-    server_seq: u32,   // Next seq we send to client
+    client_seq: u32, // Last seq we received from client
+    server_seq: u32, // Next seq we send to client
     // For checksum calculation
-    local_ip: [u8; 4],   // TUN adapter IP
-    remote_ip: [u8; 4],  // Original destination IP
+    local_ip: [u8; 4],  // TUN adapter IP
+    remote_ip: [u8; 4], // Original destination IP
 }
 
 struct ForwarderState {
@@ -52,11 +52,7 @@ struct ForwarderState {
 
 // ─── Main forwarder loop ──────────────────────────────────────────────
 
-pub fn run_forwarder(
-    adapter: Arc<TunAdapter>,
-    socks_addr: SocketAddr,
-    dns_mode: DnsMode,
-) {
+pub fn run_forwarder(adapter: Arc<TunAdapter>, socks_addr: SocketAddr, dns_mode: DnsMode) {
     // Default TUN IP - matches what we configured
     let tun_ip = parse_tun_ip();
 
@@ -217,7 +213,11 @@ fn handle_tcp_packet(
             if is_ack && !is_fin {
                 f.state = TcpState::Established;
                 f.client_seq = tcp.get_sequence();
-                log::debug!("[tun] Flow established: {}:{}", key.dst_ip_addr(), key.dst_port);
+                log::debug!(
+                    "[tun] Flow established: {}:{}",
+                    key.dst_ip_addr(),
+                    key.dst_port
+                );
                 drop(f);
 
                 // Start relaying data from SOCKS5 → TUN
@@ -286,7 +286,14 @@ fn handle_syn(
         Ok(s) => s,
         Err(e) => {
             log::warn!("[tun] SOCKS5 connect failed for {dst_ip}:{dst_port}: {e}");
-            send_rst(&adapter, &tun_ip, &key.dst_ip, dst_port, key.src_port, client_seq + 1);
+            send_rst(
+                &adapter,
+                &tun_ip,
+                &key.dst_ip,
+                dst_port,
+                key.src_port,
+                client_seq + 1,
+            );
             return;
         }
     };
@@ -294,7 +301,14 @@ fn handle_syn(
     // SOCKS5 handshake
     if let Err(e) = socks5_connect(&mut stream, &key) {
         log::warn!("[tun] SOCKS5 handshake failed for {dst_ip}:{dst_port}: {e}");
-        send_rst(&adapter, &tun_ip, &key.dst_ip, dst_port, key.src_port, client_seq + 1);
+        send_rst(
+            &adapter,
+            &tun_ip,
+            &key.dst_ip,
+            dst_port,
+            key.src_port,
+            client_seq + 1,
+        );
         return;
     }
 
@@ -314,7 +328,11 @@ fn handle_syn(
         0x12, // SYN + ACK
     );
 
-    log::debug!("[tun] SYN-ACK sent to {}:{}", key.src_ip_addr(), key.src_port);
+    log::debug!(
+        "[tun] SYN-ACK sent to {}:{}",
+        key.src_ip_addr(),
+        key.src_port
+    );
 
     // Store the flow
     let flow = Arc::new(Mutex::new(Flow {
@@ -334,11 +352,7 @@ fn handle_syn(
 
 // ─── SOCKS5 → TUN relay ──────────────────────────────────────────────
 
-fn relay_socks_to_tun(
-    state: Arc<Mutex<ForwarderState>>,
-    key: FlowKey,
-    adapter: &Arc<TunAdapter>,
-) {
+fn relay_socks_to_tun(state: Arc<Mutex<ForwarderState>>, key: FlowKey, adapter: &Arc<TunAdapter>) {
     let mut buf = [0u8; 16384];
 
     loop {
@@ -356,7 +370,9 @@ fn relay_socks_to_tun(
             if f.state == TcpState::Closed || f.state == TcpState::CloseWait {
                 return;
             }
-            f.stream.set_read_timeout(Some(Duration::from_secs(30))).ok();
+            f.stream
+                .set_read_timeout(Some(Duration::from_secs(30)))
+                .ok();
             match f.stream.read(&mut buf) {
                 Ok(0) => {
                     // Remote closed → send FIN to client
@@ -370,7 +386,12 @@ fn relay_socks_to_tun(
                         key.dst_port,
                         key.src_port,
                         server_seq,
-                        state.lock().flows.get(&key).map(|fl| fl.lock().client_seq).unwrap_or(0),
+                        state
+                            .lock()
+                            .flows
+                            .get(&key)
+                            .map(|fl| fl.lock().client_seq)
+                            .unwrap_or(0),
                         0x11, // FIN + ACK
                     );
                     // Update our seq
@@ -381,7 +402,11 @@ fn relay_socks_to_tun(
                             fl2.server_seq = server_seq.wrapping_add(1);
                         }
                     }
-                    log::debug!("[tun] SOCKS5 EOF for {}:{}", key.dst_ip_addr(), key.dst_port);
+                    log::debug!(
+                        "[tun] SOCKS5 EOF for {}:{}",
+                        key.dst_ip_addr(),
+                        key.dst_port
+                    );
                     return;
                 }
                 Ok(n) => n,
@@ -389,8 +414,14 @@ fn relay_socks_to_tun(
                     log::warn!("[tun] SOCKS5 read error: {e}");
                     let _ = f.stream.shutdown(std::net::Shutdown::Both);
                     f.state = TcpState::Closed;
-                    send_rst(adapter, &state.lock().tun_ip, &key.dst_ip, key.dst_port, key.src_port,
-                             f.server_seq);
+                    send_rst(
+                        adapter,
+                        &state.lock().tun_ip,
+                        &key.dst_ip,
+                        key.dst_port,
+                        key.src_port,
+                        f.server_seq,
+                    );
                     return;
                 }
             }
@@ -559,9 +590,13 @@ fn send_rst(
 // ─── SOCKS5 helper ────────────────────────────────────────────────────
 
 fn socks5_connect(stream: &mut TcpStream, key: &FlowKey) -> Result<(), String> {
-    stream.write_all(&[0x05, 0x01, 0x00]).map_err(|e| format!("greeting: {e}"))?;
+    stream
+        .write_all(&[0x05, 0x01, 0x00])
+        .map_err(|e| format!("greeting: {e}"))?;
     let mut resp = [0u8; 2];
-    stream.read_exact(&mut resp).map_err(|e| format!("greeting resp: {e}"))?;
+    stream
+        .read_exact(&mut resp)
+        .map_err(|e| format!("greeting resp: {e}"))?;
     if resp[0] != 0x05 || resp[1] != 0x00 {
         return Err(format!("bad greeting: {:02x} {:02x}", resp[0], resp[1]));
     }
@@ -570,10 +605,14 @@ fn socks5_connect(stream: &mut TcpStream, key: &FlowKey) -> Result<(), String> {
     let mut req = vec![0x05, 0x01, 0x00, 0x01];
     req.extend_from_slice(&dst_ip.octets());
     req.extend_from_slice(&key.dst_port.to_be_bytes());
-    stream.write_all(&req).map_err(|e| format!("CONNECT: {e}"))?;
+    stream
+        .write_all(&req)
+        .map_err(|e| format!("CONNECT: {e}"))?;
 
     let mut resp = [0u8; 10];
-    stream.read_exact(&mut resp).map_err(|e| format!("CONNECT resp: {e}"))?;
+    stream
+        .read_exact(&mut resp)
+        .map_err(|e| format!("CONNECT resp: {e}"))?;
     if resp[1] != 0x00 {
         return Err(format!("CONNECT failed: 0x{:02x}", resp[1]));
     }

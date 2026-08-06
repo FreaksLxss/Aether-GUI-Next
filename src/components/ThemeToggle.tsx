@@ -1,21 +1,17 @@
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { Moon, Sun } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { applyColors } from "@/components/ColorTheme";
+import { applyColors } from "@/lib/theme";
 
 const THEME_KEY = "aether-theme";
 const PRIMARY_KEY = "aether-custom-primary";
 const SECONDARY_KEY = "aether-custom-secondary";
 
 export function ThemeToggle() {
-  const [dark, setDark] = useState(true);
-
-  useEffect(() => {
+  const [dark, setDark] = useState(() => {
     const saved = localStorage.getItem(THEME_KEY);
-    const isDark = saved ? saved === "dark" : true;
-    setDark(isDark);
-    applyTheme(isDark);
-  }, []);
+    return saved ? saved === "dark" : true;
+  });
 
   const toggle = () => {
     const next = !dark;

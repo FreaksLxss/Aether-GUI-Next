@@ -18,6 +18,9 @@ const DESCRIPTIONS: Record<CaptureMode, string> = {
     "Enables both system proxy and TUN adapter simultaneously for maximum coverage.",
 };
 
+/** TUN modes are temporarily disabled while not yet supported in the UI. */
+const DISABLED_MODES: CaptureMode[] = ["tun", "both"];
+
 /** Selects how network traffic is captured: system proxy, TUN, or both.
  * Locked outside Idle/Error since capture mode can't change mid-session. */
 export function CaptureModeSelect() {
@@ -37,23 +40,27 @@ export function CaptureModeSelect() {
       disabled={locked}
       className="w-full gap-0.5 rounded-lg bg-surface-3 p-0.5 ring-1 ring-inset ring-white/5"
     >
-      {(Object.keys(LABELS) as CaptureMode[]).map((mode) => (
-        <Tooltip key={mode}>
-          <TooltipTrigger asChild>
-            <span className="flex-1">
-              <ToggleGroupItem
-                value={mode}
-                size="sm"
-                aria-label={LABELS[mode]}
-                className="w-full rounded-md text-[10px] text-muted-foreground transition-all duration-150 hover:text-foreground data-[state=on]:bg-primary data-[state=on]:text-primary-foreground data-[state=on]:shadow-sm data-[state=on]:shadow-primary/20"
-              >
-                {LABELS[mode]}
-              </ToggleGroupItem>
-            </span>
-          </TooltipTrigger>
-          <TooltipContent>{DESCRIPTIONS[mode]}</TooltipContent>
-        </Tooltip>
-      ))}
+      {(Object.keys(LABELS) as CaptureMode[]).map((mode) => {
+        const disabled = DISABLED_MODES.includes(mode);
+        return (
+          <Tooltip key={mode}>
+            <TooltipTrigger asChild>
+              <span className="flex-1">
+                <ToggleGroupItem
+                  value={mode}
+                  size="sm"
+                  aria-label={LABELS[mode]}
+                  disabled={disabled}
+                  className="w-full rounded-md text-[10px] text-muted-foreground transition-all duration-150 hover:text-foreground data-[state=on]:bg-primary data-[state=on]:text-primary-foreground data-[state=on]:shadow-sm data-[state=on]:shadow-primary/20 data-[state=on]:ring-1 data-[state=on]:ring-inset data-[state=on]:ring-primary-foreground/80 disabled:cursor-not-allowed disabled:opacity-40 disabled:hover:text-muted-foreground"
+                >
+                  {LABELS[mode]}
+                </ToggleGroupItem>
+              </span>
+            </TooltipTrigger>
+            <TooltipContent>{DESCRIPTIONS[mode]}</TooltipContent>
+          </Tooltip>
+        );
+      })}
     </ToggleGroup>
   );
 }

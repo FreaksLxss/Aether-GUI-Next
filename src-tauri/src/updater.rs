@@ -38,12 +38,8 @@ pub async fn check_for_update(current_version: &str) -> Result<UpdateInfo, Strin
         .trim_start_matches('v');
 
     // Find download URL — prefer .exe, then .msi, then fall back to release page
-    let download_url = find_download_url(&release).unwrap_or_else(|| {
-        release["html_url"]
-            .as_str()
-            .unwrap_or("")
-            .to_string()
-    });
+    let download_url = find_download_url(&release)
+        .unwrap_or_else(|| release["html_url"].as_str().unwrap_or("").to_string());
 
     let available = is_newer(current_version, tag);
 
@@ -95,9 +91,7 @@ pub async fn download_aether_binary(dest_dir: &PathBuf) -> Result<PathBuf, Strin
         .trim_start_matches('v');
 
     // Find the asset for our platform
-    let assets = release["assets"]
-        .as_array()
-        .ok_or("No assets in release")?;
+    let assets = release["assets"].as_array().ok_or("No assets in release")?;
 
     let asset_name = if cfg!(target_os = "windows") {
         "aether-windows-x86_64.zip"
@@ -135,8 +129,7 @@ pub async fn download_aether_binary(dest_dir: &PathBuf) -> Result<PathBuf, Strin
         .await
         .map_err(|e| format!("Failed to read download: {e}"))?;
 
-    std::fs::create_dir_all(dest_dir)
-        .map_err(|e| format!("Failed to create directory: {e}"))?;
+    std::fs::create_dir_all(dest_dir).map_err(|e| format!("Failed to create directory: {e}"))?;
 
     // Extract
     if asset_name.ends_with(".zip") {
@@ -146,7 +139,11 @@ pub async fn download_aether_binary(dest_dir: &PathBuf) -> Result<PathBuf, Strin
     }
 
     // Return the main binary path
-    let bin_name = if cfg!(target_os = "windows") { "aether.exe" } else { "aether" };
+    let bin_name = if cfg!(target_os = "windows") {
+        "aether.exe"
+    } else {
+        "aether"
+    };
     let binary_path = dest_dir.join(bin_name);
     if !binary_path.exists() {
         return Err("Binary not found after extraction".into());
@@ -159,8 +156,8 @@ pub async fn download_aether_binary(dest_dir: &PathBuf) -> Result<PathBuf, Strin
 #[cfg(target_os = "windows")]
 fn extract_zip_all(bytes: &[u8], dest: &PathBuf) -> Result<(), String> {
     let cursor = std::io::Cursor::new(bytes);
-    let mut archive = zip::ZipArchive::new(cursor)
-        .map_err(|e| format!("Failed to open zip: {e}"))?;
+    let mut archive =
+        zip::ZipArchive::new(cursor).map_err(|e| format!("Failed to open zip: {e}"))?;
 
     let mut found_binary = false;
     for i in 0..archive.len() {
@@ -175,7 +172,11 @@ fn extract_zip_all(bytes: &[u8], dest: &PathBuf) -> Result<(), String> {
 
         if is_binary || is_bat {
             let file_name = if is_binary {
-                if cfg!(target_os = "windows") { "aether.exe" } else { "aether" }
+                if cfg!(target_os = "windows") {
+                    "aether.exe"
+                } else {
+                    "aether"
+                }
             } else {
                 "run-aether.bat"
             };
@@ -224,7 +225,11 @@ fn extract_tar_gz_all(bytes: &[u8], dest: &PathBuf) -> Result<(), String> {
 
         if is_binary || is_bat {
             let file_name = if is_binary {
-                if cfg!(target_os = "windows") { "aether.exe" } else { "aether" }
+                if cfg!(target_os = "windows") {
+                    "aether.exe"
+                } else {
+                    "aether"
+                }
             } else {
                 "run-aether.bat"
             };
@@ -236,10 +241,7 @@ fn extract_tar_gz_all(bytes: &[u8], dest: &PathBuf) -> Result<(), String> {
             #[cfg(unix)]
             if is_binary {
                 use std::os::unix::fs::PermissionsExt;
-                let _ = std::fs::set_permissions(
-                    &out_path,
-                    std::fs::Permissions::from_mode(0o755),
-                );
+                let _ = std::fs::set_permissions(&out_path, std::fs::Permissions::from_mode(0o755));
             }
             if is_binary {
                 found_binary = true;
@@ -254,11 +256,7 @@ fn extract_tar_gz_all(bytes: &[u8], dest: &PathBuf) -> Result<(), String> {
 }
 
 fn is_newer(current: &str, latest: &str) -> bool {
-    let parse = |v: &str| -> Vec<u32> {
-        v.split('.')
-            .filter_map(|s| s.parse().ok())
-            .collect()
-    };
+    let parse = |v: &str| -> Vec<u32> { v.split('.').filter_map(|s| s.parse().ok()).collect() };
     let cur = parse(current);
     let lat = parse(latest);
     lat > cur

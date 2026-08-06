@@ -1,5 +1,5 @@
-use std::net::Ipv4Addr;
 use super::adapter::TunAdapter;
+use std::net::Ipv4Addr;
 
 /// Manages the Windows routing table when TUN mode is active.
 pub struct RouteManager {
@@ -20,10 +20,7 @@ impl RouteManager {
         })
     }
 
-    pub fn redirect_default_through_tun(
-        &mut self,
-        tun_adapter: &TunAdapter,
-    ) -> Result<(), String> {
+    pub fn redirect_default_through_tun(&mut self, tun_adapter: &TunAdapter) -> Result<(), String> {
         self.tun_interface_index = tun_adapter.interface_index();
         self.routes_changed = true;
 
@@ -37,23 +34,46 @@ impl RouteManager {
             for prefix in &["10.0.0.0/8", "172.16.0.0/12", "192.168.0.0/16"] {
                 let parts: Vec<&str> = prefix.split('/').collect();
                 let _ = run_cmd(&[
-                    "route", "add", parts[0], "mask",
-                    if parts[1] == "8" { "255.0.0.0" }
-                    else if parts[1] == "12" { "255.240.0.0" }
-                    else { "255.255.0.0" },
-                    &gw_str, "metric", "5",
+                    "route",
+                    "add",
+                    parts[0],
+                    "mask",
+                    if parts[1] == "8" {
+                        "255.0.0.0"
+                    } else if parts[1] == "12" {
+                        "255.240.0.0"
+                    } else {
+                        "255.255.0.0"
+                    },
+                    &gw_str,
+                    "metric",
+                    "5",
                 ]);
             }
 
             // Add bypass route for loopback
-            let _ = run_cmd(&["route", "add", "127.0.0.0", "mask", "255.0.0.0", "127.0.0.1", "metric", "5"]);
+            let _ = run_cmd(&[
+                "route",
+                "add",
+                "127.0.0.0",
+                "mask",
+                "255.0.0.0",
+                "127.0.0.1",
+                "metric",
+                "5",
+            ]);
 
             // Add bypass for the original gateway itself
             let _ = run_cmd(&["route", "add", &gw_str, &gw_str, "metric", "5"]);
 
             // Add bypass routes for Cloudflare WARP/edge IPs (Aether connects here)
             // These are the known Cloudflare anycast ranges
-            for cf_prefix in &["162.159.192.0/20", "162.159.198.0/24", "172.64.0.0/13", "104.16.0.0/13"] {
+            for cf_prefix in &[
+                "162.159.192.0/20",
+                "162.159.198.0/24",
+                "172.64.0.0/13",
+                "104.16.0.0/13",
+            ] {
                 let parts: Vec<&str> = cf_prefix.split('/').collect();
                 let mask = match parts[1] {
                     "13" => "255.248.0.0",
@@ -62,16 +82,14 @@ impl RouteManager {
                     _ => "255.255.255.0",
                 };
                 let _ = run_cmd(&[
-                    "route", "add", parts[0], "mask", mask,
-                    &gw_str, "metric", "5",
+                    "route", "add", parts[0], "mask", mask, &gw_str, "metric", "5",
                 ]);
             }
         }
 
         // Now change the default route to go through TUN
         run_cmd(&[
-            "route", "change", "0.0.0.0", "mask", "0.0.0.0",
-            &tun_ip, "metric", "1",
+            "route", "change", "0.0.0.0", "mask", "0.0.0.0", &tun_ip, "metric", "1",
         ])?;
 
         log::info!("[tun] Default route redirected through TUN adapter");
@@ -86,14 +104,7 @@ impl RouteManager {
         if let Some(gw) = self.original_default_gateway {
             let gw_str = gw.to_string();
             let mut args = vec![
-                "route",
-                "change",
-                "0.0.0.0",
-                "mask",
-                "0.0.0.0",
-                &gw_str,
-                "metric",
-                "1",
+                "route", "change", "0.0.0.0", "mask", "0.0.0.0", &gw_str, "metric", "1",
             ];
 
             if let Some(iface) = self.original_interface_index {

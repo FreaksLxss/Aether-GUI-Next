@@ -20,7 +20,7 @@ export function AboutDialog() {
         variant="ghost"
         size="sm"
         onClick={() => setOpen(true)}
-        className="h-7 gap-1.5 px-1.5 text-[10px] text-muted-foreground/60"
+        className="h-7 gap-1.5 px-1.5 text-[10px] text-muted-foreground/80"
         title="About Aether-GUI"
       >
         <Info size={10} />
@@ -39,6 +39,11 @@ export function AboutDialog() {
             <span className="text-foreground">Aether</span>{" "}
             censorship-circumvention tunnel.
           </DialogDescription>
+
+          <div className="mt-3 flex items-center justify-between rounded-lg bg-surface-3 px-3 py-1.5 font-mono text-[10px] text-muted-foreground ring-1 ring-inset ring-white/5">
+            <span>Aether engine</span>
+            <span className="text-foreground">v1.5.0</span>
+          </div>
 
           <Separator className="my-3 bg-white/5" />
 
@@ -72,7 +77,7 @@ export function AboutDialog() {
             </Button>
           </div>
 
-          <p className="mt-4 text-[10px] text-muted-foreground/60">
+          <p className="mt-4 text-[10px] text-muted-foreground/80">
             Licensed under AGPL v3.0
           </p>
         </DialogContent>

@@ -17,6 +17,15 @@ export function AmbientBackground() {
 
   return (
     <div aria-hidden="true" className="pointer-events-none absolute inset-0 z-0 overflow-hidden">
+      {/* Base radial wash — gives the frosted-glass layers something to
+          refract behind them; compositor-only and static. */}
+      <div
+        className="absolute inset-0"
+        style={{
+          background:
+            "radial-gradient(120% 90% at 50% 0%, color-mix(in srgb, var(--color-primary) 10%, transparent) 0%, transparent 70%)",
+        }}
+      />
       <div
         className="anim-orb-a absolute size-65 rounded-full"
         style={{

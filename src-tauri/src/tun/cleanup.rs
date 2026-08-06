@@ -69,7 +69,9 @@ fn is_process_alive(pid: u32) -> bool {
     #[cfg(target_os = "windows")]
     {
         use windows_sys::Win32::Foundation::CloseHandle;
-        use windows_sys::Win32::System::Threading::{GetExitCodeProcess, OpenProcess, PROCESS_QUERY_LIMITED_INFORMATION};
+        use windows_sys::Win32::System::Threading::{
+            GetExitCodeProcess, OpenProcess, PROCESS_QUERY_LIMITED_INFORMATION,
+        };
 
         unsafe {
             let handle = OpenProcess(PROCESS_QUERY_LIMITED_INFORMATION, 0, pid);
@@ -97,6 +99,8 @@ fn destroy_adapter(name: &str) {
 
 fn restore_routes(gateway: &str) {
     let _ = std::process::Command::new("route")
-        .args(["change", "0.0.0.0", "mask", "0.0.0.0", gateway, "metric", "1"])
+        .args([
+            "change", "0.0.0.0", "mask", "0.0.0.0", gateway, "metric", "1",
+        ])
         .output();
 }

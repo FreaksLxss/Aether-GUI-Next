@@ -65,7 +65,12 @@ pub fn spawn(
 ) -> Result<PtySession, AetherError> {
     let pty_system = native_pty_system();
     let pair = pty_system
-        .openpty(PtySize { rows: 40, cols: 120, pixel_width: 0, pixel_height: 0 })
+        .openpty(PtySize {
+            rows: 40,
+            cols: 120,
+            pixel_width: 0,
+            pixel_height: 0,
+        })
         .map_err(|e| AetherError::SpawnFailed(e.to_string()))?;
 
     let mut cmd = CommandBuilder::new(binary);
@@ -79,7 +84,10 @@ pub fn spawn(
     // Env var, not a flag (see ConnectionProfile::masque_http2's doc-comment):
     // any value suppresses Aether 1.2.0's interactive "MASQUE transport"
     // prompt, and only a truthy one selects HTTP/2.
-    cmd.env("AETHER_MASQUE_HTTP2", if profile.masque_http2 { "1" } else { "0" });
+    cmd.env(
+        "AETHER_MASQUE_HTTP2",
+        if profile.masque_http2 { "1" } else { "0" },
+    );
 
     let child = pair
         .slave
@@ -108,10 +116,21 @@ pub fn spawn(
     let prompts_done_for_thread = Arc::clone(&prompts_done);
 
     std::thread::spawn(move || {
-        read_loop(reader.as_mut(), writer_for_thread, profile, log_tx, prompts_done_for_thread);
+        read_loop(
+            reader.as_mut(),
+            writer_for_thread,
+            profile,
+            log_tx,
+            prompts_done_for_thread,
+        );
     });
 
-    Ok(PtySession { child, writer, prompts_done, _master: pair.master })
+    Ok(PtySession {
+        child,
+        writer,
+        prompts_done,
+        _master: pair.master,
+    })
 }
 
 fn read_loop(
@@ -151,7 +170,10 @@ fn read_loop(
                     answered.remove(rule.id);
                 }
             }
-            let _ = log_tx.send(LogEvent { line, timestamp: now_millis() });
+            let _ = log_tx.send(LogEvent {
+                line,
+                timestamp: now_millis(),
+            });
         }
 
         // Whatever remains (no newline yet) is either more output still
@@ -281,7 +303,10 @@ mod tests {
     #[test]
     fn cr_overwrite_drops_spinner_frames() {
         let mut buf = String::new();
-        assert_eq!(feed(&mut buf, "scan 1%\rscan 2%\rscan 3%"), Vec::<String>::new());
+        assert_eq!(
+            feed(&mut buf, "scan 1%\rscan 2%\rscan 3%"),
+            Vec::<String>::new()
+        );
         assert_eq!(buf, "scan 3%"); // only the live frame survives
         assert_eq!(feed(&mut buf, "\rscan done\n"), ["scan done"]);
         assert_eq!(buf, "");

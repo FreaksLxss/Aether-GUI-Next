@@ -152,7 +152,11 @@ pub fn get_presets(app: AppHandle) -> Vec<ProfilePreset> {
 }
 
 #[tauri::command]
-pub fn save_preset(app: AppHandle, name: String, profile: ConnectionProfile) -> Result<(), AetherError> {
+pub fn save_preset(
+    app: AppHandle,
+    name: String,
+    profile: ConnectionProfile,
+) -> Result<(), AetherError> {
     presets::save_preset(&app, &name, &profile).map_err(AetherError::Internal)
 }
 
@@ -163,7 +167,11 @@ pub fn delete_preset(app: AppHandle, name: String) {
 
 #[tauri::command]
 pub fn aether_binary_exists(app: AppHandle) -> bool {
-    let bin_name = if cfg!(windows) { "aether.exe" } else { "aether" };
+    let bin_name = if cfg!(windows) {
+        "aether.exe"
+    } else {
+        "aether"
+    };
     let dir = app
         .path()
         .resource_dir()
@@ -226,7 +234,9 @@ pub fn is_tun_available() -> bool {
     #[cfg(target_os = "windows")]
     {
         use windows_sys::Win32::Foundation::CloseHandle;
-        use windows_sys::Win32::Security::{GetTokenInformation, TokenElevation, TOKEN_ELEVATION, TOKEN_QUERY};
+        use windows_sys::Win32::Security::{
+            GetTokenInformation, TokenElevation, TOKEN_ELEVATION, TOKEN_QUERY,
+        };
         use windows_sys::Win32::System::Threading::{GetCurrentProcess, OpenProcessToken};
 
         unsafe {

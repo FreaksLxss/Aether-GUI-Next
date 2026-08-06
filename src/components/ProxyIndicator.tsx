@@ -20,7 +20,7 @@ export function ProxyIndicator() {
       className={`gap-1 px-1.5 py-0 text-[10px] font-normal ${
         active
           ? "border-primary/30 text-primary"
-          : "border-white/10 text-status-idle"
+          : "border-white/10 text-muted-foreground"
       }`}
       title={active ? "System proxy active" : "System proxy inactive"}
     >

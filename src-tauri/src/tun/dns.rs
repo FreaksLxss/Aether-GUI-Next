@@ -14,7 +14,10 @@ fn socks5_handshake(stream: &mut TcpStream) -> Result<(), String> {
         .map_err(|e| format!("read greeting response: {e}"))?;
 
     if response[0] != 0x05 || response[1] != 0x00 {
-        return Err(format!("unexpected greeting: {:02x} {:02x}", response[0], response[1]));
+        return Err(format!(
+            "unexpected greeting: {:02x} {:02x}",
+            response[0], response[1]
+        ));
     }
     Ok(())
 }
@@ -84,15 +87,17 @@ pub fn forward_dns_tcp(payload: &[u8], socks_addr: SocketAddr) -> Result<(), Str
 
 /// Resolve DNS directly using a UDP socket.
 pub fn resolve_direct(payload: &[u8], dst: SocketAddr) -> Result<(), String> {
-    let socket = UdpSocket::bind("0.0.0.0:0")
-        .map_err(|e| format!("bind UDP socket: {e}"))?;
+    let socket = UdpSocket::bind("0.0.0.0:0").map_err(|e| format!("bind UDP socket: {e}"))?;
 
     socket
         .set_read_timeout(Some(Duration::from_secs(3)))
         .map_err(|e| format!("set timeout: {e}"))?;
 
     let target = if dst.ip().is_unspecified() || dst.ip().to_string().starts_with("10.") {
-        SocketAddr::new(std::net::IpAddr::V4(std::net::Ipv4Addr::new(8, 8, 8, 8)), 53)
+        SocketAddr::new(
+            std::net::IpAddr::V4(std::net::Ipv4Addr::new(8, 8, 8, 8)),
+            53,
+        )
     } else {
         dst
     };

@@ -3,7 +3,7 @@ import { getCurrentWindow } from "@tauri-apps/api/window";
 import { Maximize2, Minus, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { ProxyIndicator } from "@/components/ProxyIndicator";
-import { handleClose } from "@/components/CloseDialog";
+import { handleClose } from "@/lib/close";
 import { useConnectionStore } from "@/state/connectionStore";
 
 const appWindow = getCurrentWindow();
@@ -30,9 +30,9 @@ export function TitleBar() {
   return (
     <header
       data-tauri-drag-region
-      className="relative z-10 flex h-9 shrink-0 select-none items-center justify-end"
+      className="glass relative z-10 flex h-9 shrink-0 select-none items-center justify-end border-b border-white/5"
     >
-      <div className="absolute left-0 top-0 flex h-full items-center gap-2 pl-2">
+      <div className="absolute left-0 top-0 flex h-full items-center gap-2 pl-3">
         <ProxyIndicator />
         {uptime && (
           <span className="font-mono text-[10px] text-primary/70">
@@ -43,7 +43,7 @@ export function TitleBar() {
       <Button
         variant="ghost"
         size="icon"
-        className="h-9 w-13 rounded-none text-muted-foreground hover:text-foreground"
+        className="h-9 w-13 rounded-none text-muted-foreground hover:bg-white/5 hover:text-foreground active:scale-95 transition"
         aria-label="Minimize"
         onClick={() => void appWindow.minimize()}
       >
@@ -52,7 +52,7 @@ export function TitleBar() {
       <Button
         variant="ghost"
         size="icon"
-        className="h-9 w-13 rounded-none text-muted-foreground hover:text-foreground"
+        className="h-9 w-13 rounded-none text-muted-foreground hover:bg-white/5 hover:text-foreground active:scale-95 transition"
         aria-label="Maximize"
         onClick={() => void appWindow.toggleMaximize()}
       >
@@ -61,7 +61,7 @@ export function TitleBar() {
       <Button
         variant="ghost"
         size="icon"
-        className="h-9 w-13 rounded-none text-muted-foreground hover:bg-destructive hover:text-white"
+        className="h-9 w-13 rounded-none text-muted-foreground hover:bg-destructive hover:text-white active:scale-95 transition"
         aria-label="Close"
         onClick={handleClose}
       >

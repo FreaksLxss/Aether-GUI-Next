@@ -83,8 +83,8 @@ impl TunManager {
         let tun_adapter = Arc::new(tun_adapter);
 
         // Set up routes
-        let mut route_mgr = route::RouteManager::save_current_state()
-            .map_err(TunError::RouteError)?;
+        let mut route_mgr =
+            route::RouteManager::save_current_state().map_err(TunError::RouteError)?;
 
         route_mgr
             .redirect_default_through_tun(&tun_adapter)

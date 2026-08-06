@@ -4,6 +4,7 @@ import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 import { useConnectionStore } from "@/state/connectionStore";
 import type { ScanMode, IpVersion, MasqueNoize, WgNoize } from "@/types/connection";
+import { SPRING } from "@/lib/motion";
 
 const SCAN_LABELS: Record<ScanMode, string> = {
   turbo: "Turbo",
@@ -47,15 +48,15 @@ export function ConnectionInfo() {
     <motion.div
       initial={{ opacity: 0, y: 6 }}
       animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.25, ease: [0.22, 1, 0.36, 1] }}
-      className="flex flex-col gap-1.5 rounded-md bg-surface-2 px-3 py-2 text-[10px] font-mono text-muted-foreground ring-1 ring-inset ring-white/5"
+      transition={SPRING}
+      className="flex flex-col gap-1.5 rounded-xl glass-float px-3 py-2 text-[10px] font-mono text-muted-foreground shadow-glass ring-1 ring-inset ring-primary/30"
     >
       <div className="flex items-center gap-2">
         <Badge variant="outline" className="gap-1 border-primary/30 px-1.5 py-0 text-[10px] font-normal text-primary">
           <Activity size={10} />
           {addr}
         </Badge>
-        <span className="text-muted-foreground/40">·</span>
+        <span className="text-muted-foreground/60">·</span>
         <Badge variant="secondary" className="px-1.5 py-0 text-[10px] font-medium">
           {protocol}
         </Badge>
@@ -71,11 +72,11 @@ export function ConnectionInfo() {
         <Badge variant="outline" className="px-1.5 py-0 text-[10px] font-normal">
           {scanMode}
         </Badge>
-        <span className="text-muted-foreground/30">·</span>
+        <span className="text-muted-foreground/50">·</span>
         <Badge variant="outline" className="px-1.5 py-0 text-[10px] font-normal">
           {obfuscation}
         </Badge>
-        <span className="text-muted-foreground/30">·</span>
+        <span className="text-muted-foreground/50">·</span>
         <Badge variant="outline" className="px-1.5 py-0 text-[10px] font-normal">
           {ipVersion}
         </Badge>

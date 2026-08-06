@@ -224,6 +224,43 @@ pub struct ConnectionProfile {
     /// DNS server to use when TUN mode is active (e.g. "8.8.8.8").
     #[serde(default = "default_tun_dns")]
     pub tun_dns: String,
+    /// Aether ≥1.5.0: resolvers used inside the tunnel (`--dns`), e.g.
+    /// "1.1.1.1,1.0.0.1". When `None`, the flag is omitted (Aether defaults to
+    /// 1.1.1.1,1.0.0.1).
+    #[serde(default)]
+    pub dns_servers: Option<String>,
+    /// Aether ≥1.5.0: destinations refused outright (`--route-block`). An
+    /// empty list omits the flag so the tunnel handles everything.
+    #[serde(default)]
+    pub route_block: Vec<String>,
+    /// Aether ≥1.5.0: destinations sent straight out, bypassing the tunnel
+    /// (`--route-direct`). An empty list omits the flag.
+    #[serde(default)]
+    pub route_direct: Vec<String>,
+    /// Aether ≥1.5.0: Zero Trust organization team name (`--team`). When
+    /// `None`, no Zero Trust enrolment is attempted.
+    #[serde(default)]
+    pub zt_team: Option<String>,
+    /// Aether ≥1.5.0: Zero Trust enrolment email (`--access-email`) — Aether
+    /// emails a one-time code and prompts for it.
+    #[serde(default)]
+    pub zt_access_email: Option<String>,
+    /// Aether ≥1.5.0: Zero Trust service-token client id (`--access-id`) for
+    /// headless enrolment.
+    #[serde(default)]
+    pub zt_access_id: Option<String>,
+    /// Aether ≥1.5.0: Zero Trust service-token client secret
+    /// (`--access-secret`) for headless enrolment.
+    #[serde(default)]
+    pub zt_access_secret: Option<String>,
+    /// Aether ≥1.5.0: an enrolment token already obtained from
+    /// https://<team>.cloudflareaccess.com/warp (`--access-token`).
+    #[serde(default)]
+    pub zt_access_token: Option<String>,
+    /// Aether ≥1.5.0: route HTTP/HTTPS through the organization's Gateway
+    /// proxy (`--gateway`).
+    #[serde(default)]
+    pub zt_gateway: bool,
 }
 
 fn default_true() -> bool {
@@ -285,13 +322,20 @@ impl ConnectionProfile {
             IpVersion::V6 => "-6".into(),
             IpVersion::Both => "--dual".into(),
         });
-        args.push(if self.quick_reconnect { "--quick-reconnect".into() } else { "--no-quick-reconnect".into() });
+        args.push(if self.quick_reconnect {
+            "--quick-reconnect".into()
+        } else {
+            "--no-quick-reconnect".into()
+        });
         // Noize profile — pick the value matching the active protocol family.
         args.push("--noize".into());
-        args.push(match self.protocol {
-            Protocol::Auto | Protocol::Masque => self.masque_noize.as_flag(),
-            Protocol::Wireguard | Protocol::Gool => self.wg_noize.as_flag(),
-        }.into());
+        args.push(
+            match self.protocol {
+                Protocol::Auto | Protocol::Masque => self.masque_noize.as_flag(),
+                Protocol::Wireguard | Protocol::Gool => self.wg_noize.as_flag(),
+            }
+            .into(),
+        );
         // Only forward --bind when non-default and parseable.
         if self.bind_address != default_bind_address()
             && self.bind_address.parse::<std::net::SocketAddr>().is_ok()
@@ -308,6 +352,58 @@ impl ConnectionProfile {
         if let Some(ref perf) = self.perf {
             args.push("--perf".into());
             args.push(perf.as_flag().into());
+        }
+        // Aether ≥1.5.0: in-tunnel DNS resolvers.
+        if let Some(ref dns) = self.dns_servers {
+            if !dns.trim().is_empty() {
+                args.push("--dns".into());
+                args.push(dns.trim().into());
+            }
+        }
+        // Aether ≥1.5.0: routing rules. Entries are joined with commas, which
+        // is the same list syntax Aether's --route-block/--route-direct accept
+        // (comma or newline separated).
+        if !self.route_block.is_empty() {
+            args.push("--route-block".into());
+            args.push(self.route_block.join(","));
+        }
+        if !self.route_direct.is_empty() {
+            args.push("--route-direct".into());
+            args.push(self.route_direct.join(","));
+        }
+        // Aether ≥1.5.0: Zero Trust (WARP for organizations) enrolment.
+        if let Some(ref team) = self.zt_team {
+            if !team.trim().is_empty() {
+                args.push("--team".into());
+                args.push(team.trim().into());
+            }
+        }
+        if let Some(ref id) = self.zt_access_id {
+            if !id.trim().is_empty() {
+                args.push("--access-id".into());
+                args.push(id.trim().into());
+            }
+        }
+        if let Some(ref secret) = self.zt_access_secret {
+            if !secret.trim().is_empty() {
+                args.push("--access-secret".into());
+                args.push(secret.trim().into());
+            }
+        }
+        if let Some(ref email) = self.zt_access_email {
+            if !email.trim().is_empty() {
+                args.push("--access-email".into());
+                args.push(email.trim().into());
+            }
+        }
+        if let Some(ref token) = self.zt_access_token {
+            if !token.trim().is_empty() {
+                args.push("--access-token".into());
+                args.push(token.trim().into());
+            }
+        }
+        if self.zt_gateway {
+            args.push("--gateway".into());
         }
         args
     }
@@ -329,7 +425,10 @@ mod tests {
         let mut p = ConnectionProfile::default();
         p.bind_address = "127.0.0.1:1919".into();
         let args = p.as_args();
-        let i = args.iter().position(|a| a == "--bind").expect("missing --bind");
+        let i = args
+            .iter()
+            .position(|a| a == "--bind")
+            .expect("missing --bind");
         assert_eq!(args.get(i + 1).map(String::as_str), Some("127.0.0.1:1919"));
     }
 
@@ -338,7 +437,10 @@ mod tests {
         let mut p = ConnectionProfile::default();
         p.bind_address = "0.0.0.0:1819".into();
         let args = p.as_args();
-        let i = args.iter().position(|a| a == "--bind").expect("missing --bind");
+        let i = args
+            .iter()
+            .position(|a| a == "--bind")
+            .expect("missing --bind");
         assert_eq!(args.get(i + 1).map(String::as_str), Some("0.0.0.0:1819"));
     }
 
@@ -347,7 +449,10 @@ mod tests {
         let mut p = ConnectionProfile::default();
         p.bind_address = "0.0.0.0:9999".into();
         let args = p.as_args();
-        let i = args.iter().position(|a| a == "--bind").expect("missing --bind");
+        let i = args
+            .iter()
+            .position(|a| a == "--bind")
+            .expect("missing --bind");
         assert_eq!(args.get(i + 1).map(String::as_str), Some("0.0.0.0:9999"));
     }
 
@@ -373,10 +478,62 @@ mod tests {
     }
 
     #[test]
+    fn default_omits_v15_flags() {
+        let p = ConnectionProfile::default();
+        let args = p.as_args();
+        for flag in [
+            "--dns",
+            "--route-block",
+            "--route-direct",
+            "--team",
+            "--access-id",
+            "--access-secret",
+            "--access-email",
+            "--access-token",
+            "--gateway",
+        ] {
+            assert!(
+                !args.iter().any(|a| a == flag),
+                "unexpected {flag} in {args:?}"
+            );
+        }
+    }
+
+    #[test]
+    fn v15_flags_emitted_when_set() {
+        let mut p = ConnectionProfile::default();
+        p.dns_servers = Some("1.1.1.1,1.0.0.1".into());
+        p.route_block = vec!["blocked.example".into(), "10.0.0.0/8".into()];
+        p.route_direct = vec!["full:bank.example".into()];
+        p.zt_team = Some("my-org".into());
+        p.zt_access_email = Some("me@example.com".into());
+        p.zt_gateway = true;
+        let args = p.as_args();
+
+        let get = |flag: &str| -> Option<String> {
+            args.iter()
+                .position(|a| a == flag)
+                .map(|i| args[i + 1].clone())
+        };
+        assert_eq!(get("--dns").as_deref(), Some("1.1.1.1,1.0.0.1"));
+        assert_eq!(
+            get("--route-block").as_deref(),
+            Some("blocked.example,10.0.0.0/8")
+        );
+        assert_eq!(get("--route-direct").as_deref(), Some("full:bank.example"));
+        assert_eq!(get("--team").as_deref(), Some("my-org"));
+        assert_eq!(get("--access-email").as_deref(), Some("me@example.com"));
+        assert!(args.iter().any(|a| a == "--gateway"));
+    }
+
+    #[test]
     fn default_emits_noize() {
         let p = ConnectionProfile::default();
         let args = p.as_args();
-        let i = args.iter().position(|a| a == "--noize").expect("missing --noize");
+        let i = args
+            .iter()
+            .position(|a| a == "--noize")
+            .expect("missing --noize");
         assert_eq!(args.get(i + 1).map(String::as_str), Some("firewall"));
     }
 }
@@ -399,6 +556,15 @@ impl Default for ConnectionProfile {
             dns_mode: DnsMode::Forward,
             tun_address: default_tun_address(),
             tun_dns: default_tun_dns(),
+            dns_servers: None,
+            route_block: Vec::new(),
+            route_direct: Vec::new(),
+            zt_team: None,
+            zt_access_email: None,
+            zt_access_id: None,
+            zt_access_secret: None,
+            zt_access_token: None,
+            zt_gateway: false,
         }
     }
 }

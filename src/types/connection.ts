@@ -52,6 +52,25 @@ export interface ConnectionProfile {
   tun_address: string;
   /** DNS server to use when TUN mode is active (e.g. "8.8.8.8"). */
   tun_dns: string;
+  /** Aether ≥1.5.0: resolvers used inside the tunnel (--dns), comma-separated.
+   * null = omit flag (Aether defaults to 1.1.1.1,1.0.0.1). */
+  dns_servers: string | null;
+  /** Aether ≥1.5.0: destinations refused outright (--route-block). */
+  route_block: string[];
+  /** Aether ≥1.5.0: destinations sent straight out, bypassing the tunnel (--route-direct). */
+  route_direct: string[];
+  /** Aether ≥1.5.0: Zero Trust organization team name (--team). null = no enrolment. */
+  zt_team: string | null;
+  /** Aether ≥1.5.0: Zero Trust one-time-code sign-in email (--access-email). */
+  zt_access_email: string | null;
+  /** Aether ≥1.5.0: Zero Trust service-token client id (--access-id). */
+  zt_access_id: string | null;
+  /** Aether ≥1.5.0: Zero Trust service-token client secret (--access-secret). */
+  zt_access_secret: string | null;
+  /** Aether ≥1.5.0: an enrolment token obtained from <team>.cloudflareaccess.com/warp (--access-token). */
+  zt_access_token: string | null;
+  /** Aether ≥1.5.0: route HTTP/HTTPS through the organization's Gateway proxy (--gateway). */
+  zt_gateway: boolean;
 }
 
 export interface LogLine {

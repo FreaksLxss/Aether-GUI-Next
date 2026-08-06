@@ -53,7 +53,11 @@ fn app_data_dir(app: &AppHandle) -> PathBuf {
 }
 
 fn resolve_binary(app: &AppHandle) -> Result<PathBuf, AetherError> {
-    let name = if cfg!(windows) { "aether.exe" } else { "aether" };
+    let name = if cfg!(windows) {
+        "aether.exe"
+    } else {
+        "aether"
+    };
 
     // Check resource dir first (bundled binary from installer)
     if let Ok(dir) = app.path().resource_dir() {
@@ -83,7 +87,11 @@ fn fix_exec_bit(path: &Path) {
 #[cfg(not(unix))]
 fn fix_exec_bit(_path: &Path) {}
 
-fn set_state_and_emit(app: &AppHandle, manager: &Arc<Mutex<AetherManager>>, new_state: ConnectionState) {
+fn set_state_and_emit(
+    app: &AppHandle,
+    manager: &Arc<Mutex<AetherManager>>,
+    new_state: ConnectionState,
+) {
     manager.lock().unwrap().state = new_state.clone();
     let _ = app.emit(STATUS_EVENT, &new_state);
 }
@@ -110,7 +118,10 @@ pub fn start_connect(
 
     {
         let mut mgr = manager.lock().unwrap();
-        if !matches!(mgr.state, ConnectionState::Idle | ConnectionState::Error { .. }) {
+        if !matches!(
+            mgr.state,
+            ConnectionState::Idle | ConnectionState::Error { .. }
+        ) {
             return Err(AetherError::AlreadyRunning);
         }
         // Defensive guard independent of the pid-file mechanism in orphan.rs
@@ -155,7 +166,10 @@ fn spawn_and_monitor(
             set_state_and_emit(
                 &app,
                 &manager,
-                ConnectionState::Error { message: e.to_string(), phase: "launching".into() },
+                ConnectionState::Error {
+                    message: e.to_string(),
+                    phase: "launching".into(),
+                },
             );
             return Err(e);
         }
@@ -239,7 +253,10 @@ fn handle_unexpected_failure(
             &app,
             &manager,
             ConnectionState::Error {
-                message: format!("{failure_message} (gave up after {} retries)", status::MAX_AUTO_RETRIES),
+                message: format!(
+                    "{failure_message} (gave up after {} retries)",
+                    status::MAX_AUTO_RETRIES
+                ),
                 phase: phase.into(),
             },
         );
@@ -249,7 +266,10 @@ fn handle_unexpected_failure(
     set_state_and_emit(
         &app,
         &manager,
-        ConnectionState::Reconnecting { attempt, max_attempts: status::MAX_AUTO_RETRIES },
+        ConnectionState::Reconnecting {
+            attempt,
+            max_attempts: status::MAX_AUTO_RETRIES,
+        },
     );
 
     let backoff = status::RETRY_BACKOFF[(attempt - 1) as usize];
@@ -302,7 +322,11 @@ fn monitor_connect(
         }
 
         if !announced_connecting {
-            let done = mgr.session.as_ref().map(|s| s.prompts_done()).unwrap_or(false);
+            let done = mgr
+                .session
+                .as_ref()
+                .map(|s| s.prompts_done())
+                .unwrap_or(false);
             if done {
                 mgr.state = ConnectionState::Connecting;
                 let new_state = mgr.state.clone();
@@ -410,7 +434,10 @@ fn monitor_connected(
     }
 }
 
-pub fn request_disconnect(app: &AppHandle, manager: &Arc<Mutex<AetherManager>>) -> Result<(), AetherError> {
+pub fn request_disconnect(
+    app: &AppHandle,
+    manager: &Arc<Mutex<AetherManager>>,
+) -> Result<(), AetherError> {
     // Deactivate TUN FIRST — the forwarder depends on SOCKS5 being alive.
     // Must happen before Ctrl-C because once Aether dies, SOCKS5 goes down.
     {
@@ -502,7 +529,11 @@ pub fn request_disconnect(app: &AppHandle, manager: &Arc<Mutex<AetherManager>>) 
 /// Called from `RunEvent::Exit` — the app is quitting regardless, so this
 /// blocks briefly rather than spawning a thread, and skips emitting events
 /// nobody is left to receive.
-pub fn shutdown_blocking(manager: &Arc<Mutex<AetherManager>>, data_dir: &Path, app: &tauri::AppHandle) {
+pub fn shutdown_blocking(
+    manager: &Arc<Mutex<AetherManager>>,
+    data_dir: &Path,
+    app: &tauri::AppHandle,
+) {
     // Deactivate TUN first
     {
         use crate::state::AppState;

@@ -61,6 +61,15 @@ interface ConnectionState {
   setDnsMode: (dns_mode: DnsMode) => void;
   setTunAddress: (tun_address: string) => void;
   setTunDns: (tun_dns: string) => void;
+  setDnsServers: (dns_servers: string | null) => void;
+  setRouteBlock: (route_block: string[]) => void;
+  setRouteDirect: (route_direct: string[]) => void;
+  setZtTeam: (zt_team: string | null) => void;
+  setZtAccessEmail: (zt_access_email: string | null) => void;
+  setZtAccessId: (zt_access_id: string | null) => void;
+  setZtAccessSecret: (zt_access_secret: string | null) => void;
+  setZtAccessToken: (zt_access_token: string | null) => void;
+  setZtGateway: (zt_gateway: boolean) => void;
   retryAfterSidecarError: () => void;
   loadHistory: () => Promise<void>;
   clearHistory: () => Promise<void>;
@@ -83,6 +92,15 @@ export const useConnectionStore = create<ConnectionState>((set, get) => ({
     dns_mode: "forward",
     tun_address: "10.0.0.2/24",
     tun_dns: "8.8.8.8",
+    dns_servers: null,
+    route_block: [],
+    route_direct: [],
+    zt_team: null,
+    zt_access_email: null,
+    zt_access_id: null,
+    zt_access_secret: null,
+    zt_access_token: null,
+    zt_gateway: false,
   },
   logs: [],
   sidecarError: null,
@@ -156,6 +174,33 @@ export const useConnectionStore = create<ConnectionState>((set, get) => ({
 
   setTunDns: (tun_dns) =>
     set((s) => ({ profile: { ...s.profile, tun_dns } })),
+
+  setDnsServers: (dns_servers) =>
+    set((s) => ({ profile: { ...s.profile, dns_servers } })),
+
+  setRouteBlock: (route_block) =>
+    set((s) => ({ profile: { ...s.profile, route_block } })),
+
+  setRouteDirect: (route_direct) =>
+    set((s) => ({ profile: { ...s.profile, route_direct } })),
+
+  setZtTeam: (zt_team) =>
+    set((s) => ({ profile: { ...s.profile, zt_team } })),
+
+  setZtAccessEmail: (zt_access_email) =>
+    set((s) => ({ profile: { ...s.profile, zt_access_email } })),
+
+  setZtAccessId: (zt_access_id) =>
+    set((s) => ({ profile: { ...s.profile, zt_access_id } })),
+
+  setZtAccessSecret: (zt_access_secret) =>
+    set((s) => ({ profile: { ...s.profile, zt_access_secret } })),
+
+  setZtAccessToken: (zt_access_token) =>
+    set((s) => ({ profile: { ...s.profile, zt_access_token } })),
+
+  setZtGateway: (zt_gateway) =>
+    set((s) => ({ profile: { ...s.profile, zt_gateway } })),
 
   // Clears the fallback screen so the user can attempt Connect again (e.g.
   // after fixing a broken install) — the next connect() call will re-set

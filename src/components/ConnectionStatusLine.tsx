@@ -3,12 +3,12 @@ import { AnimatePresence, motion } from "motion/react";
 import { Progress } from "@/components/ui/progress";
 import { useConnectionStore } from "@/state/connectionStore";
 import { useWindowFocused } from "@/state/windowFocus";
+import { SPRING_FAST } from "@/lib/motion";
 
 const TEXT_TRANSITION = {
   initial: { y: 4, opacity: 0 },
-  animate: { y: 0, opacity: 1 },
-  exit: { y: -4, opacity: 0 },
-  transition: { duration: 0.1, ease: [0.4, 0, 0.2, 1] as const },
+  animate: { y: 0, opacity: 1, transition: SPRING_FAST },
+  exit: { y: -4, opacity: 0, transition: { duration: 0.12, ease: "easeIn" as const } },
 };
 
 function useElapsed(sinceMs: number | null): { formatted: string; totalSeconds: number } {
@@ -32,12 +32,9 @@ function ScanProgressBar({ percent }: { percent: number | null }) {
   return (
     <div className="relative h-1 w-40 overflow-hidden rounded-full bg-surface-2">
       {percent == null ? (
-        <motion.div
-          className="absolute inset-y-0 left-0 w-1/3 rounded-full bg-status-connecting"
-          animate={focused ? { x: ["-100%", "220%"] } : { x: "50%", opacity: 0.6 }}
-          transition={
-            focused ? { duration: 1.1, repeat: Infinity, ease: "easeInOut" } : { duration: 0.3 }
-          }
+        <div
+          className="anim-scan-sweep absolute inset-y-0 left-0 w-1/3 rounded-full bg-status-connecting"
+          style={{ animationPlayState: focused ? "running" : "paused" }}
         />
       ) : (
         <Progress
@@ -115,7 +112,7 @@ export function ConnectionStatusLine() {
       <AnimatePresence mode="wait">
         <motion.span
           key={status.state}
-          className="block text-base font-medium text-foreground"
+          className="block text-base font-semibold tracking-tight-display text-foreground"
           {...TEXT_TRANSITION}
         >
           {primary}

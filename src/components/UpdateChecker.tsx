@@ -22,7 +22,13 @@ export function UpdateChecker() {
   useEffect(() => {
     if (sessionStorage.getItem(CHECKED_KEY)) return;
     sessionStorage.setItem(CHECKED_KEY, "1");
-    check();
+    invoke<UpdateInfo>("check_update", { currentVersion: "0.8.0" })
+      .then((info) => {
+        if (info.available) setUpdate(info);
+      })
+      .catch(() => {
+        // Silent — network might be down
+      });
   }, []);
 
   const check = async () => {
@@ -45,7 +51,7 @@ export function UpdateChecker() {
         size="sm"
         onClick={check}
         disabled={checking}
-        className="h-7 gap-1 px-1.5 text-xs text-muted-foreground/60"
+        className="h-7 gap-1 px-1.5 text-xs text-muted-foreground/80"
         title="Check for updates"
       >
         <RefreshCw size={10} className={checking ? "animate-spin" : ""} />
