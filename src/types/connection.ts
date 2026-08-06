@@ -19,6 +19,10 @@ export type WgNoize = "balanced" | "aggressive" | "light" | "off";
 export type LogLevel = "error" | "warn" | "info" | "debug" | "trace";
 /** Aether ≥1.4.0: resource scaling override. */
 export type PerfLevel = "low" | "medium" | "high";
+/** How network traffic is captured: system proxy, TUN adapter, or both. */
+export type CaptureMode = "proxy" | "tun" | "both";
+/** How DNS is resolved when TUN mode is active. */
+export type DnsMode = "forward" | "direct";
 
 export interface ConnectionProfile {
   protocol: Protocol;
@@ -40,6 +44,14 @@ export interface ConnectionProfile {
   log_level: LogLevel | null;
   /** Aether ≥1.4.0: resource scaling override (low/medium/high). null = omit flag (Aether auto-detects). */
   perf: PerfLevel | null;
+  /** How traffic is captured: system proxy only, TUN adapter only, or both. */
+  capture_mode: CaptureMode;
+  /** How DNS is resolved when TUN mode is active. */
+  dns_mode: DnsMode;
+  /** TUN adapter IP address in CIDR notation (e.g. "10.0.0.2/24"). */
+  tun_address: string;
+  /** DNS server to use when TUN mode is active (e.g. "8.8.8.8"). */
+  tun_dns: string;
 }
 
 export interface LogLine {

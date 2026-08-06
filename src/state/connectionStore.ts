@@ -10,6 +10,8 @@ import type {
   MasqueNoize,
   PerfLevel,
   WgNoize,
+  CaptureMode,
+  DnsMode,
 } from "@/types/connection";
 
 const MAX_LOG_LINES = 500;
@@ -55,6 +57,10 @@ interface ConnectionState {
   setBindAddress: (bind_address: string) => void;
   setLogLevel: (log_level: LogLevel | null) => void;
   setPerf: (perf: PerfLevel | null) => void;
+  setCaptureMode: (capture_mode: CaptureMode) => void;
+  setDnsMode: (dns_mode: DnsMode) => void;
+  setTunAddress: (tun_address: string) => void;
+  setTunDns: (tun_dns: string) => void;
   retryAfterSidecarError: () => void;
   loadHistory: () => Promise<void>;
   clearHistory: () => Promise<void>;
@@ -73,6 +79,10 @@ export const useConnectionStore = create<ConnectionState>((set, get) => ({
     bind_address: "127.0.0.1:1819",
     log_level: null,
     perf: null,
+    capture_mode: "proxy",
+    dns_mode: "forward",
+    tun_address: "10.0.0.2/24",
+    tun_dns: "8.8.8.8",
   },
   logs: [],
   sidecarError: null,
@@ -134,6 +144,18 @@ export const useConnectionStore = create<ConnectionState>((set, get) => ({
 
   setPerf: (perf) =>
     set((s) => ({ profile: { ...s.profile, perf } })),
+
+  setCaptureMode: (capture_mode) =>
+    set((s) => ({ profile: { ...s.profile, capture_mode } })),
+
+  setDnsMode: (dns_mode) =>
+    set((s) => ({ profile: { ...s.profile, dns_mode } })),
+
+  setTunAddress: (tun_address) =>
+    set((s) => ({ profile: { ...s.profile, tun_address } })),
+
+  setTunDns: (tun_dns) =>
+    set((s) => ({ profile: { ...s.profile, tun_dns } })),
 
   // Clears the fallback screen so the user can attempt Connect again (e.g.
   // after fixing a broken install) — the next connect() call will re-set
@@ -200,7 +222,9 @@ export async function initConnectionListeners(): Promise<() => void> {
       if (newState !== lastNotifiedState) {
         lastNotifiedState = newState;
         if (newState === "Connected") {
-          sendNotification("Aether-GUI", "Connected successfully");
+          const captureMode = useConnectionStore.getState().profile.capture_mode;
+          const modeLabel = captureMode === "tun" ? " (TUN mode)" : captureMode === "both" ? " (Proxy + TUN)" : "";
+          sendNotification("Aether-GUI", `Connected successfully${modeLabel}`);
         } else if (newState === "Error") {
           const msg = "state" in e.payload ? (e.payload as { message?: string }).message : "Unknown error";
           sendNotification("Aether-GUI", `Connection failed: ${msg}`);

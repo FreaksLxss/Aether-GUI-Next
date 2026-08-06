@@ -220,3 +220,43 @@ pub fn get_window_position(app: AppHandle) -> Option<(f64, f64, f64, f64)> {
             Some((x, y, w, h))
         })
 }
+
+#[tauri::command]
+pub fn is_tun_available() -> bool {
+    #[cfg(target_os = "windows")]
+    {
+        use windows_sys::Win32::Foundation::CloseHandle;
+        use windows_sys::Win32::Security::{GetTokenInformation, TokenElevation, TOKEN_ELEVATION, TOKEN_QUERY};
+        use windows_sys::Win32::System::Threading::{GetCurrentProcess, OpenProcessToken};
+
+        unsafe {
+            let mut token_handle = std::ptr::null_mut();
+            if OpenProcessToken(GetCurrentProcess(), TOKEN_QUERY, &mut token_handle) == 0 {
+                return false;
+            }
+
+            let mut elevation = TOKEN_ELEVATION { TokenIsElevated: 0 };
+            let mut return_length = 0u32;
+            let success = GetTokenInformation(
+                token_handle,
+                TokenElevation,
+                &mut elevation as *mut _ as *mut _,
+                std::mem::size_of::<TOKEN_ELEVATION>() as u32,
+                &mut return_length,
+            );
+            CloseHandle(token_handle);
+
+            success != 0 && elevation.TokenIsElevated != 0
+        }
+    }
+
+    #[cfg(not(target_os = "windows"))]
+    {
+        false
+    }
+}
+
+#[tauri::command]
+pub fn get_tun_active(state: State<AppState>) -> bool {
+    state.tun_manager.lock().unwrap().is_active()
+}

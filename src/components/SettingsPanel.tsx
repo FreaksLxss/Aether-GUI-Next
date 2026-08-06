@@ -6,6 +6,8 @@ import {
   CollapsibleTrigger,
 } from "@/components/ui/collapsible";
 import { SystemProxyToggle } from "@/components/SystemProxyToggle";
+import { CaptureModeSelect } from "@/components/CaptureModeSelect";
+import { DnsModeSelect } from "@/components/DnsModeSelect";
 import { AlwaysOnTopToggle } from "@/components/AlwaysOnTopToggle";
 import { AutoStartToggle } from "@/components/AutoStartToggle";
 import { MinimizeOnStartupToggle } from "@/components/MinimizeOnStartupToggle";
@@ -15,6 +17,7 @@ import { ColorTheme } from "@/components/ColorTheme";
 import { SettingsIO } from "@/components/SettingsIO";
 import { AboutDialog } from "@/components/AboutDialog";
 import { UpdateChecker } from "@/components/UpdateChecker";
+import { useConnectionStore } from "@/state/connectionStore";
 import { cn } from "@/lib/utils";
 
 export function SettingsPanel({
@@ -24,6 +27,8 @@ export function SettingsPanel({
   open: boolean;
   onToggle: () => void;
 }) {
+  const captureMode = useConnectionStore((s) => s.profile.capture_mode);
+  const showSystemProxy = captureMode === "proxy" || captureMode === "both";
   return (
     <div className="w-full">
       <Collapsible open={open} onOpenChange={onToggle}>
@@ -59,11 +64,26 @@ export function SettingsPanel({
                 <span className="text-[10px] font-medium tracking-wide text-primary uppercase">
                   System
                 </span>
-                <SystemProxyToggle />
                 <AlwaysOnTopToggle />
                 <AutoStartToggle />
                 <MinimizeOnStartupToggle />
                 <CloseToTrayToggle key={open ? "open" : "closed"} />
+              </div>
+
+              {/* Network */}
+              <Separator className="bg-border" />
+              <div className="flex flex-col gap-1.5">
+                <span className="text-[10px] font-medium tracking-wide text-primary uppercase">
+                  Network
+                </span>
+                <CaptureModeSelect />
+                {showSystemProxy && <SystemProxyToggle />}
+                {captureMode !== "proxy" && (
+                  <div className="flex flex-col gap-1.5">
+                    <span className="text-[10px] text-muted-foreground">DNS resolution</span>
+                    <DnsModeSelect />
+                  </div>
+                )}
               </div>
 
               {/* Appearance */}

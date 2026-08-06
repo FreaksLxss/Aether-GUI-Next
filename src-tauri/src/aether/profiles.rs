@@ -1,5 +1,27 @@
 use serde::{Deserialize, Serialize};
 
+/// How network traffic is captured and routed through the tunnel.
+/// `Proxy` is the original behavior (Windows system proxy via registry).
+/// `Tun` uses a wintun adapter to capture all IP-layer traffic.
+/// `Both` enables system proxy and TUN simultaneously.
+#[derive(Serialize, Deserialize, Clone, Debug, PartialEq, Eq)]
+#[serde(rename_all = "snake_case")]
+pub enum CaptureMode {
+    Proxy,
+    Tun,
+    Both,
+}
+
+/// How DNS queries are resolved when TUN mode is active.
+/// `Forward` routes DNS through the SOCKS5 proxy (UDP ASSOCIATE or TCP DNS).
+/// `Direct` uses the system's default DNS resolver, bypassing the proxy.
+#[derive(Serialize, Deserialize, Clone, Debug, PartialEq, Eq)]
+#[serde(rename_all = "snake_case")]
+pub enum DnsMode {
+    Forward,
+    Direct,
+}
+
 /// `Auto` resolves to Aether's own default (MASQUE). Aether's own `scan_mode`
 /// already performs multi-route discovery internally (confirmed by manually
 /// running the real binary), so Aether-GUI does not implement a client-side
@@ -190,6 +212,18 @@ pub struct ConnectionProfile {
     /// scan concurrency, socket buffers, and queue sizes accordingly.
     #[serde(default)]
     pub perf: Option<PerfLevel>,
+    /// How traffic is captured: system proxy only, TUN adapter only, or both.
+    #[serde(default = "default_capture_mode")]
+    pub capture_mode: CaptureMode,
+    /// How DNS is resolved when TUN mode is active.
+    #[serde(default = "default_dns_mode")]
+    pub dns_mode: DnsMode,
+    /// TUN adapter IP address in CIDR notation (e.g. "10.0.0.2/24").
+    #[serde(default = "default_tun_address")]
+    pub tun_address: String,
+    /// DNS server to use when TUN mode is active (e.g. "8.8.8.8").
+    #[serde(default = "default_tun_dns")]
+    pub tun_dns: String,
 }
 
 fn default_true() -> bool {
@@ -206,6 +240,22 @@ fn default_wg_noize() -> WgNoize {
 
 fn default_bind_address() -> String {
     "127.0.0.1:1819".into()
+}
+
+fn default_capture_mode() -> CaptureMode {
+    CaptureMode::Proxy
+}
+
+fn default_dns_mode() -> DnsMode {
+    DnsMode::Forward
+}
+
+fn default_tun_address() -> String {
+    "10.0.0.2/24".into()
+}
+
+fn default_tun_dns() -> String {
+    "8.8.8.8".into()
 }
 
 impl ConnectionProfile {
@@ -315,6 +365,11 @@ mod tests {
         let p: ConnectionProfile = serde_json::from_str(json).unwrap();
         assert_eq!(p.bind_address, "127.0.0.1:1819");
         assert_eq!(p.masque_noize, MasqueNoize::Firewall);
+        // New TUN fields get defaults when absent from old profiles
+        assert_eq!(p.capture_mode, CaptureMode::Proxy);
+        assert_eq!(p.dns_mode, DnsMode::Forward);
+        assert_eq!(p.tun_address, "10.0.0.2/24");
+        assert_eq!(p.tun_dns, "8.8.8.8");
     }
 
     #[test]
@@ -340,6 +395,10 @@ impl Default for ConnectionProfile {
             bind_address: default_bind_address(),
             log_level: None,
             perf: None,
+            capture_mode: CaptureMode::Proxy,
+            dns_mode: DnsMode::Forward,
+            tun_address: default_tun_address(),
+            tun_dns: default_tun_dns(),
         }
     }
 }

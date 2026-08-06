@@ -1,4 +1,5 @@
 use crate::aether::AetherManager;
+use crate::tun::TunManager;
 use serde::Serialize;
 use std::sync::{Arc, Mutex};
 
@@ -30,12 +31,14 @@ pub enum ConnectionState {
 
 pub struct AppState {
     pub manager: Arc<Mutex<AetherManager>>,
+    pub tun_manager: Arc<Mutex<TunManager>>,
 }
 
 impl Default for AppState {
     fn default() -> Self {
         Self {
             manager: Arc::new(Mutex::new(AetherManager::new())),
+            tun_manager: Arc::new(Mutex::new(TunManager::new())),
         }
     }
 }

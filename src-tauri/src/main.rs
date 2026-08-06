@@ -10,6 +10,7 @@ mod presets;
 mod state;
 mod sysproxy;
 mod tray;
+mod tun;
 mod updater;
 
 use state::AppState;
@@ -34,6 +35,7 @@ fn main() {
             // the user can click Connect and spawn a second one onto the
             // same port.
             aether::orphan::reap_orphan(&data_dir);
+            tun::cleanup::reap_orphan_tun(&data_dir);
             focus::spawn_watcher(app.handle().clone());
             tray::init(app)?;
             // Start minimized if the user opted in (paired with close-to-tray
@@ -122,6 +124,8 @@ fn main() {
             commands::write_file,
             commands::save_window_position,
             commands::get_window_position,
+            commands::is_tun_available,
+            commands::get_tun_active,
         ])
         .on_window_event(|window, event| {
             if let WindowEvent::CloseRequested { api, .. } = event {
@@ -162,7 +166,7 @@ fn main() {
                     .path()
                     .app_data_dir()
                     .unwrap_or_else(|_| std::env::temp_dir());
-                aether::shutdown_blocking(&state.manager, &data_dir);
+                aether::shutdown_blocking(&state.manager, &data_dir, app_handle);
             }
         });
 }

@@ -1,5 +1,5 @@
 import { motion } from "motion/react";
-import { Activity } from "lucide-react";
+import { Activity, Network } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 import { useConnectionStore } from "@/state/connectionStore";
@@ -41,6 +41,7 @@ export function ConnectionInfo() {
   const scanMode = SCAN_LABELS[profile.scan_mode];
   const ipVersion = IP_LABELS[profile.ip_version];
   const obfuscation = getObfuscationLabel(profile.protocol, profile.masque_noize, profile.wg_noize);
+  const showTun = profile.capture_mode === "tun" || profile.capture_mode === "both";
 
   return (
     <motion.div
@@ -58,6 +59,12 @@ export function ConnectionInfo() {
         <Badge variant="secondary" className="px-1.5 py-0 text-[10px] font-medium">
           {protocol}
         </Badge>
+        {showTun && (
+          <Badge variant="outline" className="gap-1 border-primary/30 px-1.5 py-0 text-[10px] font-normal text-primary">
+            <Network size={10} />
+            TUN
+          </Badge>
+        )}
       </div>
       <Separator className="bg-white/5" />
       <div className="flex items-center justify-center gap-2 text-muted-foreground/70">

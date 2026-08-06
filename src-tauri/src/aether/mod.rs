@@ -329,6 +329,31 @@ fn monitor_connect(
             // Only persisted as "last successful" once actually proven to
             // work, never on a mere attempt (see profiles::save's doc-comment).
             profiles::save(&app, &profile);
+
+            // Activate TUN mode if capture_mode requires it
+            if matches!(
+                profile.capture_mode,
+                crate::aether::profiles::CaptureMode::Tun
+                    | crate::aether::profiles::CaptureMode::Both
+            ) {
+                use crate::state::AppState;
+                let tun_manager = app.state::<AppState>().tun_manager.clone();
+                let mut tun = tun_manager.lock().unwrap();
+                let resource_dir = app.path().resource_dir().ok();
+                let resource_dir_ref = resource_dir.as_deref();
+                if let Err(e) = tun.activate(&profile.bind_address, &profile, resource_dir_ref) {
+                    let _ = app.emit(
+                        LOG_EVENT,
+                        LogEvent {
+                            line: format!("[tun] Failed to activate TUN: {e}"),
+                            timestamp: now_millis(),
+                        },
+                    );
+                    // TUN failure is non-fatal — connection still works via SOCKS5
+                }
+                drop(tun);
+            }
+
             monitor_connected(app, manager, binary, data_dir, profile);
             return;
         }
@@ -386,6 +411,25 @@ fn monitor_connected(
 }
 
 pub fn request_disconnect(app: &AppHandle, manager: &Arc<Mutex<AetherManager>>) -> Result<(), AetherError> {
+    // Deactivate TUN FIRST — the forwarder depends on SOCKS5 being alive.
+    // Must happen before Ctrl-C because once Aether dies, SOCKS5 goes down.
+    {
+        use crate::state::AppState;
+        let tun_manager = app.state::<AppState>().tun_manager.clone();
+        let mut tun = tun_manager.lock().unwrap();
+        if tun.is_active() {
+            if let Err(e) = tun.deactivate() {
+                let _ = app.emit(
+                    LOG_EVENT,
+                    crate::events::LogEvent {
+                        line: format!("[tun] Failed to deactivate TUN: {e}"),
+                        timestamp: now_millis(),
+                    },
+                );
+            }
+        }
+    }
+
     let had_session = {
         let mut mgr = manager.lock().unwrap();
         // Reconnecting has no live session (the old one already exited; the
@@ -458,7 +502,15 @@ pub fn request_disconnect(app: &AppHandle, manager: &Arc<Mutex<AetherManager>>) 
 /// Called from `RunEvent::Exit` — the app is quitting regardless, so this
 /// blocks briefly rather than spawning a thread, and skips emitting events
 /// nobody is left to receive.
-pub fn shutdown_blocking(manager: &Arc<Mutex<AetherManager>>, data_dir: &Path) {
+pub fn shutdown_blocking(manager: &Arc<Mutex<AetherManager>>, data_dir: &Path, app: &tauri::AppHandle) {
+    // Deactivate TUN first
+    {
+        use crate::state::AppState;
+        let tun_manager = app.state::<AppState>().tun_manager.clone();
+        let mut tun = tun_manager.lock().unwrap();
+        let _ = tun.deactivate();
+    }
+
     let mut mgr = manager.lock().unwrap();
     if let Some(session) = mgr.session.as_mut() {
         session.send_ctrl_c();
