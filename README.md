@@ -13,6 +13,15 @@ A one-click desktop GUI for [**Aether**](https://github.com/CluvexStudio/Aether)
 
 This project does not reimplement any of Aether's tunneling logic. It drives the real `aether` binary in a pseudo-terminal, answers its interactive setup prompts on your behalf, and watches its output to tell you what's happening. All the actual censorship-circumvention work — MASQUE/QUIC obfuscation, WireGuard, route probing — is [Aether's](https://github.com/CluvexStudio/Aether), not this repo's.
 
+<p align="center">
+  <img
+    width="418"
+    height="659"
+    alt="Aether-GUI screenshot"
+    src="https://github.com/user-attachments/assets/8d7e21f7-d9b4-4793-8b7d-0fc4b88069ce"
+  />
+</p>
+
 ## Features
 
 - **Auto mode** — the default screen is just a single button. No configuration is required; it connects using your last-successful settings (or sensible defaults on first run).
