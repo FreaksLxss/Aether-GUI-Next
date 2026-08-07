@@ -49,7 +49,7 @@ export function ConnectionInfo() {
       initial={{ opacity: 0, y: 6 }}
       animate={{ opacity: 1, y: 0 }}
       transition={SPRING}
-      className="flex flex-col gap-1.5 rounded-xl glass-float px-3 py-2 text-[10px] font-mono text-muted-foreground shadow-glass ring-1 ring-inset ring-primary/30"
+      className="flex w-[260px] flex-col gap-1.5 rounded-xl glass-float px-3 py-2 text-[10px] font-mono text-muted-foreground shadow-glass ring-1 ring-inset ring-primary/30"
     >
       <div className="flex items-center gap-2">
         <Badge variant="outline" className="gap-1 border-primary/30 px-1.5 py-0 text-[10px] font-normal text-primary">

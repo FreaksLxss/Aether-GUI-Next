@@ -3,6 +3,7 @@ import { AnimatePresence, motion, MotionConfig } from "motion/react";
 import { ConnectButton } from "@/components/ConnectButton";
 import { ConnectionStatusLine } from "@/components/ConnectionStatusLine";
 import { ConnectionInfo } from "@/components/ConnectionInfo";
+import { PublicLocation } from "@/components/PublicLocation";
 import { CopyProxyButton } from "@/components/CopyProxyButton";
 import { PacUrl } from "@/components/PacUrl";
 import { QuickConnect } from "@/components/QuickConnect";
@@ -20,7 +21,7 @@ import { useSquircleClip } from "@/hooks/useSquircleMask";
 import { useKeyboardShortcuts } from "@/hooks/useKeyboardShortcuts";
 import { useConnectionSound } from "@/hooks/useConnectionSound";
 import { initConnectionListeners, useConnectionStore } from "@/state/connectionStore";
-import { SCREEN_FADE } from "@/lib/motion";
+import { SCREEN_FADE, SPRING } from "@/lib/motion";
 
 export type AccordionPanel = "advanced" | "presets" | "history" | "settings" | null;
 
@@ -50,13 +51,25 @@ function MainScreen() {
       {/* Status + details flow below the fixed button area */}
       <div className="flex flex-col items-center gap-3">
         <ConnectionStatusLine />
-        <ConnectionInfo />
-        {isConnected && (
-          <div className="flex gap-1.5">
-            <CopyProxyButton />
-            <PacUrl />
-          </div>
-        )}
+        <PublicLocation key={isConnected ? "connected" : "disconnected"} />
+        <AnimatePresence>
+          {isConnected && (
+            <motion.div
+              key="connected-cluster"
+              initial={{ opacity: 0, x: -16 }}
+              animate={{ opacity: 1, x: 0 }}
+              exit={{ opacity: 0, x: -16 }}
+              transition={SPRING}
+              className="flex flex-col items-center gap-3"
+            >
+              <ConnectionInfo />
+              <div className="flex gap-1.5">
+                <CopyProxyButton />
+                <PacUrl />
+              </div>
+            </motion.div>
+          )}
+        </AnimatePresence>
         <QuickConnect onMoreOptions={openAdvancedHighlightScan} />
       </div>
       <div className="mt-auto flex w-full max-w-sm flex-col gap-1.5 pt-3">

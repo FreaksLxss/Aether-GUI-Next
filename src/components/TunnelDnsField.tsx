@@ -3,7 +3,7 @@ import { useConnectionStore } from "@/state/connectionStore";
 
 /** Aether ≥1.5.0: resolvers used inside the tunnel (--dns), comma-separated.
  * Empty input stores null so Aether's default (1.1.1.1,1.0.0.1) is used. */
-export function TunnelDnsField() {
+export function TunnelDnsField({ id }: { id?: string }) {
   const dns = useConnectionStore((s) => s.profile.dns_servers);
   const setDns = useConnectionStore((s) => s.setDnsServers);
   const status = useConnectionStore((s) => s.status);
@@ -11,6 +11,7 @@ export function TunnelDnsField() {
 
   return (
     <Input
+      id={id}
       type="text"
       value={dns ?? ""}
       disabled={locked}

@@ -15,7 +15,7 @@ const OPTIONS: { value: PerfLevel | "auto"; label: string; desc: string }[] = [
   { value: "high", label: "High", desc: "Maximum scan speed and buffers" },
 ];
 
-export function PerfSelect() {
+export function PerfSelect({ id }: { id?: string }) {
   const status = useConnectionStore((s) => s.status);
   const perf = useConnectionStore((s) => s.profile.perf);
   const setPerf = useConnectionStore((s) => s.setPerf);
@@ -29,6 +29,7 @@ export function PerfSelect() {
       disabled={locked}
     >
       <SelectTrigger
+        id={id}
         className="w-full justify-start gap-2 rounded-lg bg-surface-3 px-3 text-xs text-foreground ring-1 ring-inset ring-white/5 transition-all duration-150 hover:bg-surface-4 hover:ring-white/10 focus-visible:ring-primary disabled:opacity-50 [&>span]:flex-1 [&>span]:text-left [&>svg]:ml-auto"
         aria-label="Performance"
       >

@@ -24,6 +24,12 @@ interface LogLine {
 let allLines: LogLine[] = [];
 let autoScroll = true;
 let filterText = "";
+/** How many of `allLines` already have DOM nodes appended. Lets the hot path
+ * (a log event per line during a fast scan) append incrementally instead of
+ * re-rendering the whole list every event. */
+let renderedCount = 0;
+/** Set when the ring buffer dropped the oldest lines (offsets shift). */
+let truncated = false;
 
 // Auto-scroll detection
 viewport.addEventListener("scroll", () => {
@@ -43,6 +49,8 @@ autoScrollBtn.addEventListener("click", () => {
 
 clearBtn.addEventListener("click", () => {
   allLines = [];
+  renderedCount = 0;
+  truncated = false;
   render();
 });
 
@@ -79,14 +87,22 @@ function getLevelClass(line: string): string {
   return "";
 }
 
-function render() {
-  const filtered = filterText
-    ? allLines.filter((l) => l.line.toLowerCase().includes(filterText))
-    : allLines;
+function buildLine(l: LogLine, baseTs: number, query: string): HTMLDivElement {
+  const div = document.createElement("div");
+  div.className = "log-line" + (query ? " highlight" : "") + getLevelClass(l.line);
+  const relMs = l.timestamp - baseTs;
+  const s = (relMs / 1000).toFixed(1);
+  div.innerHTML = `<span class="ts">+${s}s</span>${highlightMatch(l.line, query)}`;
+  return div;
+}
 
-  if (allLines.length === 0) {
+function render() {
+  const empty = allLines.length === 0;
+
+  if (empty) {
     emptyState.style.display = "flex";
     viewport.querySelectorAll(".log-line").forEach((el) => el.remove());
+    renderedCount = 0;
     lineCount.textContent = "0 lines";
     searchCount.textContent = "";
     return;
@@ -94,22 +110,38 @@ function render() {
 
   emptyState.style.display = "none";
 
-  const frag = document.createDocumentFragment();
-  const baseTs = filtered[0]?.timestamp ?? 0;
+  // Search filters the whole list, so a filtering change warrants a full
+  // rebuild. Otherwise the common path just appends newly-arrived lines.
+  const needFullRebuild =
+    filterText !== "" || truncated || renderedCount > allLines.length;
 
-  for (const l of filtered) {
-    const div = document.createElement("div");
-    div.className = "log-line" + (filterText ? " highlight" : "") + getLevelClass(l.line);
+  const baseTs = filterText
+    ? (allLines.find((l) => l.line.toLowerCase().includes(filterText))?.timestamp ??
+      allLines[0].timestamp)
+    : allLines[0].timestamp;
 
-    const relMs = l.timestamp - baseTs;
-    const s = (relMs / 1000).toFixed(1);
-    div.innerHTML = `<span class="ts">+${s}s</span>${highlightMatch(l.line, filterText)}`;
-    frag.appendChild(div);
+  if (needFullRebuild) {
+    viewport.querySelectorAll(".log-line").forEach((el) => el.remove());
+    const frag = document.createDocumentFragment();
+    for (const l of allLines) {
+      if (filterText && !l.line.toLowerCase().includes(filterText)) continue;
+      frag.appendChild(buildLine(l, baseTs, filterText));
+    }
+    viewport.appendChild(frag);
+    renderedCount = allLines.length;
+    truncated = false;
+  } else if (renderedCount < allLines.length) {
+    const frag = document.createDocumentFragment();
+    for (let i = renderedCount; i < allLines.length; i++) {
+      frag.appendChild(buildLine(allLines[i], baseTs, filterText));
+    }
+    viewport.appendChild(frag);
+    renderedCount = allLines.length;
   }
 
-  viewport.querySelectorAll(".log-line").forEach((el) => el.remove());
-  viewport.appendChild(frag);
-
+  const filtered = filterText
+    ? allLines.filter((l) => l.line.toLowerCase().includes(filterText))
+    : allLines;
   lineCount.textContent = `${filtered.length}${filterText ? ` / ${allLines.length}` : ""} lines`;
   searchCount.textContent = filterText
     ? `${filtered.length} match${filtered.length !== 1 ? "es" : ""}`
@@ -125,6 +157,7 @@ await listen<LogLine>("aether://log", (event) => {
   allLines.push(event.payload);
   if (allLines.length > MAX_LINES) {
     allLines = allLines.slice(-MAX_LINES);
+    truncated = true;
   }
   render();
 });

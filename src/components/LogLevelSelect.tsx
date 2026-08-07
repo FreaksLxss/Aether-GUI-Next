@@ -17,7 +17,7 @@ const OPTIONS: { value: LogLevel | "auto"; label: string; desc: string }[] = [
   { value: "trace", label: "Trace", desc: "Full per-packet detail" },
 ];
 
-export function LogLevelSelect() {
+export function LogLevelSelect({ id }: { id?: string }) {
   const status = useConnectionStore((s) => s.status);
   const logLevel = useConnectionStore((s) => s.profile.log_level);
   const setLogLevel = useConnectionStore((s) => s.setLogLevel);
@@ -31,6 +31,7 @@ export function LogLevelSelect() {
       disabled={locked}
     >
       <SelectTrigger
+        id={id}
         className="w-full justify-start gap-2 rounded-lg bg-surface-3 px-3 text-xs text-foreground ring-1 ring-inset ring-white/5 transition-all duration-150 hover:bg-surface-4 hover:ring-white/10 focus-visible:ring-primary disabled:opacity-50 [&>span]:flex-1 [&>span]:text-left [&>svg]:ml-auto"
         aria-label="Log Level"
       >

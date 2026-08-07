@@ -35,6 +35,7 @@ export function MasqueTransportToggle() {
         if (v) setMasqueHttp2(v === "http2");
       }}
       disabled={locked || notMasque}
+      aria-label="MASQUE transport"
       className="w-full gap-0.5 rounded-lg bg-surface-3 p-0.5 ring-1 ring-inset ring-white/5"
     >
       {(Object.keys(LABELS) as Transport[]).map((t) => (

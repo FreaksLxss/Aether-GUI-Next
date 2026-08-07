@@ -22,8 +22,9 @@ export function ZeroTrustPanel() {
 
   return (
     <div className="flex flex-col gap-2.5">
-      <Field label="Team name" tooltip="Your organization's Zero Trust team name (--team). Aether enrols this device into that organization. Leave empty for normal anonymous WARP.">
+      <Field label="Team name" htmlFor="zt-team" tooltip="Your organization's Zero Trust team name (--team). Aether enrols this device into that organization. Leave empty for normal anonymous WARP.">
         <Input
+          id="zt-team"
           type="text"
           value={p.zt_team ?? ""}
           disabled={locked}
@@ -33,8 +34,9 @@ export function ZeroTrustPanel() {
         />
       </Field>
 
-      <Field label="Email one-time code" tooltip="Send a one-time sign-in code to this address (--access-email). Aether prompts for the code after startup.">
+      <Field label="Email one-time code" htmlFor="zt-email" tooltip="Send a one-time sign-in code to this address (--access-email). Aether prompts for the code after startup.">
         <Input
+          id="zt-email"
           type="email"
           value={p.zt_access_email ?? ""}
           disabled={locked}
@@ -46,8 +48,9 @@ export function ZeroTrustPanel() {
 
       <div className="flex items-center gap-2">
         <div className="flex-1">
-          <Field label="Access id" tooltip="--access-id: service-token client id for headless enrolment.">
+          <Field label="Access id" htmlFor="zt-access-id" tooltip="--access-id: service-token client id for headless enrolment.">
             <Input
+              id="zt-access-id"
               type="text"
               value={p.zt_access_id ?? ""}
               disabled={locked}
@@ -58,8 +61,9 @@ export function ZeroTrustPanel() {
           </Field>
         </div>
         <div className="flex-1">
-          <Field label="Access secret" tooltip="--access-secret: service-token client secret for headless enrolment.">
+          <Field label="Access secret" htmlFor="zt-access-secret" tooltip="--access-secret: service-token client secret for headless enrolment.">
             <Input
+              id="zt-access-secret"
               type="password"
               value={p.zt_access_secret ?? ""}
               disabled={locked}
@@ -71,8 +75,9 @@ export function ZeroTrustPanel() {
         </div>
       </div>
 
-      <Field label="Access token (JWT)" tooltip="--access-token: an enrolment token already obtained from https://<team>.cloudflareaccess.com/warp.">
+      <Field label="Access token (JWT)" htmlFor="zt-access-token" tooltip="--access-token: an enrolment token already obtained from https://<team>.cloudflareaccess.com/warp.">
         <Input
+          id="zt-access-token"
           type="password"
           value={p.zt_access_token ?? ""}
           disabled={locked}
@@ -110,15 +115,17 @@ export function ZeroTrustPanel() {
 function Field({
   label,
   tooltip,
+  htmlFor,
   children,
 }: {
   label: string;
   tooltip: string;
+  htmlFor?: string;
   children: ReactNode;
 }) {
   return (
     <div className="flex flex-col gap-1.5">
-      <div className="flex items-center gap-1 text-xs text-muted-foreground">
+      <label htmlFor={htmlFor} className="flex w-fit items-center gap-1 text-xs text-muted-foreground">
         {label}
         <Tooltip>
           <TooltipTrigger aria-label={`About ${label}`}>
@@ -126,7 +133,7 @@ function Field({
           </TooltipTrigger>
           <TooltipContent>{tooltip}</TooltipContent>
         </Tooltip>
-      </div>
+      </label>
       {children}
     </div>
   );

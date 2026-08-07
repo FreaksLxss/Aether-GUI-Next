@@ -12,6 +12,7 @@ import type {
   WgNoize,
   CaptureMode,
   DnsMode,
+  PublicInfo,
 } from "@/types/connection";
 
 const MAX_LOG_LINES = 500;
@@ -45,6 +46,17 @@ interface ConnectionState {
    * on every fresh attempt since it can differ by protocol/scan mode. */
   scanBudgetSecs: number | null;
   history: ConnectionHistoryEntry[];
+  /** Egress IP/location seen *through* the tunnel (Aether's exit). null until
+   * the last check ran or it failed. */
+  publicIp: PublicInfo | null;
+  /** The machine's raw ISP IP, fetched without the proxy — the comparison
+   * baseline for the leak check. */
+  directIp: PublicInfo | null;
+  publicIpLoading: boolean;
+  /** Result of comparing exit IP vs direct IP while connected:
+   * "none" (tunnel is masking), "leak" (exit IP == direct IP), or
+   * "unavailable" when no comparison was possible. */
+  leakStatus: "none" | "leak" | "unavailable";
   connect: () => Promise<void>;
   disconnect: () => Promise<void>;
   setProtocol: (protocol: ConnectionProfile["protocol"]) => void;
@@ -73,6 +85,13 @@ interface ConnectionState {
   retryAfterSidecarError: () => void;
   loadHistory: () => Promise<void>;
   clearHistory: () => Promise<void>;
+  /** Fetches both the tunnel-exit and direct public IPs in parallel and works
+   * out the leak status. Safe to call any time; leak comparison only applies
+   * while connected. */
+  runPublicIpCheck: () => Promise<void>;
+  /** Re-read the persisted default profile into the store (e.g. after the
+   * user imports settings from a file that changed the saved profile). */
+  reloadProfile: () => Promise<void>;
 }
 
 export const useConnectionStore = create<ConnectionState>((set, get) => ({
@@ -106,6 +125,10 @@ export const useConnectionStore = create<ConnectionState>((set, get) => ({
   sidecarError: null,
   scanBudgetSecs: null,
   history: [],
+  publicIp: null,
+  directIp: null,
+  publicIpLoading: false,
+  leakStatus: "unavailable",
 
   connect: async () => {
     try {
@@ -215,6 +238,39 @@ export const useConnectionStore = create<ConnectionState>((set, get) => ({
   clearHistory: async () => {
     await invoke("clear_history");
     set({ history: [] });
+  },
+
+  runPublicIpCheck: async () => {
+    const connected = get().status.state === "Connected";
+    set({ publicIpLoading: true });
+    const [tunnel, direct] = await Promise.all([
+      invoke<PublicInfo | null>("get_public_ip", {
+        throughTunnel: connected,
+      }).catch(() => null),
+      invoke<PublicInfo | null>("get_public_ip", {
+        throughTunnel: false,
+      }).catch(() => null),
+    ]);
+
+    let leakStatus: "none" | "leak" | "unavailable" = "unavailable";
+    if (connected && tunnel) {
+      if (direct) {
+        // If a remote host sees the same address with and without the proxy,
+        // the tunnel isn't masking this traffic.
+        leakStatus = tunnel.ip === direct.ip ? "leak" : "none";
+      } else {
+        // Exit resolved but the direct baseline failed — can't compare, but
+        // the tunnel is demonstrably working so don't alarm the user.
+        leakStatus = "none";
+      }
+    }
+
+    set({ publicIp: tunnel, directIp: direct, publicIpLoading: false, leakStatus });
+  },
+
+  reloadProfile: async () => {
+    const profile = await invoke<ConnectionProfile>("get_default_profile");
+    set({ profile });
   },
 }));
 

@@ -270,3 +270,12 @@ pub fn is_tun_available() -> bool {
 pub fn get_tun_active(state: State<AppState>) -> bool {
     state.tun_manager.lock().unwrap().is_active()
 }
+
+/// Fetches the public egress IP — through the tunnel (via its SOCKS5 proxy)
+/// when `through_tunnel` is true, otherwise straight from the machine.
+/// Returns `None` on any failure so the frontend can degrade gracefully.
+#[tauri::command]
+pub async fn get_public_ip(app: AppHandle, through_tunnel: bool) -> Option<crate::net::PublicInfo> {
+    let profile = aether::profiles::load(&app);
+    crate::net::fetch_public_info(through_tunnel, &profile.bind_address).await
+}

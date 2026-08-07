@@ -1,4 +1,4 @@
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Check, Clock, Trash2, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
@@ -66,6 +66,7 @@ export function ConnectionHistory({
   const loadHistory = useConnectionStore((s) => s.loadHistory);
   const clearHistory = useConnectionStore((s) => s.clearHistory);
   const wasConnected = useRef(false);
+  const [confirmingClear, setConfirmingClear] = useState(false);
 
   useEffect(() => {
     const unsub = useConnectionStore.subscribe((state) => {
@@ -106,15 +107,49 @@ export function ConnectionHistory({
                   ))}
                 </ul>
               </ScrollArea>
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={() => void clearHistory()}
-                className="mt-1 h-7 gap-1 text-xs text-muted-foreground hover:text-destructive"
-              >
-                <Trash2 size={12} />
-                Clear history
-              </Button>
+              <div className="mt-1 flex items-center justify-between gap-2">
+                {confirmingClear ? (
+                  <>
+                    <span className="text-[10px] font-medium text-destructive">
+                      Delete all history?
+                    </span>
+                    <div className="flex gap-1">
+                      <Button
+                        variant="destructive"
+                        size="sm"
+                        onClick={() => {
+                          void clearHistory();
+                          setConfirmingClear(false);
+                        }}
+                        className="h-7 gap-1 text-xs"
+                        aria-label="Confirm clear history"
+                      >
+                        <Trash2 size={12} />
+                        Yes, clear
+                      </Button>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => setConfirmingClear(false)}
+                        className="h-7 text-xs text-muted-foreground"
+                      >
+                        Cancel
+                      </Button>
+                    </div>
+                  </>
+                ) : (
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => setConfirmingClear(true)}
+                    className="h-7 gap-1 text-xs text-muted-foreground hover:text-destructive"
+                    aria-label="Clear history"
+                  >
+                    <Trash2 size={12} />
+                    Clear history
+                  </Button>
+                )}
+              </div>
             </>
           )}
         </div>

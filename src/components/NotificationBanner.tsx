@@ -34,7 +34,8 @@ export function NotificationBanner() {
     <AnimatePresence>
       {visible && (
         <motion.div
-          role="status"
+          role="region"
+          aria-label="Notification permissions request"
           initial={{ opacity: 0, y: -8, height: 0 }}
           animate={{ opacity: 1, y: 0, height: "auto" }}
           exit={{ opacity: 0, y: -8, height: 0 }}

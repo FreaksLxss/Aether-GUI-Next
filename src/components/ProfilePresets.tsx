@@ -1,6 +1,6 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { invoke } from "@tauri-apps/api/core";
-import { Bookmark, Plus, Trash2 } from "lucide-react";
+import { Bookmark, Plus, Trash2, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { ScrollArea } from "@/components/ui/scroll-area";
@@ -44,6 +44,7 @@ export function ProfilePresets({
   const [presets, setPresets] = useState<ProfilePreset[]>([]);
   const [newName, setNewName] = useState("");
   const [confirmDelete, setConfirmDelete] = useState<string | null>(null);
+  const deleteTimerRef = useRef<ReturnType<typeof setTimeout>>(null);
   const locked = status.state !== "Idle" && status.state !== "Error";
 
   const loadPresets = async () => {
@@ -160,23 +161,40 @@ export function ProfilePresets({
                       {p.name}
                     </button>
                     {confirmDelete === p.name ? (
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        onClick={() => void deletePreset(p.name)}
-                        title="Click again to confirm delete"
-                        aria-label={`Confirm delete preset "${p.name}"`}
-                        className="h-7 w-7 text-status-error hover:bg-destructive/10 hover:text-destructive"
-                      >
-                        <Trash2 size={12} />
-                      </Button>
+                      <span className="flex items-center gap-0.5">
+                        <span className="mr-0.5 text-[9px] font-medium text-destructive">
+                          Delete?
+                        </span>
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          onClick={() => void deletePreset(p.name)}
+                          aria-label={`Confirm delete preset "${p.name}"`}
+                          className="h-7 w-7 text-status-error hover:bg-destructive/10 hover:text-destructive"
+                        >
+                          <Trash2 size={12} />
+                        </Button>
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          onClick={() => {
+                            setConfirmDelete(null);
+                            if (deleteTimerRef.current) clearTimeout(deleteTimerRef.current);
+                          }}
+                          aria-label={`Cancel delete preset "${p.name}"`}
+                          className="h-7 w-7 text-muted-foreground/80 hover:text-foreground"
+                        >
+                          <X size={12} />
+                        </Button>
+                      </span>
                     ) : (
                       <Button
                         variant="ghost"
                         size="icon"
                         onClick={() => {
                           setConfirmDelete(p.name);
-                          setTimeout(() => {
+                          if (deleteTimerRef.current) clearTimeout(deleteTimerRef.current);
+                          deleteTimerRef.current = setTimeout(() => {
                             setConfirmDelete((cur) => (cur === p.name ? null : cur));
                           }, 2500);
                         }}

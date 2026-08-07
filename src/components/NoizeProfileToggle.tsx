@@ -55,6 +55,7 @@ export function NoizeProfileToggle() {
           if (v) setMasqueNoize(v as MasqueNoize);
         }}
         disabled={locked}
+        aria-label="Obfuscation"
         className="w-full gap-0.5 rounded-lg bg-surface-3 p-0.5 ring-1 ring-inset ring-white/5"
       >
         {(Object.keys(MASQUE_LABELS) as MasqueNoize[]).map((n) => (
@@ -86,6 +87,7 @@ export function NoizeProfileToggle() {
         if (v) setWgNoize(v as WgNoize);
       }}
       disabled={locked}
+      aria-label="Obfuscation"
       className="w-full gap-0.5 rounded-lg bg-surface-3 p-0.5 ring-1 ring-inset ring-white/5"
     >
       {(Object.keys(WG_LABELS) as WgNoize[]).map((n) => (

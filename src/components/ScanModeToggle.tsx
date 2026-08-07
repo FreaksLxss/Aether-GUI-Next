@@ -38,6 +38,7 @@ export function ScanModeToggle() {
         if (v) setScanMode(v as ScanMode);
       }}
       disabled={locked}
+      aria-label="Scan mode"
       className="w-full gap-0.5 rounded-lg bg-surface-3 p-0.5 ring-1 ring-inset ring-white/5"
     >
       {(Object.keys(LABELS) as ScanMode[]).map((mode) => (

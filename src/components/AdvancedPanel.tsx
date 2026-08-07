@@ -23,25 +23,41 @@ import { cn } from "@/lib/utils";
 function FieldRow({
   label,
   tooltip,
+  htmlFor,
   children,
 }: {
   label: string;
   tooltip?: string;
+  htmlFor?: string;
   children: ReactNode;
 }) {
+  const labelNode = (
+    <>
+      {label}
+      {tooltip && (
+        <Tooltip>
+          <TooltipTrigger aria-label={`About ${label}`}>
+            <Info size={12} />
+          </TooltipTrigger>
+          <TooltipContent>{tooltip}</TooltipContent>
+        </Tooltip>
+      )}
+    </>
+  );
   return (
     <div className="flex flex-col gap-1.5">
-      <div className="flex items-center gap-1 text-xs text-muted-foreground">
-        {label}
-        {tooltip && (
-          <Tooltip>
-            <TooltipTrigger aria-label={`About ${label}`}>
-              <Info size={12} />
-            </TooltipTrigger>
-            <TooltipContent>{tooltip}</TooltipContent>
-          </Tooltip>
-        )}
-      </div>
+      {htmlFor ? (
+        <label
+          htmlFor={htmlFor}
+          className="flex w-fit items-center gap-1 text-xs text-muted-foreground"
+        >
+          {labelNode}
+        </label>
+      ) : (
+        <div className="flex w-fit items-center gap-1 text-xs text-muted-foreground">
+          {labelNode}
+        </div>
+      )}
       {children}
     </div>
   );
@@ -103,9 +119,10 @@ export function AdvancedPanel({
             </span>
             <FieldRow
               label="Protocol"
+              htmlFor="aether-field-protocol"
               tooltip="MASQUE disguises traffic as normal HTTPS — best against strict censorship. WireGuard is lighter and faster. gool nests two WireGuard tunnels for extra security at a speed cost."
             >
-              <ProtocolSelect />
+              <ProtocolSelect id="aether-field-protocol" />
             </FieldRow>
             <div
               ref={scanModeRef}
@@ -145,15 +162,17 @@ export function AdvancedPanel({
             </span>
             <FieldRow
               label="SOCKS5 Proxy"
+              htmlFor="aether-field-socks-port"
               tooltip="The local address Aether's SOCKS5 proxy listens on. Change the port to avoid conflicts, or enable LAN to share the tunnel with other devices on your network."
             >
-              <BindAddressField />
+              <BindAddressField id="aether-field-socks-port" />
             </FieldRow>
             <FieldRow
               label="Tunnel DNS"
+              htmlFor="aether-field-dns"
               tooltip="Resolvers used inside the tunnel (--dns, comma-separated). Left blank, Aether uses its default (1.1.1.1,1.0.0.1). This is separate from the TUN-DNS option used when the TUN adapter is active."
             >
-              <TunnelDnsField />
+              <TunnelDnsField id="aether-field-dns" />
             </FieldRow>
           </div>
 
@@ -164,15 +183,17 @@ export function AdvancedPanel({
             </span>
             <FieldRow
               label="Blocked"
+              htmlFor="aether-field-route-block"
               tooltip="Destinations Aether refuses outright (--route-block), comma-separated. Rules match on domain, IP, network, and port. Blocked is checked first, then Direct, otherwise the tunnel is used."
             >
-              <RouteRulesField kind="block" />
+              <RouteRulesField id="aether-field-route-block" kind="block" />
             </FieldRow>
             <FieldRow
               label="Direct"
+              htmlFor="aether-field-route-direct"
               tooltip="Destinations sent straight out, bypassing the tunnel (--route-direct) — useful for banking apps, LAN services, and domestic sites."
             >
-              <RouteRulesField kind="direct" />
+              <RouteRulesField id="aether-field-route-direct" kind="direct" />
             </FieldRow>
             <p className="text-[10px] text-muted-foreground/70">
               Entries: <code>example.com</code> (and subdomains), <code>full:example.com</code>,{" "}
@@ -223,15 +244,17 @@ export function AdvancedPanel({
             </div>
             <FieldRow
               label="Log Level"
+              htmlFor="aether-field-log-level"
               tooltip="Controls how much Aether prints to the log panel. Info is quiet; Debug adds tunnel internals useful for troubleshooting; Trace adds full per-packet detail."
             >
-              <LogLevelSelect />
+              <LogLevelSelect id="aether-field-log-level" />
             </FieldRow>
             <FieldRow
               label="Performance"
+              htmlFor="aether-field-perf"
               tooltip="Override Aether's automatic resource scaling. Leave on Auto to let it detect your CPU and RAM at startup. Use Low for routers or Pi, High for maximum scan speed."
             >
-              <PerfSelect />
+              <PerfSelect id="aether-field-perf" />
             </FieldRow>
           </div>
 

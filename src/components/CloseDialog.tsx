@@ -42,7 +42,7 @@ export function CloseDialog() {
 
   return (
     <Dialog open={show} onOpenChange={setShow}>
-      <DialogContent className="w-72 gap-0 p-5">
+      <DialogContent className="w-72 gap-0 p-5" showCloseButton={false}>
         <DialogHeader>
           <DialogTitle className="text-sm">Close Aether?</DialogTitle>
           <DialogDescription className="text-xs">

@@ -188,6 +188,10 @@
         font-size: 11px;
         line-height: 1.6;
         scroll-behavior: auto;
+        /* Log text must be copyable for bug reports — re-enable selection. */
+        user-select: text;
+        -webkit-user-select: text;
+        cursor: text;
       }
       .log-viewport::-webkit-scrollbar {
         width: 6px;

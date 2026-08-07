@@ -6,6 +6,7 @@ mod error;
 mod events;
 mod focus;
 mod history;
+mod net;
 mod presets;
 mod state;
 mod sysproxy;
@@ -132,6 +133,7 @@ fn main() {
             commands::get_window_position,
             commands::is_tun_available,
             commands::get_tun_active,
+            commands::get_public_ip,
         ])
         .on_window_event(|window, event| {
             if let WindowEvent::CloseRequested { api, .. } = event {

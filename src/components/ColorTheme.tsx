@@ -17,6 +17,19 @@ import {
   initThemeColors,
 } from "@/lib/theme";
 
+/** Presets for the secondary (surface) accent — neutral-to-tinted dark tones
+ *  that complement whatever primary hue is chosen. */
+const SECONDARY_COLORS: [string, string][] = [
+  ["#242424", "Graphite"],
+  ["#1c1c1c", "Charcoal"],
+  ["#2f2b3a", "Plum"],
+  ["#1f2937", "Slate"],
+  ["#1e293b", "Ink"],
+  ["#3b2f2f", "Umber"],
+  ["#143d36", "Pine"],
+  ["#3a3a3a", "Stone"],
+];
+
 function ColorSwatches({
   colors,
   selected,
@@ -129,6 +142,11 @@ export function ColorTheme() {
             <p className="text-[10px] font-medium text-muted-foreground uppercase tracking-wide">
               Secondary
             </p>
+            <ColorSwatches
+              colors={SECONDARY_COLORS}
+              selected={secondary}
+              onSelect={pickSecondary}
+            />
             <div className="flex items-center gap-2">
               <input
                 type="color"

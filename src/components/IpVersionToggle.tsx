@@ -24,6 +24,7 @@ export function IpVersionToggle() {
         if (v) setIpVersion(v as IpVersion);
       }}
       disabled={locked}
+      aria-label="IP version"
       className="w-full gap-0.5 rounded-lg bg-surface-3 p-0.5 ring-1 ring-inset ring-white/5"
     >
       {(Object.keys(LABELS) as IpVersion[]).map((v) => (

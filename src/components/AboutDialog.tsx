@@ -31,7 +31,7 @@ export function AboutDialog() {
         <DialogContent className="w-80 gap-0">
           <DialogHeader>
             <DialogTitle className="text-sm">Aether-GUI</DialogTitle>
-            <DialogDescription className="text-xs">v0.8.0</DialogDescription>
+            <DialogDescription className="text-xs">v0.9.0</DialogDescription>
           </DialogHeader>
 
           <DialogDescription className="mt-3 text-xs leading-relaxed text-muted-foreground">

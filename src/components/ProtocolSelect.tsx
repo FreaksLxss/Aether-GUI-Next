@@ -23,7 +23,7 @@ const OPTIONS: { value: Protocol; label: string; desc: string }[] = [
  * Disabled outside Idle/Error since Aether can't switch protocol mid-session
  * — changing it requires a full disconnect/reconnect.
  */
-export function ProtocolSelect() {
+export function ProtocolSelect({ id }: { id?: string }) {
   const status = useConnectionStore((s) => s.status);
   const protocol = useConnectionStore((s) => s.profile.protocol);
   const setProtocol = useConnectionStore((s) => s.setProtocol);
@@ -37,6 +37,7 @@ export function ProtocolSelect() {
       disabled={locked}
     >
       <SelectTrigger
+        id={id}
         className="w-full justify-start gap-2 rounded-lg bg-surface-3 px-3 text-xs text-foreground ring-1 ring-inset ring-white/5 transition-all duration-150 hover:bg-surface-4 hover:ring-white/10 focus-visible:ring-primary disabled:opacity-50 [&>span]:flex-1 [&>span]:text-left [&>svg]:ml-auto"
         aria-label="Protocol"
       >

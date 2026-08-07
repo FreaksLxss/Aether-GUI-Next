@@ -78,6 +78,16 @@ export interface LogLine {
   timestamp: number;
 }
 
+/** Public egress IP/location for the GUI's leak-check (src-tauri/src/net.rs,
+ * mirrored from its `PublicInfo`). */
+export interface PublicInfo {
+  ip: string;
+  ip_version: "IPv4" | "IPv6";
+  country_code: string | null;
+  city: string | null;
+  org: string | null;
+}
+
 export interface ConnectionHistoryEntry {
   protocol: string;
   scan_mode: string;

@@ -13,7 +13,7 @@ function splitAddr(addr: string): { host: string; port: string } {
   return { host: addr.slice(0, last) || LOOPBACK, port: addr.slice(last + 1) || DEFAULT_PORT };
 }
 
-export function BindAddressField() {
+export function BindAddressField({ id }: { id?: string }) {
   const bind = useConnectionStore((s) => s.profile.bind_address);
   const setBindAddress = useConnectionStore((s) => s.setBindAddress);
   const status = useConnectionStore((s) => s.status);
@@ -30,6 +30,7 @@ export function BindAddressField() {
   return (
     <div className="flex items-center justify-between">
       <Input
+        id={id}
         type="text"
         inputMode="numeric"
         value={port}
@@ -53,6 +54,7 @@ export function BindAddressField() {
             : "ring-white/5 focus-visible:ring-primary"
         }`}
         aria-label="SOCKS5 port"
+        aria-invalid={invalid}
       />
       <div className="flex items-center gap-1.5">
         <span className="text-xs text-muted-foreground">Allow connections from the LAN</span>

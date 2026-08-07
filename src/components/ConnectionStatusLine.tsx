@@ -103,15 +103,19 @@ export function ConnectionStatusLine() {
       break;
   }
 
+  /**
+   * Live announcements are scoped to the primary line only. The secondary
+   * line (e.g. the "Still searching · 0:12" elapsed timer) re-renders every
+   * second, so putting it inside a live region would spam screen readers —
+   * announcing only discrete state transitions keeps it dependable.
+   */
   return (
-    <div
-      aria-live="polite"
-      aria-atomic="true"
-      className="flex flex-col items-center gap-2 text-center"
-    >
+    <div className="flex flex-col items-center gap-2 text-center">
       <AnimatePresence mode="wait">
         <motion.span
           key={status.state}
+          aria-live="polite"
+          aria-atomic="true"
           className="block text-base font-semibold tracking-tight-display text-foreground"
           {...TEXT_TRANSITION}
         >
@@ -121,7 +125,11 @@ export function ConnectionStatusLine() {
       <AnimatePresence mode="wait">
         <motion.span
           key={status.state}
-          className="block min-h-5 max-w-xs truncate font-mono text-xs text-muted-foreground"
+          className={
+            status.state === "Error"
+              ? "block max-w-sm whitespace-pre-wrap font-mono text-xs leading-relaxed text-status-error"
+              : "block min-h-5 max-w-xs truncate font-mono text-xs text-muted-foreground"
+          }
           {...TEXT_TRANSITION}
         >
           {secondary}

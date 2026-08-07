@@ -163,6 +163,10 @@ fn spawn_and_monitor(
             // process behind it. A spawn failure is an OS/environment-level
             // problem (not a network drop), so it is not auto-retried —
             // retrying blindly here would just mask a real setup issue.
+            // The SOCKS socket is dead now, so drop the system proxy too —
+            // otherwise the OS keeps pointing at 127.0.0.1:1819 with nothing
+            // listening behind it.
+            let _ = crate::sysproxy::disable();
             set_state_and_emit(
                 &app,
                 &manager,
@@ -249,6 +253,10 @@ fn handle_unexpected_failure(
     orphan::clear_pid(&data_dir);
 
     if attempt > status::MAX_AUTO_RETRIES {
+        // Giving up on the attempt — the tunnel's SOCKS socket is dead, so the
+        // OS proxy (if the user turned it on) would now point at a port with
+        // nothing listening, breaking every browser. Drop it.
+        let _ = crate::sysproxy::disable();
         set_state_and_emit(
             &app,
             &manager,
@@ -517,6 +525,10 @@ pub fn request_disconnect(
                 mgr.user_requested_stop = false;
                 drop(mgr);
                 orphan::clear_pid(&app_data_dir(&app));
+                // Tunnel is fully down now — turn off the system proxy so it
+                // isn't left pointing at a dead SOCKS port when the user
+                // disconnects.
+                let _ = crate::sysproxy::disable();
                 set_state_and_emit(&app, &manager, ConnectionState::Idle);
                 return;
             }
@@ -551,4 +563,7 @@ pub fn shutdown_blocking(
     mgr.session = None;
     drop(mgr);
     orphan::clear_pid(data_dir);
+    // App is quitting — make sure the OS proxy isn't left pointing at a
+    // dead tunnel socket after we exit.
+    let _ = crate::sysproxy::disable();
 }
