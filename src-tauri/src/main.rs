@@ -36,6 +36,7 @@ fn main() {
             // the user can click Connect and spawn a second one onto the
             // same port.
             aether::orphan::reap_orphan(&data_dir);
+            #[cfg(target_os = "windows")]
             tun::cleanup::reap_orphan_tun(&data_dir);
             focus::spawn_watcher(app.handle().clone());
             tray::init(app)?;
