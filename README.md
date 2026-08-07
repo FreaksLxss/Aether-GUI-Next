@@ -34,6 +34,18 @@ This project does not reimplement any of Aether's tunneling logic. It drives the
   Each option has an explanation on hover.
 - **Live progress** — while Aether searches for a working route, the GUI shows real elapsed time and, once Aether reports its own scan budget, an actual percentage and progress bar — not just a spinner.
 - **Automatic reconnect** — if the tunnel drops unexpectedly mid-session (observed occasionally with WARP-in-WARP, but handled the same way for every protocol), the GUI retries automatically with backoff, shown as a visible "Reconnecting… (attempt N of 3)" rather than silently dying or dumping you back to a bare error. A user-requested disconnect is never retried.
+- **Egress location & leak check** — while connected, a small pill shows the public IP, country, and city your traffic is actually exiting through (the tunnel's egress), and a one-click refresh fettches it again. Every connect, the GUI also compares that exit IP against your real, direct IP — if they match, it raises a visible "Leak detected" warning, so you immediately know the tunnel isn't actually masking your traffic.
+- **Connection history** — every session is recorded (protocol, scan mode, duration, time, success/failure) in a collapsible panel with a clear-history action, so you can see what's been working.
+- **Live log window** — Aether's full log stream can be popped open in a separate, resizable window that stays live even when you're not watching the main screen — useful for digging into what a connection attempt actually did.
+
+## Settings
+
+Beyond the connect screen and the advanced profile, a Settings panel houses the app-level wiring:
+
+- **Capture mode** — route captured traffic through your **system proxy** (only apps that respect it), or, on Windows, through a **TUN** virtual adapter that catches everything (currently gated off in the UI until fully wired). DNS resolution mode follows.
+- **System niceties** — keep the window always on top, launch the app at sign-in, minimize to tray on startup, and close to tray instead of quitting.
+- **Appearance** — light/dark theme plus your own accent color, tailored per profile.
+- **Import/export** — save your whole setup to a file and restore it on another machine, and check for new releases from inside the app.
 
 ## Installing
 
