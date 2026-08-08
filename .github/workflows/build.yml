@@ -85,6 +85,38 @@ jobs:
           releaseDraft: true
           args: ${{ matrix.target != '' && format('--target {0}', matrix.target) || '' }}
 
+      # Windows Authenticode sign the built binaries, then re-upload over the
+      # (unsigned) bundle tauri-action attached to the draft release. This job
+      # is skipped until a code-signing cert is configured in repository
+      # secrets (WINDOWS_CERT_BASE64 + WINDOWS_CERT_PASSWORD) — supplying the
+      # cert is what actually kills Defender ML false-positives.
+      - name: Sign Windows binaries
+        if: runner.os == 'Windows' && env.WINDOWS_CERT_BASE64 != ''
+        shell: pwsh
+        env:
+          WINDOWS_CERT_BASE64: ${{ secrets.WINDOWS_CERT_BASE64 }}
+          WINDOWS_CERT_PASSWORD: ${{ secrets.WINDOWS_CERT_PASSWORD }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          $certPath = Join-Path $env:RUNNER_TEMP "code-signing-cert.pfx"
+          [IO.File]::WriteAllBytes($certPath, [Convert]::FromBase64String($env:WINDOWS_CERT_BASE64))
+          $signtool = Get-ChildItem "C:\Program Files (x86)\Windows Kits\10\bin\*\x64\signtool.exe" |
+            Sort-Object FullName -Descending | Select-Object -First 1
+          if (-not $signtool) { throw "signtool.exe not found" }
+          $signed = @()
+          Get-ChildItem "src-tauri\target" -Recurse -Include *.exe,*.dll,*.msi |
+            Where-Object { $_.FullName -match '\\bundle\\' } |
+            ForEach-Object {
+              & $signtool.FullName sign /f $certPath /p $env:WINDOWS_CERT_PASSWORD `
+                /tr "http://timestamp.digicert.com" /td sha256 /fd sha256 $_.FullName
+              if ($LASTEXITCODE -ne 0) { throw "Signing failed: $($_.FullName)" }
+              $signed += $_.FullName
+            }
+          if ($env:GITHUB_REF_TYPE -ne 'tag') { exit 0 }
+          foreach ($file in $signed) {
+            gh release upload "$env:GITHUB_REF_NAME" "$file" --clobber
+          }
+
       - uses: actions/upload-artifact@v4
         with:
           name: bundles-${{ matrix.name }}

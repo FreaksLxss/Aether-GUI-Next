@@ -31,6 +31,7 @@
   "bundle": {
     "active": true,
     "targets": "all",
+    "publisher": "Aether-GUI",
     "icon": [
       "icons/32x32.png",
       "icons/128x128.png",
@@ -38,6 +39,11 @@
       "icons/icon.icns",
       "icons/icon.ico"
     ],
-    "resources": ["binaries/*"]
+    "resources": ["binaries/*"],
+    "windows": {
+      "nsis": {
+        "installMode": "perMachine"
+      }
+    }
   }
 }
