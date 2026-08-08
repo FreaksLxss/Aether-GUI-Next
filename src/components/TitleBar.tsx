@@ -31,43 +31,52 @@ export function TitleBar() {
   return (
     <header
       data-tauri-drag-region
-      className="glass relative z-10 flex h-9 shrink-0 select-none items-center justify-end border-b border-white/5"
+      className="relative z-10 shrink-0 select-none px-2 pt-2"
     >
-      <div className="absolute left-0 top-0 flex h-full items-center gap-2 pl-3">
-        <ProxyIndicator />
-        {uptime && (
-          <span className="font-mono text-[10px] text-primary/70">
-            {uptime}
-          </span>
-        )}
+      <div data-tauri-drag-region className="flex items-center justify-between gap-2">
+        <div data-tauri-drag-region className="flex items-center gap-2 pl-3">
+          <ProxyIndicator />
+          {uptime && (
+            <div
+              data-tauri-drag-region
+              className="glass flex h-9 items-center rounded-lg border border-white/10 px-3 shadow-[var(--shadow-glass)]"
+            >
+              <span className="font-mono text-[10px] text-primary/70">
+                {uptime}
+              </span>
+            </div>
+          )}
+        </div>
+        <div className="glass flex h-9 items-center rounded-lg border border-white/10 px-1 shadow-[var(--shadow-glass)]">
+          <Button
+            variant="ghost"
+            size="icon"
+            className="size-8 rounded-full text-muted-foreground hover:bg-white/10 hover:text-foreground active:scale-95 transition"
+            aria-label="Minimize"
+            onClick={() => void appWindow.minimize()}
+          >
+            <Minus className="size-4" />
+          </Button>
+          <Button
+            variant="ghost"
+            size="icon"
+            className="size-8 rounded-full text-muted-foreground hover:bg-white/10 hover:text-foreground active:scale-95 transition"
+            aria-label="Maximize"
+            onClick={() => void appWindow.toggleMaximize()}
+          >
+            <Maximize2 className="size-3.5" />
+          </Button>
+          <Button
+            variant="ghost"
+            size="icon"
+            className="size-8 rounded-full text-muted-foreground hover:bg-destructive hover:text-white active:scale-95 transition"
+            aria-label="Close"
+            onClick={handleClose}
+          >
+            <X className="size-4" />
+          </Button>
+        </div>
       </div>
-      <Button
-        variant="ghost"
-        size="icon"
-        className="h-9 w-13 rounded-none text-muted-foreground hover:bg-white/5 hover:text-foreground active:scale-95 transition"
-        aria-label="Minimize"
-        onClick={() => void appWindow.minimize()}
-      >
-        <Minus className="size-4" />
-      </Button>
-      <Button
-        variant="ghost"
-        size="icon"
-        className="h-9 w-13 rounded-none text-muted-foreground hover:bg-white/5 hover:text-foreground active:scale-95 transition"
-        aria-label="Maximize"
-        onClick={() => void appWindow.toggleMaximize()}
-      >
-        <Maximize2 className="size-3.5" />
-      </Button>
-      <Button
-        variant="ghost"
-        size="icon"
-        className="h-9 w-13 rounded-none text-muted-foreground hover:bg-destructive hover:text-white active:scale-95 transition"
-        aria-label="Close"
-        onClick={handleClose}
-      >
-        <X className="size-4" />
-      </Button>
     </header>
   );
 }

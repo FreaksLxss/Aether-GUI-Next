@@ -1,7 +1,6 @@
 import { useEffect, useState } from "react";
 import { invoke } from "@tauri-apps/api/core";
 import { Globe } from "lucide-react";
-import { Badge } from "@/components/ui/badge";
 
 export function ProxyIndicator() {
   const [active, setActive] = useState(false);
@@ -15,17 +14,14 @@ export function ProxyIndicator() {
   }, []);
 
   return (
-    <Badge
-      variant="outline"
-      className={`gap-1 px-1.5 py-0 text-[10px] font-normal ${
-        active
-          ? "border-primary/30 text-primary"
-          : "border-white/10 text-muted-foreground"
+    <span
+      className={`inline-flex items-center gap-1 text-[11px] font-medium ${
+        active ? "text-primary" : "text-muted-foreground"
       }`}
       title={active ? "System proxy active" : "System proxy inactive"}
     >
-      <Globe size={10} />
+      <Globe size={11} />
       {active ? "Proxy" : "No Proxy"}
-    </Badge>
+    </span>
   );
 }

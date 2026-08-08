@@ -7,6 +7,7 @@ import { PublicLocation } from "@/components/PublicLocation";
 import { CopyProxyButton } from "@/components/CopyProxyButton";
 import { PacUrl } from "@/components/PacUrl";
 import { QuickConnect } from "@/components/QuickConnect";
+import { QuickProtocol } from "@/components/QuickProtocol";
 import { AdvancedPanel } from "@/components/AdvancedPanel";
 import { ConnectionHistory } from "@/components/ConnectionHistory";
 import { ProfilePresets } from "@/components/ProfilePresets";
@@ -41,7 +42,7 @@ function MainScreen() {
   };
 
   return (
-    <div className="relative z-10 flex h-full flex-col items-center overflow-y-auto px-5 pt-4 pb-3">
+    <div className="relative z-10 flex h-full flex-col items-center overflow-y-auto px-5 pt-4 pb-[1.3rem]">
       <NotificationBanner />
       {/* Button centered in a fixed-height area — height never changes
           so the button position is rock-stable regardless of what's below */}
@@ -71,6 +72,7 @@ function MainScreen() {
           )}
         </AnimatePresence>
         <QuickConnect onMoreOptions={openAdvancedHighlightScan} />
+        <QuickProtocol />
       </div>
       <div className="mt-auto flex w-full max-w-sm flex-col gap-1.5 pt-3">
         <div className="flex items-center gap-2 px-1">

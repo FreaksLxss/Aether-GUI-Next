@@ -1,4 +1,4 @@
-import { ChevronRight, Zap, Shield, Gauge } from "lucide-react";
+import { ChevronRight, Zap, Shield, Gauge, EyeOff } from "lucide-react";
 import { motion } from "motion/react";
 import { Button } from "@/components/ui/button";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
@@ -9,7 +9,7 @@ interface QuickPreset {
   label: string;
   icon: typeof Zap;
   protocol: "auto" | "masque" | "wireguard";
-  scanMode: "turbo" | "balanced" | "thorough";
+  scanMode: "turbo" | "balanced" | "thorough" | "stealth";
   description: string;
 }
 
@@ -35,16 +35,22 @@ const PRESETS: QuickPreset[] = [
     scanMode: "thorough",
     description: "Maximum security",
   },
+  {
+    label: "Stealth",
+    icon: EyeOff,
+    protocol: "auto",
+    scanMode: "stealth",
+    description: "Hardest to detect",
+  },
 ];
 
-/** Maps every scan mode onto one of the three quick presets so there is
- * always an active indicator, even for modes only reachable via the advanced
- * panel (stealth/ironclad are still "more secure" → Secure). */
+/** Maps every scan mode onto one of the quick presets so there is always an
+ * active indicator, even for modes only reachable via the advanced panel. */
 const ACTIVE_PRESET: Record<string, string> = {
   turbo: "Fast",
   balanced: "Balanced",
   thorough: "Secure",
-  stealth: "Secure",
+  stealth: "Stealth",
   ironclad: "Secure",
 };
 
@@ -84,7 +90,7 @@ export function QuickConnect({ onMoreOptions }: { onMoreOptions: () => void }) {
                     initial={{ opacity: 0, scale: 0.85 }}
                     animate={{ opacity: 1, scale: 1 }}
                     transition={SPRING_FAST}
-                    className="absolute inset-0 rounded-lg bg-primary shadow-md shadow-primary/40"
+                    className="absolute inset-0 rounded-xl bg-primary shadow-md shadow-primary/40"
                   />
                 )}
                 <Icon size={12} className="relative" aria-hidden />

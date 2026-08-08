@@ -8,124 +8,131 @@
 @custom-variant dark (&:is(.dark *));
 
 @theme inline {
-    --font-heading: var(--font-sans);
-    --font-sans: 'Geist Variable', sans-serif;
-    --font-mono: 'JetBrains Mono Variable', ui-monospace, monospace;
-    --color-sidebar-ring: var(--sidebar-ring);
-    --color-sidebar-border: var(--sidebar-border);
-    --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
-    --color-sidebar-accent: var(--sidebar-accent);
-    --color-sidebar-primary-foreground: var(--sidebar-primary-foreground);
-    --color-sidebar-primary: var(--sidebar-primary);
-    --color-sidebar-foreground: var(--sidebar-foreground);
-    --color-sidebar: var(--sidebar);
-    --color-ring: var(--ring);
-    --color-input: var(--input);
-    --color-border: var(--border);
-    --color-destructive: var(--destructive);
-    --color-accent-foreground: var(--accent-foreground);
-    --color-accent: var(--accent);
-    --color-muted-foreground: var(--muted-foreground);
-    --color-muted: var(--muted);
-    --color-secondary-foreground: var(--secondary-foreground);
-    --color-secondary: var(--secondary);
-    --color-primary-foreground: var(--primary-foreground);
-    --color-primary: var(--primary);
-    --color-popover-foreground: var(--popover-foreground);
-    --color-popover: var(--popover);
-    --color-card-foreground: var(--card-foreground);
-    --color-card: var(--card);
-    --color-foreground: var(--foreground);
-    --color-background: var(--background);
-    --radius-sm: calc(var(--radius) * 0.6);
-    --radius-md: calc(var(--radius) * 0.8);
-    --radius-lg: var(--radius);
-    --radius-xl: calc(var(--radius) * 1.4);
-    --radius-2xl: calc(var(--radius) * 1.8);
-    --radius-3xl: calc(var(--radius) * 2.2);
-    --radius-4xl: calc(var(--radius) * 2.6);
+  --font-heading: var(--font-sans);
+  --font-sans: "Geist Variable", sans-serif;
+  --font-mono: "JetBrains Mono Variable", ui-monospace, monospace;
+  --color-sidebar-ring: var(--sidebar-ring);
+  --color-sidebar-border: var(--sidebar-border);
+  --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
+  --color-sidebar-accent: var(--sidebar-accent);
+  --color-sidebar-primary-foreground: var(--sidebar-primary-foreground);
+  --color-sidebar-primary: var(--sidebar-primary);
+  --color-sidebar-foreground: var(--sidebar-foreground);
+  --color-sidebar: var(--sidebar);
+  --color-ring: var(--ring);
+  --color-input: var(--input);
+  --color-border: var(--border);
+  --color-destructive: var(--destructive);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-accent: var(--accent);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-muted: var(--muted);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-secondary: var(--secondary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-primary: var(--primary);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-popover: var(--popover);
+  --color-card-foreground: var(--card-foreground);
+  --color-card: var(--card);
+  --color-foreground: var(--foreground);
+  --color-background: var(--background);
+  --radius-sm: calc(var(--radius) * 0.6);
+  --radius-md: calc(var(--radius) * 0.8);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) * 1.4);
+  --radius-2xl: calc(var(--radius) * 1.8);
+  --radius-3xl: calc(var(--radius) * 2.2);
+  --radius-4xl: calc(var(--radius) * 2.6);
 
-    /* Elevation scale (background lightens upward instead of using
+  /* Elevation scale (background lightens upward instead of using
        box-shadows, which barely read on dark surfaces) and status colors —
        not part of shadcn's default semantic set, used directly by the
        hand-built ConnectButton/LogsPanel rather than shadcn primitives. */
-    --color-surface-1: var(--surface-1);
-    --color-surface-2: var(--surface-2);
-    --color-surface-3: var(--surface-3);
-    --color-surface-4: var(--surface-4);
-    --color-status-connected: var(--status-connected);
-    --color-status-connecting: var(--status-connecting);
-    --color-status-error: var(--status-error);
-    --color-status-idle: var(--status-idle);
-    --color-chart-5: var(--chart-5);
-    --color-chart-4: var(--chart-4);
-    --color-chart-3: var(--chart-3);
-    --color-chart-2: var(--chart-2);
-    --color-chart-1: var(--chart-1);
-    --shadow-glass: var(--shadow-glass);
+  --color-surface-1: var(--surface-1);
+  --color-surface-2: var(--surface-2);
+  --color-surface-3: var(--surface-3);
+  --color-surface-4: var(--surface-4);
+  --color-status-connected: var(--status-connected);
+  --color-status-connecting: var(--status-connecting);
+  --color-status-error: var(--status-error);
+  --color-status-idle: var(--status-idle);
+  --color-chart-5: var(--chart-5);
+  --color-chart-4: var(--chart-4);
+  --color-chart-3: var(--chart-3);
+  --color-chart-2: var(--chart-2);
+  --color-chart-1: var(--chart-1);
+  --shadow-glass: var(--shadow-glass);
 }
 
 /* Dark theme (default) — the app starts dark; .light class toggles to light. */
 :root {
-    --background: #09090b;
-    --foreground: #fafafa;
-    --card: #18181b;
-    --card-foreground: #fafafa;
-    --popover: #18181b;
-    --popover-foreground: #fafafa;
-    --primary: #ea580c;
-    --primary-foreground: #0d0d0f;
-    --secondary: #27272a;
-    --secondary-foreground: #fafafa;
-    --muted: #27272a;
-    --muted-foreground: #a1a1aa;
-    --accent: #27272a;
-    --accent-foreground: #fafafa;
-    --destructive: oklch(0.577 0.245 27.325);
-    --border: rgba(255, 255, 255, 0.08);
-    --input: rgba(255, 255, 255, 0.08);
-    --ring: #ea580c;
-    --radius: 0.625rem;
-    --sidebar: #09090b;
-    --sidebar-foreground: #fafafa;
-    --sidebar-primary: #ea580c;
-    --sidebar-primary-foreground: #0d0d0f;
-    --sidebar-accent: #27272a;
-    --sidebar-accent-foreground: #fafafa;
-    --sidebar-border: rgba(255, 255, 255, 0.08);
-    --sidebar-ring: oklch(0.708 0 0);
+  --background: #09090b;
+  --foreground: #fafafa;
+  --card: #18181b;
+  --card-foreground: #fafafa;
+  --popover: #18181b;
+  --popover-foreground: #fafafa;
+  --primary: #ea580c;
+  --primary-foreground: #0d0d0f;
+  --secondary: #27272a;
+  --secondary-foreground: #fafafa;
+  --muted: #27272a;
+  --muted-foreground: #a1a1aa;
+  --accent: #27272a;
+  --accent-foreground: #fafafa;
+  --destructive: oklch(0.577 0.245 27.325);
+  --border: rgba(255, 255, 255, 0.08);
+  --input: rgba(255, 255, 255, 0.08);
+  --ring: #ea580c;
+  --radius: 0.625rem;
+  --sidebar: #09090b;
+  --sidebar-foreground: #fafafa;
+  --sidebar-primary: #ea580c;
+  --sidebar-primary-foreground: #0d0d0f;
+  --sidebar-accent: #27272a;
+  --sidebar-accent-foreground: #fafafa;
+  --sidebar-border: rgba(255, 255, 255, 0.08);
+  --sidebar-ring: oklch(0.708 0 0);
 
-    --surface-1: #1a1a1a;
-    --surface-2: #1e1e1e;
-    --surface-3: #242424;
-    --surface-4: #2a2a2a;
-    --status-connected: #2dd4bf;
-    --status-connecting: #f2711c;
-    --status-error: #ef4444;
-    --status-idle: #6b7280;
-    --chart-1: oklch(0.87 0 0);
-    --chart-2: oklch(0.556 0 0);
-    --chart-3: oklch(0.439 0 0);
-    --chart-4: oklch(0.371 0 0);
-    --chart-5: oklch(0.269 0 0);
+  --surface-1: #1a1a1a;
+  --surface-2: #1e1e1e;
+  --surface-3: #242424;
+  --surface-4: #2a2a2a;
+  --status-connected: #2dd4bf;
+  --status-connecting: #f2711c;
+  --status-error: #ef4444;
+  --status-idle: #6b7280;
+  --chart-1: oklch(0.87 0 0);
+  --chart-2: oklch(0.556 0 0);
+  --chart-3: oklch(0.439 0 0);
+  --chart-4: oklch(0.371 0 0);
+  --chart-5: oklch(0.269 0 0);
 
-    /* Frosted-glass material (Apple-style translucent layers). Components
+  /* Frosted-glass material (Apple-style translucent layers). Components
        reference the --glass-* tokens through the .glass-* utilities below;
        the blur + saturation is what lets the ambient orbs read through. */
-    --glass-blur: 26px;
-    --glass-saturate: 1.6;
-    --glass-bg: color-mix(in srgb, var(--surface-2) 58%, transparent);
-    --glass-bg-strong: color-mix(in srgb, var(--surface-3) 80%, transparent);
-    --glass-bg-float: color-mix(in srgb, var(--surface-3) 86%, transparent);
-    --glass-ring: rgba(255, 255, 255, 0.1);
-    --glass-highlight: rgba(255, 255, 255, 0.06);
-    --shadow-glass: 0 12px 40px -12px rgba(0, 0, 0, 0.55),
-      inset 0 1px 0 0 rgba(255, 255, 255, 0.05);
+  --glass-blur: 26px;
+  --glass-saturate: 1.6;
+  --glass-bg: color-mix(in srgb, var(--surface-2) 58%, transparent);
+  --glass-bg-strong: color-mix(in srgb, var(--surface-3) 80%, transparent);
+  --glass-bg-float: color-mix(in srgb, var(--surface-3) 86%, transparent);
+  --glass-ring: rgba(255, 255, 255, 0.1);
+  --glass-highlight: rgba(255, 255, 255, 0.06);
+  --shadow-glass:
+    0 12px 40px -12px rgba(0, 0, 0, 0.55),
+    inset 0 1px 0 0 rgba(255, 255, 255, 0.05);
 
-    /* Rounded window frame (transparent native window + CSS rounding). */
-    --window-radius: 18px;
-    --window-ring: rgba(255, 255, 255, 0.09);
-    --window-highlight: rgba(255, 255, 255, 0.06);
+  /* Rounded window frame (transparent native window + CSS rounding).
+       Per-corner overrides default to the shared radius; change any of
+       --window-radius-tl/-tr/-br/-bl for individual corners. */
+  --window-radius: 18px;
+  --window-radius-tl: var(--window-radius);
+  --window-radius-tr: var(--window-radius);
+  --window-radius-bl: 30px; /* bottom-left */
+  --window-radius-br: 30px; /* bottom-right */
+  --window-ring: rgba(255, 255, 255, 0.09);
+  --window-highlight: rgba(255, 255, 255, 0.06);
 }
 
 @media (prefers-reduced-transparency: reduce) {
@@ -146,67 +153,86 @@
 
 /* Light theme — overrides CSS variables when .light is on <html>. */
 :root.light {
-    --background: #f5f5f5;
-    --foreground: #171717;
-    --card: #ffffff;
-    --card-foreground: #171717;
-    --popover: #ffffff;
-    --popover-foreground: #171717;
-    --primary: #ea580c;
-    --primary-foreground: #0d0d0f;
-    --secondary: #e5e5e5;
-    --secondary-foreground: #171717;
-    --muted: #e5e5e5;
-    --muted-foreground: #525252;
-    --accent: #d4d4d4;
-    --accent-foreground: #171717;
-    --destructive: #dc2626;
-    --border: rgba(0, 0, 0, 0.08);
-    --input: rgba(0, 0, 0, 0.12);
-    --ring: #ea580c;
-    --surface-1: #ffffff;
-    --surface-2: #f0f0f0;
-    --surface-3: #e5e5e5;
-    --surface-4: #d4d4d4;
-    --status-connected: #0d9488;
-    --status-connecting: #ea580c;
-    --status-error: #dc2626;
-    --status-idle: #9ca3af;
-    --glass-blur: 22px;
-    --glass-saturate: 1.4;
-    --glass-bg: color-mix(in srgb, #ffffff 66%, transparent);
-    --glass-bg-strong: color-mix(in srgb, #ffffff 82%, transparent);
-    --glass-bg-float: color-mix(in srgb, #ffffff 92%, transparent);
-    --glass-ring: rgba(0, 0, 0, 0.08);
-    --glass-highlight: rgba(255, 255, 255, 0.7);
-    --shadow-glass: 0 12px 40px -14px rgba(0, 0, 0, 0.18),
-      inset 0 1px 0 0 rgba(255, 255, 255, 0.8);
-    --window-radius: 18px;
-    --window-ring: rgba(0, 0, 0, 0.08);
-    --window-highlight: rgba(255, 255, 255, 0.7);
+  --background: #f5f5f5;
+  --foreground: #171717;
+  --card: #ffffff;
+  --card-foreground: #171717;
+  --popover: #ffffff;
+  --popover-foreground: #171717;
+  --primary: #ea580c;
+  --primary-foreground: #0d0d0f;
+  --secondary: #e5e5e5;
+  --secondary-foreground: #171717;
+  --muted: #e5e5e5;
+  --muted-foreground: #525252;
+  --accent: #d4d4d4;
+  --accent-foreground: #171717;
+  --destructive: #dc2626;
+  --border: rgba(0, 0, 0, 0.08);
+  --input: rgba(0, 0, 0, 0.12);
+  --ring: #ea580c;
+  --surface-1: #ffffff;
+  --surface-2: #f0f0f0;
+  --surface-3: #e5e5e5;
+  --surface-4: #d4d4d4;
+  --status-connected: #0d9488;
+  --status-connecting: #ea580c;
+  --status-error: #dc2626;
+  --status-idle: #9ca3af;
+  --glass-blur: 22px;
+  --glass-saturate: 1.4;
+  --glass-bg: color-mix(in srgb, #ffffff 66%, transparent);
+  --glass-bg-strong: color-mix(in srgb, #ffffff 82%, transparent);
+  --glass-bg-float: color-mix(in srgb, #ffffff 92%, transparent);
+  --glass-ring: rgba(0, 0, 0, 0.08);
+  --glass-highlight: rgba(255, 255, 255, 0.7);
+  --shadow-glass:
+    0 12px 40px -14px rgba(0, 0, 0, 0.18),
+    inset 0 1px 0 0 rgba(255, 255, 255, 0.8);
+  --window-radius: 18px;
+  --window-ring: rgba(0, 0, 0, 0.08);
+  --window-highlight: rgba(255, 255, 255, 0.7);
 }
 
-.light .bg-background { background-color: var(--background); }
-.light .text-foreground { color: var(--foreground); }
-.light .bg-surface-2 { background-color: var(--surface-2); }
-.light .text-muted-foreground { color: var(--muted-foreground); }
-.light .ring-white\/10 { --tw-ring-color: rgba(0, 0, 0, 0.08); }
-.light .ring-white\/5 { --tw-ring-color: rgba(0, 0, 0, 0.06); }
-.light .bg-black\/20 { background-color: rgba(0, 0, 0, 0.06); }
-.light .bg-black\/10 { background-color: rgba(0, 0, 0, 0.04); }
-.light [data-tauri-drag-region] { color: var(--foreground); }
+.light .bg-background {
+  background-color: var(--background);
+}
+.light .text-foreground {
+  color: var(--foreground);
+}
+.light .bg-surface-2 {
+  background-color: var(--surface-2);
+}
+.light .text-muted-foreground {
+  color: var(--muted-foreground);
+}
+.light .ring-white\/10 {
+  --tw-ring-color: rgba(0, 0, 0, 0.08);
+}
+.light .ring-white\/5 {
+  --tw-ring-color: rgba(0, 0, 0, 0.06);
+}
+.light .bg-black\/20 {
+  background-color: rgba(0, 0, 0, 0.06);
+}
+.light .bg-black\/10 {
+  background-color: rgba(0, 0, 0, 0.04);
+}
+.light [data-tauri-drag-region] {
+  color: var(--foreground);
+}
 
 @layer base {
   * {
     @apply border-border outline-ring/50;
-    }
+  }
   body {
     @apply text-foreground;
     background: transparent;
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
     font-optical-sizing: auto;
-    }
+  }
   html,
   body,
   #root {
@@ -214,10 +240,10 @@
     overflow: hidden;
     overscroll-behavior: none;
     background: transparent;
-    }
+  }
   html {
     @apply font-sans;
-    }
+  }
   ::selection {
     background: color-mix(in srgb, var(--primary) 30%, transparent);
   }
@@ -234,7 +260,8 @@
     position: relative;
     width: 100%;
     height: 100dvh;
-    border-radius: var(--window-radius);
+    border-radius: var(--window-radius-tl) var(--window-radius-tr)
+      var(--window-radius-br) var(--window-radius-bl);
     overflow: hidden;
     border: 1px solid var(--window-ring);
     box-shadow: inset 0 1px 0 0 var(--window-highlight);
@@ -242,17 +269,20 @@
 
   .glass {
     background-color: var(--glass-bg);
-    -webkit-backdrop-filter: blur(var(--glass-blur)) saturate(var(--glass-saturate));
+    -webkit-backdrop-filter: blur(var(--glass-blur))
+      saturate(var(--glass-saturate));
     backdrop-filter: blur(var(--glass-blur)) saturate(var(--glass-saturate));
   }
   .glass-strong {
     background: var(--glass-bg-strong);
-    -webkit-backdrop-filter: blur(var(--glass-blur)) saturate(var(--glass-saturate));
+    -webkit-backdrop-filter: blur(var(--glass-blur))
+      saturate(var(--glass-saturate));
     backdrop-filter: blur(var(--glass-blur)) saturate(var(--glass-saturate));
   }
   .glass-float {
     background: var(--glass-bg-float);
-    -webkit-backdrop-filter: blur(var(--glass-blur)) saturate(var(--glass-saturate));
+    -webkit-backdrop-filter: blur(var(--glass-blur))
+      saturate(var(--glass-saturate));
     backdrop-filter: blur(var(--glass-blur)) saturate(var(--glass-saturate));
   }
   .text-balance {
@@ -263,17 +293,21 @@
   }
 
   .transition-smooth {
-    transition-property: color, background-color, border-color, box-shadow, opacity, transform;
+    transition-property:
+      color, background-color, border-color, box-shadow, opacity, transform;
     transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
     transition-duration: 200ms;
   }
   .transition-fast {
-    transition-property: color, background-color, border-color, box-shadow, opacity, transform;
+    transition-property:
+      color, background-color, border-color, box-shadow, opacity, transform;
     transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
     transition-duration: 100ms;
   }
   .hover-lift {
-    transition: transform 0.2s cubic-bezier(0.4, 0, 0.2, 1), box-shadow 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+    transition:
+      transform 0.2s cubic-bezier(0.4, 0, 0.2, 1),
+      box-shadow 0.2s cubic-bezier(0.4, 0, 0.2, 1);
   }
   .hover-lift:hover {
     transform: translateY(-1px);
@@ -290,7 +324,8 @@
    both themes without hard-coded colors. */
 * {
   scrollbar-width: thin;
-  scrollbar-color: color-mix(in srgb, var(--foreground) 22%, transparent) transparent;
+  scrollbar-color: color-mix(in srgb, var(--foreground) 22%, transparent)
+    transparent;
 }
 ::-webkit-scrollbar {
   width: 4px;
@@ -322,63 +357,151 @@
    [animation-play-state:paused] while the window is unfocused. Motion is
    reserved for one-shot transitions. */
 @keyframes ring-breathe {
-  0%, 100% { transform: scale(1); opacity: 0.55; }
-  50% { transform: scale(1.015); opacity: 0.7; }
+  0%,
+  100% {
+    transform: scale(1);
+    opacity: 0.55;
+  }
+  50% {
+    transform: scale(1.015);
+    opacity: 0.7;
+  }
 }
 @keyframes ring-pulse-fast {
-  0%, 100% { transform: scale(1); opacity: 0.7; }
-  50% { transform: scale(1.08); opacity: 1; }
+  0%,
+  100% {
+    transform: scale(1);
+    opacity: 0.7;
+  }
+  50% {
+    transform: scale(1.08);
+    opacity: 1;
+  }
 }
 @keyframes ring-pulse-slow {
-  0%, 100% { transform: scale(1); }
-  50% { transform: scale(1.03); }
+  0%,
+  100% {
+    transform: scale(1);
+  }
+  50% {
+    transform: scale(1.03);
+  }
 }
 @keyframes glow-pulse {
-  0%, 100% { transform: scale(1); opacity: 0.55; }
-  50% { transform: scale(1.04); opacity: 1; }
+  0%,
+  100% {
+    transform: scale(1);
+    opacity: 0.55;
+  }
+  50% {
+    transform: scale(1.04);
+    opacity: 1;
+  }
 }
 @keyframes scan-sweep {
-  0%, 20% { transform: translateX(-110%); }
-  100% { transform: translateX(360%); }
+  0%,
+  20% {
+    transform: translateX(-110%);
+  }
+  100% {
+    transform: translateX(360%);
+  }
 }
 @keyframes orb-drift-a {
-  0%, 100% { transform: translate(0, 0); opacity: 0.14; }
-  50% { transform: translate(20px, -15px); opacity: 0.22; }
+  0%,
+  100% {
+    transform: translate(0, 0);
+    opacity: 0.14;
+  }
+  50% {
+    transform: translate(20px, -15px);
+    opacity: 0.22;
+  }
 }
 @keyframes orb-drift-b {
-  0%, 100% { transform: translate(0, 0); opacity: 0.1; }
-  50% { transform: translate(-25px, 18px); opacity: 0.16; }
+  0%,
+  100% {
+    transform: translate(0, 0);
+    opacity: 0.1;
+  }
+  50% {
+    transform: translate(-25px, 18px);
+    opacity: 0.16;
+  }
 }
 @keyframes strand-pulse {
-  0% { opacity: 0.3; transform: scale(0.95); }
-  100% { opacity: 1; transform: scale(1.08); }
+  0% {
+    opacity: 0.3;
+    transform: scale(0.95);
+  }
+  100% {
+    opacity: 1;
+    transform: scale(1.08);
+  }
 }
 @keyframes strand-breathe {
-  0% { opacity: 0.2; transform: scale(1); }
-  100% { opacity: 0.5; transform: scale(1.02); }
+  0% {
+    opacity: 0.2;
+    transform: scale(1);
+  }
+  100% {
+    opacity: 0.5;
+    transform: scale(1.02);
+  }
 }
 @keyframes side-ray-pulse {
-  0% { opacity: 0.3; filter: blur(0px); }
-  100% { opacity: 1; filter: blur(1px); }
+  0% {
+    opacity: 0.3;
+    filter: blur(0px);
+  }
+  100% {
+    opacity: 1;
+    filter: blur(1px);
+  }
 }
 
-.anim-ring-breathe { animation: ring-breathe 4.5s ease-in-out infinite; }
-.anim-ring-pulse-fast { animation: ring-pulse-fast 1.6s ease-in-out infinite; }
-.anim-ring-pulse-slow { animation: ring-pulse-slow 2.4s ease-in-out infinite; }
-.anim-glow-fast { animation: glow-pulse 1.6s ease-in-out infinite; }
-.anim-glow-slow { animation: glow-pulse 2.4s ease-in-out infinite; }
-.anim-orb-a { animation: orb-drift-a 10s ease-in-out infinite; }
-.anim-orb-b { animation: orb-drift-b 13s ease-in-out infinite; }
-.anim-scan-sweep { animation: scan-sweep 1.2s ease-in-out infinite; }
+.anim-ring-breathe {
+  animation: ring-breathe 4.5s ease-in-out infinite;
+}
+.anim-ring-pulse-fast {
+  animation: ring-pulse-fast 1.6s ease-in-out infinite;
+}
+.anim-ring-pulse-slow {
+  animation: ring-pulse-slow 2.4s ease-in-out infinite;
+}
+.anim-glow-fast {
+  animation: glow-pulse 1.6s ease-in-out infinite;
+}
+.anim-glow-slow {
+  animation: glow-pulse 2.4s ease-in-out infinite;
+}
+.anim-orb-a {
+  animation: orb-drift-a 10s ease-in-out infinite;
+}
+.anim-orb-b {
+  animation: orb-drift-b 13s ease-in-out infinite;
+}
+.anim-scan-sweep {
+  animation: scan-sweep 1.2s ease-in-out infinite;
+}
 
 @keyframes spin {
-  to { transform: rotate(360deg); }
+  to {
+    transform: rotate(360deg);
+  }
 }
-.anim-spin { animation: spin 0.8s linear infinite; }
+.anim-spin {
+  animation: spin 0.8s linear infinite;
+}
 
 /* The decorative loops (idle breathing, background orbs) honor reduced
    motion; the connecting/connected pulses are active state feedback and are
    deliberately left running (matches the original Motion behavior). */
 @media (prefers-reduced-motion: reduce) {
-  .anim-ring-breathe, .anim-orb-a, .anim-orb-b, .anim-scan-sweep { animation: none; }
+  .anim-ring-breathe,
+  .anim-orb-a,
+  .anim-orb-b,
+  .anim-scan-sweep {
+    animation: none;
+  }
 }

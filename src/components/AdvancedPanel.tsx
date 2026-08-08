@@ -127,7 +127,7 @@ export function AdvancedPanel({
             <div
               ref={scanModeRef}
               className={cn(
-                "rounded-md transition-all duration-300",
+                "rounded-lg transition-all duration-800 p-1",
                 highlightScanMode && "bg-primary/10 ring-1 ring-primary/30",
               )}
             >

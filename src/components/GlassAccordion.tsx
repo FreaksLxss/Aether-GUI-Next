@@ -41,7 +41,7 @@ export function GlassAccordion({
     <Collapsible open={open} onOpenChange={onToggle}>
       <div
         className={cn(
-          "glass rounded-xl shadow-glass transition-shadow duration-200",
+          "glass rounded-[0.7rem] shadow-glass transition-shadow duration-200",
           open
             ? "ring-1 ring-white/10"
             : "ring-1 ring-white/5 hover:ring-white/10",
@@ -62,7 +62,7 @@ export function GlassAccordion({
           />
           {label}
           {count != null && count > 0 && (
-            <span className="rounded-full bg-white/10 px-1.5 py-0.5 text-[9px] leading-none text-muted-foreground tabular-nums">
+            <span className="rounded-lg bg-white/10 px-1.5 py-0.5 text-[9px] leading-none text-muted-foreground tabular-nums">
               {count}
             </span>
           )}
