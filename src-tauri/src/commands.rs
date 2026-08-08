@@ -140,8 +140,8 @@ pub fn get_system_proxy() -> bool {
 }
 
 #[tauri::command]
-pub async fn check_update(current_version: String) -> Result<updater::UpdateInfo, AetherError> {
-    updater::check_for_update(&current_version)
+pub async fn check_update() -> Result<updater::UpdateInfo, AetherError> {
+    updater::check_for_update(env!("CARGO_PKG_VERSION"))
         .await
         .map_err(AetherError::Internal)
 }

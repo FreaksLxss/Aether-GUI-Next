@@ -22,7 +22,7 @@ export function UpdateChecker() {
   useEffect(() => {
     if (sessionStorage.getItem(CHECKED_KEY)) return;
     sessionStorage.setItem(CHECKED_KEY, "1");
-    invoke<UpdateInfo>("check_update", { currentVersion: "0.9.0" })
+    invoke<UpdateInfo>("check_update")
       .then((info) => {
         if (info.available) setUpdate(info);
       })
@@ -34,9 +34,7 @@ export function UpdateChecker() {
   const check = async () => {
     setChecking(true);
     try {
-      const info = await invoke<UpdateInfo>("check_update", {
-        currentVersion: "0.9.0",
-      });
+      const info = await invoke<UpdateInfo>("check_update");
       if (info.available) setUpdate(info);
     } catch {
       // Silent — network might be down

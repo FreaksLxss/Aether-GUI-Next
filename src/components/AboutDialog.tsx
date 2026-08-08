@@ -1,6 +1,7 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { ExternalLink, Info } from "lucide-react";
 import { open } from "@tauri-apps/plugin-shell";
+import { getVersion } from "@tauri-apps/api/app";
 import {
   Dialog,
   DialogContent,
@@ -13,6 +14,13 @@ import { Separator } from "@/components/ui/separator";
 
 export function AboutDialog() {
   const [open_, setOpen] = useState(false);
+  const [version, setVersion] = useState("0.0.0");
+
+  useEffect(() => {
+    getVersion()
+      .then(setVersion)
+      .catch(() => {});
+  }, []);
 
   return (
     <>
@@ -31,7 +39,7 @@ export function AboutDialog() {
         <DialogContent className="w-80 gap-0">
           <DialogHeader>
             <DialogTitle className="text-sm">Aether-GUI</DialogTitle>
-            <DialogDescription className="text-xs">v0.9.0</DialogDescription>
+            <DialogDescription className="text-xs">v{version}</DialogDescription>
           </DialogHeader>
 
           <DialogDescription className="mt-3 text-xs leading-relaxed text-muted-foreground">
