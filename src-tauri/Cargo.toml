@@ -23,6 +23,7 @@ reqwest = { version = "0.12", features = ["json", "socks"] }
 zip = "2"
 tar = "0.4"
 flate2 = "1"
+log = "0.4"
 
 [target.'cfg(windows)'.dependencies]
 windows-sys = { version = "0.59", features = ["Win32_Foundation", "Win32_UI_WindowsAndMessaging", "Win32_Networking_WinInet", "Win32_System_Threading", "Win32_Security"] }
@@ -30,4 +31,3 @@ winreg = "0.55"
 wintun = "0.5"
 pnet_packet = "0.35"
 parking_lot = "0.12"
-log = "0.4"

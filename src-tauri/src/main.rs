@@ -6,6 +6,7 @@ mod error;
 mod events;
 mod focus;
 mod history;
+mod httpproxy;
 mod net;
 mod presets;
 mod state;
@@ -40,6 +41,16 @@ fn main() {
             tun::cleanup::reap_orphan_tun(&data_dir);
             focus::spawn_watcher(app.handle().clone());
             tray::init(app)?;
+            // Loopback HTTP→SOCKS5 bridge. The Windows system proxy is an HTTP
+            // proxy; aether only speaks SOCKS5, so the OS points at this bridge
+            // and it forwards every request through aether. Started here so the
+            // bound port is stable for the whole session.
+            httpproxy::start().map_err(|e| {
+                log::error!("failed to start HTTP proxy bridge: {e}");
+                Box::new(tauri::Error::Io(std::io::Error::other(format!(
+                    "failed to start HTTP proxy bridge: {e}"
+                ))))
+            })?;
             // Start minimized if the user opted in (paired with close-to-tray
             // and launch-at-startup so the app quietly sits in the tray).
             // Only applies when close_to_tray is also enabled — otherwise

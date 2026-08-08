@@ -45,16 +45,27 @@ fn notify_proxy_changed() {
     }
 }
 
-/// Check if the system proxy is currently set to our SOCKS5 address.
+/// Check if the system proxy is currently set to our HTTP proxy bridge.
 pub fn is_enabled() -> bool {
     PROXY_ENABLED.load(Ordering::Relaxed)
 }
 
-/// Enable the Windows system SOCKS5 proxy at the given address.
+/// Enable the Windows system proxy, pointing it at the loopback HTTP bridge
+/// which forwards through Aether's SOCKS5 listener at `addr`.
+///
+/// The bridge (not the SOCKS address) is what apps connect to, and Windows'
+/// system proxy is HTTP-oriented — writing `socks=host:port` directly makes
+/// the Settings UI mangle the entry and Chrome/Edge/Store apps ignore it.
 #[cfg(target_os = "windows")]
 pub fn enable(addr: &str) -> Result<(), String> {
     use winreg::enums::*;
     use winreg::RegKey;
+
+    // Point the bridge's upstream at Aether's SOCKS5 listener.
+    crate::httpproxy::set_target(addr);
+
+    let listen = crate::httpproxy::local_addr()
+        .ok_or_else(|| "HTTP proxy bridge is not running".to_string())?;
 
     let internet = RegKey::predef(HKEY_CURRENT_USER)
         .open_subkey_with_flags(
@@ -63,25 +74,15 @@ pub fn enable(addr: &str) -> Result<(), String> {
         )
         .map_err(|e| format!("Failed to open registry: {e}"))?;
 
-    // Parse host:port, normalizing a wildcard bind (0.0.0.0 / LAN mode) to
-    // loopback — the system proxy entry is what apps connect TO, and no app
-    // can reach 0.0.0.0. Aether itself serves the same SOCKS listener on all
-    // interfaces, so loopback always resolves to it.
-    let parts: Vec<&str> = addr.split(':').collect();
-    let raw_host = parts.first().unwrap_or(&"127.0.0.1");
-    let host = match raw_host.parse::<std::net::IpAddr>() {
-        Ok(ip) if ip.is_unspecified() => "127.0.0.1",
-        _ => raw_host,
-    };
-    let port = parts.get(1).unwrap_or(&"1819");
-
     // Enable proxy
     internet
         .set_value("ProxyEnable", &1u32)
         .map_err(|e| format!("Failed to set ProxyEnable: {e}"))?;
 
-    // Set SOCKS5 proxy (format: socks=host:port)
-    let proxy_value = format!("socks={host}:{port}");
+    // Plain HTTP proxy pointing at our loopback bridge. No scheme prefix —
+    // that is what Windows Settings renders as "proxy ip address:port" and
+    // what every app (Chrome, Edge, Store, WinHTTP) honors.
+    let proxy_value = format!("{}:{}", listen.ip(), listen.port());
     internet
         .set_value("ProxyServer", &proxy_value)
         .map_err(|e| format!("Failed to set ProxyServer: {e}"))?;
