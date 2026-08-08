@@ -37,14 +37,9 @@ export function TitleBar() {
         <div data-tauri-drag-region className="flex items-center gap-2 pl-3">
           <ProxyIndicator />
           {uptime && (
-            <div
-              data-tauri-drag-region
-              className="glass flex h-9 items-center rounded-lg border border-white/10 px-3 shadow-[var(--shadow-glass)]"
-            >
-              <span className="font-mono text-[10px] text-primary/70">
-                {uptime}
-              </span>
-            </div>
+            <span data-tauri-drag-region className="font-mono text-[10px] text-primary/70">
+              {uptime}
+            </span>
           )}
         </div>
         <div className="glass flex h-9 items-center rounded-lg border border-white/10 px-1 shadow-[var(--shadow-glass)]">
