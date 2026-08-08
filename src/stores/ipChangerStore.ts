@@ -2,7 +2,7 @@ import { create } from "zustand";
 import { invoke } from "@tauri-apps/api/core";
 import { listen } from "@tauri-apps/api/event";
 import type { LogLine, PublicInfo } from "@/types/connection";
-import type { AutoRotateConfig, TorSocksAddr, TorStatus } from "@/types/ipChanger";
+import type { AutoRotateConfig, TorSourceInfo, TorSocksAddr, TorStatus } from "@/types/ipChanger";
 
 const MAX_LOG_LINES = 400;
 
@@ -67,6 +67,9 @@ interface IpChangerState {
   lanEnabled: boolean;
   /** True when the IP-changer owns the Windows system proxy right now. */
   ipProxyEnabled: boolean;
+  /** Whether we run the OS-installed `tor` instead of the app-bundled one,
+   * plus the availability of each engine so the UI can gate the switch. */
+  torEngine: TorSourceInfo;
   logLine: (line: string) => void;
   start: () => Promise<void>;
   stop: () => Promise<void>;
@@ -77,6 +80,9 @@ interface IpChangerState {
   /** Turn the system proxy on/off for the IP-changeer. Returns the error
    * message on conflict (another proxy already owned) so the UI can warn. */
   setIpProxy: (enabled: boolean) => Promise<string | null>;
+  /** Switch Tor between the app-bundled binary and the OS package. Returns
+   * the error message when the choice is rejected (system Tor missing). */
+  setTorEngine: (useSystem: boolean) => Promise<string | null>;
   /** Re-read status + config from the backend the first time the section is
    * opened, and resolve the bundled Tor binary. */
   refreshAll: () => Promise<void>;
@@ -102,6 +108,12 @@ export const useIpChangerStore = create<IpChangerState>((set, get) => ({
   socksAddr: { host: "127.0.0.1", port: 9050 },
   lanEnabled: false,
   ipProxyEnabled: false,
+  torEngine: {
+    using_system: false,
+    bundled_available: true,
+    system_available: false,
+    system_path: null,
+  },
 
   logLine: (line) =>
     set((s) => ({
@@ -216,9 +228,24 @@ export const useIpChangerStore = create<IpChangerState>((set, get) => ({
     }
   },
 
+  setTorEngine: async (useSystem) => {
+    try {
+      await invoke("set_use_system_tor", { useSystem });
+      set({
+        torEngine: { ...get().torEngine, using_system: useSystem },
+        error: null,
+      });
+      return null;
+    } catch (e) {
+      const msg = String(e);
+      set({ error: msg });
+      return msg;
+    }
+  },
+
   refreshAll: async () => {
     try {
-      const [status, auto, binary, socks, lan, proxy] = await Promise.all([
+      const [status, auto, binary, socks, lan, proxy, engine] = await Promise.all([
         invoke<TorStatus>("get_tor_status"),
         invoke<AutoRotateConfig>("get_auto_rotate"),
         invoke<boolean>("tor_binary_exists"),
@@ -227,6 +254,7 @@ export const useIpChangerStore = create<IpChangerState>((set, get) => ({
         invoke<{ enabled: boolean; owner: string } | null>("get_system_proxy_state").catch(
           () => null,
         ),
+        invoke<TorSourceInfo>("get_tor_source").catch(() => null),
       ]);
       const mapped = mapStatus(status);
       set({
@@ -237,6 +265,7 @@ export const useIpChangerStore = create<IpChangerState>((set, get) => ({
         socksAddr: socks,
         lanEnabled: lan,
         ipProxyEnabled: proxy?.owner === "ip_changer" ? true : false,
+        ...(engine ? { torEngine: engine } : {}),
       });
       await get().refreshIp();
     } catch (e) {

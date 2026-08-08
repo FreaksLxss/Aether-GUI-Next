@@ -7,6 +7,7 @@ import { StatusIndicator } from "@/components/ip-changer/StatusIndicator";
 import { IpDisplay } from "@/components/ip-changer/IpDisplay";
 import { RotationControls } from "@/components/ip-changer/RotationControls";
 import { ProxyEndpointSettings, IpProxyToggle } from "@/components/ip-changer/ProxyEndpointSettings";
+import { TorEngineSource } from "@/components/ip-changer/TorEngineSource";
 import { AutoRotateSettings } from "@/components/ip-changer/AutoRotateSettings";
 import { LogViewer } from "@/components/ip-changer/LogViewer";
 
@@ -53,6 +54,7 @@ export function IpChangerPanel({
           <Separator className="bg-border" />
           <ProxyEndpointSettings />
           <IpProxyToggle />
+          <TorEngineSource />
 
           <Separator className="bg-border" />
           <AutoRotateSettings />

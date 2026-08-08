@@ -105,6 +105,11 @@ pub struct TorManager {
     /// Bind the SOCKS listener to `0.0.0.0` so other machines on the LAN can
     /// use it; loopback only otherwise. Also persists the choice.
     lan_bind: bool,
+    /// Launch the OS-installed `tor` package (found on PATH / the usual Linux
+    /// dirs) instead of the app's bundled Tor. A Linux-oriented escape hatch
+    /// for when the bundled binary can't execute (e.g. AppImage mounts that
+    /// drop the exec bit). Only consulted at start time.
+    use_system_tor: bool,
     auto_enabled: bool,
     auto_interval_secs: u64,
     /// ms since epoch of the last NEWIP, so the auto-rotate loop can pace
@@ -116,6 +121,10 @@ impl TorManager {
     /// The SOCKS port the Tor listener is (or will be) bound to.
     pub fn socks_port(&self) -> u16 {
         self.socks_port
+    }
+
+    pub fn set_use_system_tor(&mut self, value: bool) {
+        self.use_system_tor = value;
     }
 }
 
@@ -130,6 +139,7 @@ impl Default for TorManager {
             socks_port: DEFAULT_SOCKS_PORT,
             control_port: DEFAULT_CONTROL_PORT,
             lan_bind: false,
+            use_system_tor: false,
             auto_enabled: false,
             auto_interval_secs: 60,
             auto_last_ms: 0,
@@ -216,6 +226,44 @@ pub fn tor_binary_path(app: &AppHandle) -> Result<PathBuf, AetherError> {
         "Tor binary not found (looked in: {})",
         tried.join("; ")
     )))
+}
+
+/// Locates the OS-installed `tor`, i.e. the distro/package-provided binary
+/// (e.g. `/usr/bin/tor` on Linux). Used when the user opts out of the app's
+/// bundled Tor — a robust escape hatch when the bundled copy can't execute,
+/// most notably inside AppImage mounts that strip the exec bit.
+pub fn system_tor_binary() -> Option<PathBuf> {
+    let name = if cfg!(windows) { "tor.exe" } else { "tor" };
+
+    if let Some(paths) = std::env::var_os("PATH") {
+        for dir in std::env::split_paths(&paths) {
+            let cand = dir.join(name);
+            if cand.is_file() {
+                return Some(cand);
+            }
+        }
+    }
+    // Desktop-launch environments often start the app with a minimal PATH
+    // that omits the standard distro bin dirs where Tor is installed. The
+    // Debian/Ubuntu `tor` package lands in /usr/bin regardless, so fall
+    // through to the well-known locations on Linux.
+    if cfg!(target_os = "linux") {
+        for dir in ["/usr/bin", "/usr/local/bin", "/bin"] {
+            let cand = PathBuf::from(dir).join(name);
+            if cand.is_file() {
+                return Some(cand);
+            }
+        }
+    }
+    None
+}
+
+/// Which Tor engine the IP-changer will run next `start`: the app-bundled
+/// binary or the OS-installed package.
+#[derive(PartialEq, Clone, Copy, Debug)]
+enum TorEngine {
+    Bundled,
+    System,
 }
 
 // ---------------------------------------------------------------------------
@@ -372,7 +420,7 @@ pub fn start(app: &AppHandle, manager: &Arc<Mutex<TorManager>>) -> Result<(), Ae
     }
 
     set_status(app, manager, TorStatus::Starting);
-    logline(app, "[tor] starting bundled Tor…");
+    logline(app, "[tor] starting Tor…");
 
     match do_start(app, manager) {
         Ok(()) => Ok(()),
@@ -402,7 +450,29 @@ pub fn start(app: &AppHandle, manager: &Arc<Mutex<TorManager>>) -> Result<(), Ae
 }
 
 fn do_start(app: &AppHandle, manager: &Arc<Mutex<TorManager>>) -> Result<(), AetherError> {
-    let binary = tor_binary_path(app)?;
+    let engine = {
+        let m = manager.lock().unwrap();
+        if m.use_system_tor {
+            TorEngine::System
+        } else {
+            TorEngine::Bundled
+        }
+    };
+    let binary = match engine {
+        TorEngine::Bundled => tor_binary_path(app)?,
+        TorEngine::System => system_tor_binary().ok_or_else(|| {
+            AetherError::Internal(
+                "system Tor selected but no `tor` binary found on PATH".to_string(),
+            )
+        })?,
+    };
+    logline(
+        app,
+        match engine {
+            TorEngine::Bundled => format!("[tor] using app-bundled Tor: {}", binary.display()),
+            TorEngine::System => format!("[tor] using system Tor package: {}", binary.display()),
+        },
+    );
 
     // Pre-flight: refuse to clobber an unrelated process already bound to
     // either of our ports. Without this Tor would just silently pick a
@@ -803,6 +873,51 @@ pub fn get_auto_rotate(state: State<'_, AppState>) -> AutoRotateConfig {
 #[tauri::command]
 pub fn tor_binary_exists(app: AppHandle) -> bool {
     tor_binary_path(&app).is_ok()
+}
+
+/// Whether we currently run the OS-installed `tor` instead of the app's
+/// bundled one, plus which copies are available — so the frontend can offer
+/// the engine switch on Linux without guessing.
+#[derive(Serialize, Clone, Debug)]
+pub struct TorSourceInfo {
+    pub using_system: bool,
+    pub bundled_available: bool,
+    pub system_available: bool,
+    /// Path of the detected system Tor (for display in the UI), if any.
+    pub system_path: Option<String>,
+}
+
+#[tauri::command]
+pub fn get_tor_source(app: AppHandle, state: State<'_, AppState>) -> TorSourceInfo {
+    let using_system = state.tor_manager.lock().unwrap().use_system_tor;
+    let system_path = system_tor_binary();
+    TorSourceInfo {
+        using_system,
+        bundled_available: tor_binary_path(&app).is_ok(),
+        system_available: system_path.is_some(),
+        system_path: system_path.map(|p| p.display().to_string()),
+    }
+}
+
+#[tauri::command]
+pub fn set_use_system_tor(
+    app: AppHandle,
+    state: State<'_, AppState>,
+    use_system: bool,
+) -> Result<(), AetherError> {
+    if use_system && system_tor_binary().is_none() {
+        return Err(AetherError::Internal(
+            "system Tor not found on PATH".to_string(),
+        ));
+    }
+    let mut m = state.tor_manager.lock().unwrap();
+    m.set_use_system_tor(use_system);
+    use tauri_plugin_store::StoreExt;
+    if let Ok(store) = app.store("settings.json") {
+        store.set("ip_changer_use_system_tor", use_system);
+        let _ = store.save();
+    }
+    Ok(())
 }
 
 /// Effective SOCKS host the proxy is (or will be) bound to, plus its port —

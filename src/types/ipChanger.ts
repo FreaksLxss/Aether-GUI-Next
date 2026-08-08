@@ -19,3 +19,10 @@ export interface TorSocksAddr {
   host: string;
   port: number;
 }
+
+export interface TorSourceInfo {
+  using_system: boolean;
+  bundled_available: boolean;
+  system_available: boolean;
+  system_path: string | null;
+}

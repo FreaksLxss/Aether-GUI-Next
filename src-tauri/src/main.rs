@@ -58,6 +58,24 @@ fn main() {
                 let state = app.state::<AppState>();
                 ip_changer::spawn_auto_rotate(app.handle().clone(), state.tor_manager.clone());
             }
+            // Restore the IP-changer's Tor engine choice (bundled vs system)
+            // so the preference survives restarts.
+            {
+                use tauri_plugin_store::StoreExt;
+                let use_system_tor = app
+                    .handle()
+                    .store("settings.json")
+                    .ok()
+                    .and_then(|s| s.get("ip_changer_use_system_tor"))
+                    .and_then(|v| v.as_bool())
+                    .unwrap_or(false);
+                let state = app.state::<AppState>();
+                state
+                    .tor_manager
+                    .lock()
+                    .unwrap()
+                    .set_use_system_tor(use_system_tor);
+            }
             // Start minimized if the user opted in (paired with close-to-tray
             // and launch-at-startup so the app quietly sits in the tray).
             // Only applies when close_to_tray is also enabled — otherwise
@@ -167,6 +185,8 @@ fn main() {
             ip_changer::get_socks_addr,
             ip_changer::set_tor_lan,
             ip_changer::get_tor_lan,
+            ip_changer::get_tor_source,
+            ip_changer::set_use_system_tor,
         ])
         .on_window_event(|window, event| {
             if let WindowEvent::CloseRequested { api, .. } = event {
