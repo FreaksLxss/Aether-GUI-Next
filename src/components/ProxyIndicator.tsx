@@ -20,11 +20,12 @@ export function ProxyIndicator() {
   }, []);
 
   const active = state?.enabled ?? false;
-  const title = active
-    ? state?.owner === "ip_changer"
-      ? `System proxy (IP changer) → 127.0.0.1:${state.port}`
-      : `System proxy (main tunnel) → 127.0.0.1:${state.port}`
-    : "System proxy inactive";
+  const title =
+    active && state
+      ? state.owner === "ip_changer"
+        ? `System proxy (IP changer) → 127.0.0.1:${state.port}`
+        : `System proxy (main tunnel) → 127.0.0.1:${state.port}`
+      : "System proxy inactive";
 
   return (
     <span
