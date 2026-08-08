@@ -140,6 +140,11 @@ pub fn get_system_proxy() -> bool {
 }
 
 #[tauri::command]
+pub fn get_app_version() -> String {
+    env!("CARGO_PKG_VERSION").to_string()
+}
+
+#[tauri::command]
 pub async fn check_update() -> Result<updater::UpdateInfo, AetherError> {
     updater::check_for_update(env!("CARGO_PKG_VERSION"))
         .await

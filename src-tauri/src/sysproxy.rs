@@ -63,9 +63,16 @@ pub fn enable(addr: &str) -> Result<(), String> {
         )
         .map_err(|e| format!("Failed to open registry: {e}"))?;
 
-    // Parse host:port
+    // Parse host:port, normalizing a wildcard bind (0.0.0.0 / LAN mode) to
+    // loopback — the system proxy entry is what apps connect TO, and no app
+    // can reach 0.0.0.0. Aether itself serves the same SOCKS listener on all
+    // interfaces, so loopback always resolves to it.
     let parts: Vec<&str> = addr.split(':').collect();
-    let host = parts.first().unwrap_or(&"127.0.0.1");
+    let raw_host = parts.first().unwrap_or(&"127.0.0.1");
+    let host = match raw_host.parse::<std::net::IpAddr>() {
+        Ok(ip) if ip.is_unspecified() => "127.0.0.1",
+        _ => raw_host,
+    };
     let port = parts.get(1).unwrap_or(&"1819");
 
     // Enable proxy

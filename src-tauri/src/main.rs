@@ -122,6 +122,7 @@ fn main() {
             commands::set_system_proxy,
             commands::set_system_proxy_addr,
             commands::get_system_proxy,
+            commands::get_app_version,
             commands::check_update,
             commands::get_presets,
             commands::save_preset,

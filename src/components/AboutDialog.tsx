@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { ExternalLink, Info } from "lucide-react";
 import { open } from "@tauri-apps/plugin-shell";
-import { getVersion } from "@tauri-apps/api/app";
+import { invoke } from "@tauri-apps/api/core";
 import {
   Dialog,
   DialogContent,
@@ -17,7 +17,7 @@ export function AboutDialog() {
   const [version, setVersion] = useState("0.0.0");
 
   useEffect(() => {
-    getVersion()
+    invoke<string>("get_app_version")
       .then(setVersion)
       .catch(() => {});
   }, []);
