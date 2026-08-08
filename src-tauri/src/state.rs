@@ -1,4 +1,5 @@
 use crate::aether::AetherManager;
+use crate::ip_changer::TorManager;
 use crate::tun::TunManager;
 use serde::Serialize;
 use std::sync::{Arc, Mutex};
@@ -41,6 +42,9 @@ pub enum ConnectionState {
 pub struct AppState {
     pub manager: Arc<Mutex<AetherManager>>,
     pub tun_manager: Arc<Mutex<TunManager>>,
+    /// Independent Tor client for the IP Changer panel — shares no ports with
+    /// Aether (SOCKS 9050 vs 1819) and can run alongside or without it.
+    pub tor_manager: Arc<Mutex<TorManager>>,
 }
 
 impl Default for AppState {
@@ -48,6 +52,7 @@ impl Default for AppState {
         Self {
             manager: Arc::new(Mutex::new(AetherManager::new())),
             tun_manager: Arc::new(Mutex::new(TunManager::new())),
+            tor_manager: Arc::new(Mutex::new(TorManager::default())),
         }
     }
 }

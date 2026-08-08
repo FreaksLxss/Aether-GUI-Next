@@ -42,6 +42,7 @@ This project does not reimplement any of Aether's tunneling logic. It drives the
 - **Egress location & leak check** — while connected, a small pill shows the public IP, country, and city your traffic is actually exiting through (the tunnel's egress), and a one-click refresh fettches it again. Every connect, the GUI also compares that exit IP against your real, direct IP — if they match, it raises a visible "Leak detected" warning, so you immediately know the tunnel isn't actually masking your traffic.
 - **Connection history** — every session is recorded (protocol, scan mode, duration, time, success/failure) in a collapsible panel with a clear-history action, so you can see what's been working.
 - **Live log window** — Aether's full log stream can be popped open in a separate, resizable window that stays live even when you're not watching the main screen — useful for digging into what a connection attempt actually did.
+- **IP Changer** — an optional, self-contained Tor subprocess that gives you a fresh public egress IP on demand or on a schedule. Start Tor from the panel to see your current exit IP (country, city, ISP) resolve through the tunnel, hit **Rotate IP** to request a new identity (NEWNYM), or enable **Auto-rotate** to do it automatically every 1–60 minutes. Runs entirely independently of Aether on its own SOCKS5/control ports, with a live log stream in the panel.
 
 ## Settings
 
@@ -84,13 +85,17 @@ Windows x64 only for now — see [Building from source](#building-from-source) f
 
    This script covers Linux and macOS directly. On Windows, download the matching `aether-windows-*.zip` from the [Aether releases page](https://github.com/CluvexStudio/Aether/releases) yourself, verify it against the published `SHA256SUMS.txt`, and extract `aether.exe` into `src-tauri/binaries/`.
 
-4. **Run in development mode**
+5. **Fetch the Tor expert bundle (for the IP Changer)**
+
+   The IP Changer panel drives a bundled [Tor](https://www.torproject.org/) expert bundle rather than Tor Browser. Download the `tor-expert-bundle-*-<version>.zip` for your platform from the [Tor project downloads](https://www.torproject.org/dist/), and extract the `tor.exe` binary into `src-tauri/binaries/tor/` (e.g. `binaries/tor/windows/x86_64/tor.exe` on Windows, `binaries/tor/linux/x86_64/tor` on Linux, `binaries/tor/macos/aarch64/tor` on Apple Silicon). The panel simply shows "Tor binary not found" until a matching binary is present.
+
+6. **Run in development mode**
 
    ```sh
    npm run tauri dev
    ```
 
-5. **Build a release installer**
+7. **Build a release installer**
 
    ```sh
    npm run tauri build
@@ -101,7 +106,7 @@ Windows x64 only for now — see [Building from source](#building-from-source) f
 ## How it works
 
 - **Frontend**: React 19 + Tailwind v4, state managed with Zustand, animated with [Motion](https://motion.dev/) — all talking to the Rust backend over Tauri's IPC. Deliberately lightweight: the ambient background is two compositor-only CSS gradient orbs, and every looping animation freezes while the window is unfocused, so the app costs next to nothing sitting in the background.
-- **Backend**: Rust, using [`portable-pty`](https://docs.rs/portable-pty) to spawn the real `aether` binary (v1.5.0) in a genuine pseudo-terminal. Your chosen profile — protocol, scan mode, IP version, MASQUE transport (HTTP/3 or HTTP/2), obfuscation profile, quick reconnect, in-tunnel DNS, routing rules, Zero Trust enrolment — is passed as CLI flags/environment up front, so Aether's interactive prompts normally never appear; a background thread still watches the output and can answer any prompt that does, while forwarding every line live to the GUI's log panel.
+- **Backend**: Rust, using [`portable-pty`](https://docs.rs/portable-pty) to spawn the real `aether` binary (v1.5.0) in a genuine pseudo-terminal. Your chosen profile — protocol, scan mode, IP version, MASQUE transport (HTTP/3 or HTTP/2), obfuscation profile, quick reconnect, in-tunnel DNS, routing rules, Zero Trust enrolment — is passed as CLI flags/environment up front, so Aether's interactive prompts normally never appear; a background thread still watches the output and can answer any prompt that does, while forwarding every line live to the GUI's log panel. The **IP Changer** is a fully separate subsystem: `ip_changer.rs` spawns a bundled Tor on its own SOCKS5 (9050) + control (9051) ports, talks [Tor's control protocol](https://spec.torproject.org/control-spec/) over loopback with cookie auth (`SIGNAL NEWNYM` / `SIGNAL SHUTDOWN`), and reuses the leak-check's `net.rs` endpoints through a `socks5h` proxy to display the live exit IP.
 - **Ground truth for "connected"**: the GUI doesn't trust Aether's log wording alone (that's fragile across releases) — it treats a successful TCP connection to the local SOCKS5 port (`127.0.0.1:1819`) as the actual proof the tunnel is up.
 - **State machine**: `Idle → Launching → Connecting → Connected`, with `Reconnecting` and `Error` as the two ways a connection attempt can end up needing your attention — `Reconnecting` retries automatically (with backoff, capped at 3 attempts), `Error` is the final word once retries are exhausted or something isn't retriable (e.g. the binary itself is missing).
 

@@ -12,6 +12,8 @@ pub enum AetherError {
     PortInUse(u16),
     #[error("no active connection")]
     NotConnected,
+    #[error("a system proxy is already set — turn it off first before switching")]
+    ProxyConflict,
     #[error("internal error: {0}")]
     Internal(String),
 }

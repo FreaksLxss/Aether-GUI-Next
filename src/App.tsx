@@ -11,6 +11,7 @@ import { QuickProtocol } from "@/components/QuickProtocol";
 import { AdvancedPanel } from "@/components/AdvancedPanel";
 import { ConnectionHistory } from "@/components/ConnectionHistory";
 import { ProfilePresets } from "@/components/ProfilePresets";
+import { IpChangerPanel } from "@/components/ip-changer/IpChangerPanel";
 import { NotificationBanner } from "@/components/NotificationBanner";
 import { SettingsPanel } from "@/components/SettingsPanel";
 import { AmbientBackground } from "@/components/AmbientBackground";
@@ -22,9 +23,16 @@ import { useSquircleClip } from "@/hooks/useSquircleMask";
 import { useKeyboardShortcuts } from "@/hooks/useKeyboardShortcuts";
 import { useConnectionSound } from "@/hooks/useConnectionSound";
 import { initConnectionListeners, useConnectionStore } from "@/state/connectionStore";
+import { initIpChangerListeners } from "@/stores/ipChangerStore";
 import { SCREEN_FADE, SPRING } from "@/lib/motion";
 
-export type AccordionPanel = "advanced" | "presets" | "history" | "settings" | null;
+export type AccordionPanel =
+  | "advanced"
+  | "presets"
+  | "history"
+  | "ipchanger"
+  | "settings"
+  | null;
 
 function MainScreen() {
   const isConnected = useConnectionStore((s) => s.status.state === "Connected");
@@ -84,6 +92,7 @@ function MainScreen() {
         </div>
         <AdvancedPanel open={activePanel === "advanced"} onToggle={() => togglePanel("advanced")} highlightScanMode={highlightScanMode} />
         <ProfilePresets open={activePanel === "presets"} onToggle={() => togglePanel("presets")} />
+        <IpChangerPanel open={activePanel === "ipchanger"} onToggle={() => togglePanel("ipchanger")} />
         <ConnectionHistory open={activePanel === "history"} onToggle={() => togglePanel("history")} />
         <SettingsPanel open={activePanel === "settings"} onToggle={() => togglePanel("settings")} />
       </div>
@@ -123,8 +132,10 @@ export function App() {
 
   useEffect(() => {
     const cleanup = initConnectionListeners();
+    const cleanupIp = initIpChangerListeners();
     return () => {
       void cleanup.then((unlisten) => unlisten());
+      void cleanupIp.then((unlisten) => unlisten());
     };
   }, []);
 

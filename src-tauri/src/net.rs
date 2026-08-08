@@ -18,10 +18,10 @@ const USER_AGENT: &str = concat!("aether-gui/", env!("CARGO_PKG_VERSION"), " lea
 /// it answers 429 (see the panel rendering "Location unavailable"), which is
 /// useless for a leak check that runs on every connect. ipwho.is is generous
 /// and returns the same fields we need.
-const ENDPOINT_IPWHO: &str = "https://ipwho.is/";
+pub(crate) const ENDPOINT_IPWHO: &str = "https://ipwho.is/";
 /// Fallback if the primary endpoint is down/blocked. Returns the bare shape
 /// we care about (`ip`, `country_code`, `city`, `connection.org`).
-const ENDPOINT_IPAPI: &str = "https://ipapi.co/json/";
+pub(crate) const ENDPOINT_IPAPI: &str = "https://ipapi.co/json/";
 
 /// Mirrored on the frontend in `src/types/connection.ts`.
 #[derive(Debug, Serialize, Clone)]
@@ -46,7 +46,9 @@ fn client(through_tunnel: bool, bind_addr: &str) -> Result<reqwest::Client, reqw
     builder.build()
 }
 
-fn parse(v: &serde_json::Value) -> Option<PublicInfo> {
+/// Shared by the Aether leak-check and the Tor IP-changer (which fetches
+/// through `socks5h://127.0.0.1:9050` with the same two endpoints).
+pub(crate) fn parse(v: &serde_json::Value) -> Option<PublicInfo> {
     let ip = v.get("ip").and_then(|x| x.as_str())?.to_string();
     let ip_version = v
         .get("type")

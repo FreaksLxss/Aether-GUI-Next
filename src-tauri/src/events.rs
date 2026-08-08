@@ -3,6 +3,12 @@ use serde::Serialize;
 pub const STATUS_EVENT: &str = "aether://status";
 pub const LOG_EVENT: &str = "aether://log";
 
+/// Tor (IP Changer) status transitions — `TorStatus`, tagged `state`.
+pub const TOR_STATUS_EVENT: &str = "ip-changer://status";
+/// Tor stdout/stderr lines plus GUI-generated messages. Same `LogEvent` shape
+/// as Aether's log event so the frontend can reuse one renderer.
+pub const TOR_LOG_EVENT: &str = "ip-changer://log";
+
 #[derive(Serialize, Clone, Debug)]
 pub struct LogEvent {
     pub line: String,

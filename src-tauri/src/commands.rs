@@ -6,6 +6,7 @@ use crate::state::{AppState, ConnectionState};
 use crate::sysproxy;
 use crate::tray;
 use crate::updater;
+use serde::Serialize;
 use std::sync::atomic::{AtomicBool, Ordering};
 use tauri::{AppHandle, Manager, State};
 
@@ -115,11 +116,14 @@ pub fn set_minimize_on_startup(app: AppHandle, enabled: bool) {
 }
 
 #[tauri::command]
-pub fn set_system_proxy(enabled: bool) -> Result<(), AetherError> {
-    if enabled {
+pub fn set_system_proxy(enable: bool) -> Result<(), AetherError> {
+    if enable {
+        if sysproxy::is_enabled() && sysproxy::source() != sysproxy::SOURCE_MAIN {
+            return Err(AetherError::ProxyConflict);
+        }
         // Use default SOCKS5 address — the profile's bind_address may not be
         // connected yet, so we read from the last-known profile.
-        sysproxy::enable("127.0.0.1:1819").map_err(AetherError::Internal)
+        sysproxy::enable("127.0.0.1:1819", sysproxy::SOURCE_MAIN).map_err(AetherError::Internal)
     } else {
         sysproxy::disable().map_err(AetherError::Internal)
     }
@@ -128,7 +132,10 @@ pub fn set_system_proxy(enabled: bool) -> Result<(), AetherError> {
 #[tauri::command]
 pub fn set_system_proxy_addr(addr: String, enabled: bool) -> Result<(), AetherError> {
     if enabled {
-        sysproxy::enable(&addr).map_err(AetherError::Internal)
+        if sysproxy::is_enabled() && sysproxy::source() != sysproxy::SOURCE_MAIN {
+            return Err(AetherError::ProxyConflict);
+        }
+        sysproxy::enable(&addr, sysproxy::SOURCE_MAIN).map_err(AetherError::Internal)
     } else {
         sysproxy::disable().map_err(AetherError::Internal)
     }
@@ -137,6 +144,44 @@ pub fn set_system_proxy_addr(addr: String, enabled: bool) -> Result<(), AetherEr
 #[tauri::command]
 pub fn get_system_proxy() -> bool {
     sysproxy::is_enabled()
+}
+
+/// Who currently owns the system proxy and the SOCKS port behind it, so the
+/// navbar can show *which* proxy is on. `owner` is "none" | "main" | "ip_changer".
+#[derive(Serialize, Clone, Debug)]
+pub struct SystemProxyState {
+    pub enabled: bool,
+    pub owner: String,
+    pub port: u16,
+}
+
+#[tauri::command]
+pub fn get_system_proxy_state() -> SystemProxyState {
+    SystemProxyState {
+        enabled: sysproxy::is_enabled(),
+        owner: match sysproxy::source() {
+            sysproxy::SOURCE_MAIN => "main".to_string(),
+            sysproxy::SOURCE_IP_CHANGER => "ip_changer".to_string(),
+            _ => "none".to_string(),
+        },
+        port: sysproxy::socks_port(),
+    }
+}
+
+/// Enable the system proxy for the IP-changer's Tor SOCKS listener. Refuses if
+/// any other proxy (main tunnel included) is already set, so the two toggles
+/// never silently clobber each other.
+#[tauri::command]
+pub fn set_ip_proxy(state: State<AppState>, enabled: bool) -> Result<(), AetherError> {
+    if enabled {
+        sysproxy::ensure_free(sysproxy::SOURCE_IP_CHANGER)
+            .map_err(|_| AetherError::ProxyConflict)?;
+        let port = state.tor_manager.lock().unwrap().socks_port();
+        sysproxy::enable(&format!("127.0.0.1:{port}"), sysproxy::SOURCE_IP_CHANGER)
+            .map_err(AetherError::Internal)
+    } else {
+        sysproxy::disable().map_err(AetherError::Internal)
+    }
 }
 
 #[tauri::command]

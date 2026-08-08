@@ -166,7 +166,7 @@ fn spawn_and_monitor(
             // The SOCKS socket is dead now, so drop the system proxy too —
             // otherwise the OS keeps pointing at 127.0.0.1:1819 with nothing
             // listening behind it.
-            let _ = crate::sysproxy::disable();
+            crate::sysproxy::disable_if_main();
             set_state_and_emit(
                 &app,
                 &manager,
@@ -256,7 +256,7 @@ fn handle_unexpected_failure(
         // Giving up on the attempt — the tunnel's SOCKS socket is dead, so the
         // OS proxy (if the user turned it on) would now point at a port with
         // nothing listening, breaking every browser. Drop it.
-        let _ = crate::sysproxy::disable();
+        crate::sysproxy::disable_if_main();
         set_state_and_emit(
             &app,
             &manager,
@@ -528,7 +528,7 @@ pub fn request_disconnect(
                 // Tunnel is fully down now — turn off the system proxy so it
                 // isn't left pointing at a dead SOCKS port when the user
                 // disconnects.
-                let _ = crate::sysproxy::disable();
+                crate::sysproxy::disable_if_main();
                 set_state_and_emit(&app, &manager, ConnectionState::Idle);
                 return;
             }

@@ -7,6 +7,7 @@ mod events;
 mod focus;
 mod history;
 mod httpproxy;
+mod ip_changer;
 mod net;
 mod presets;
 mod state;
@@ -51,6 +52,12 @@ fn main() {
                     "failed to start HTTP proxy bridge: {e}"
                 ))))
             })?;
+            // IP Changer's auto-rotate loop: controls its own scheduling and
+            // only acts while the (separate) Tor process is running.
+            {
+                let state = app.state::<AppState>();
+                ip_changer::spawn_auto_rotate(app.handle().clone(), state.tor_manager.clone());
+            }
             // Start minimized if the user opted in (paired with close-to-tray
             // and launch-at-startup so the app quietly sits in the tray).
             // Only applies when close_to_tray is also enabled — otherwise
@@ -133,6 +140,8 @@ fn main() {
             commands::set_system_proxy,
             commands::set_system_proxy_addr,
             commands::get_system_proxy,
+            commands::get_system_proxy_state,
+            commands::set_ip_proxy,
             commands::get_app_version,
             commands::check_update,
             commands::get_presets,
@@ -147,6 +156,17 @@ fn main() {
             commands::is_tun_available,
             commands::get_tun_active,
             commands::get_public_ip,
+            ip_changer::start_tor,
+            ip_changer::stop_tor,
+            ip_changer::rotate_ip,
+            ip_changer::get_current_ip,
+            ip_changer::get_tor_status,
+            ip_changer::set_auto_rotate,
+            ip_changer::get_auto_rotate,
+            ip_changer::tor_binary_exists,
+            ip_changer::get_socks_addr,
+            ip_changer::set_tor_lan,
+            ip_changer::get_tor_lan,
         ])
         .on_window_event(|window, event| {
             if let WindowEvent::CloseRequested { api, .. } = event {
@@ -184,6 +204,7 @@ fn main() {
                     .app_data_dir()
                     .unwrap_or_else(|_| std::env::temp_dir());
                 aether::shutdown_blocking(&state.manager, &data_dir, app_handle);
+                ip_changer::shutdown_blocking(&state.tor_manager);
             }
         });
 }
