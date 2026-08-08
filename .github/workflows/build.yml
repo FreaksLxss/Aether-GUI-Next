@@ -74,11 +74,45 @@ jobs:
           Expand-Archive aether.zip -DestinationPath aether-extract
           Move-Item aether-extract/aether.exe src-tauri/binaries/aether.exe
 
+      # Only this platform's Tor bundle is needed at runtime (ip_changer.rs
+      # resolves binaries/tor/<os>/<arch>/). Pruning the rest stops linuxdeploy
+      # from choking on foreign/32-bit ELF during AppImage bundling, and keeps
+      # every installer/AppImage small.
+      - name: Prune other-platform Tor bundles
+        shell: bash
+        env:
+          TARGET: ${{ matrix.target }}
+        run: |
+          set -e
+          cd src-tauri/binaries/tor
+          keep_os=""
+          case "$RUNNER_OS" in
+            Linux)   keep_os="linux";  keep_arch="x86_64" ;;
+            macOS)   keep_os="macos"
+                     case "$TARGET" in
+                       aarch64*)   keep_arch="aarch64" ;;
+                       x86_64*)    keep_arch="x86_64" ;;
+                     esac ;;
+            Windows) keep_os="windows"; keep_arch="x86_64" ;;
+          esac
+          for d in ./*/; do
+            [ "$(basename "$d")" = "$keep_os" ] || rm -rf "$d"
+          done
+          for a in "$keep_os"/*/; do
+            [ "$(basename "$a")" = "$keep_arch" ] || rm -rf "$a"
+          done
+
       - run: npm ci
 
       - uses: tauri-apps/tauri-action@v0
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          # linuxdeploy applies system `strip` to every ELF it bundles, including
+          # the tor side-library/binaries in resources/. Ubuntu 22.04's old strip
+          # chokes on their RELR/RELRO sections ("unknown type [0x13] .relr.dyn"),
+          # so skip stripping. Also force extract-and-run so no FUSE is required.
+          NO_STRIP: "true"
+          APPIMAGE_EXTRACT_AND_RUN: "1"
         with:
           tagName: ${{ github.ref_type == 'tag' && github.ref_name || '' }}
           releaseName: ${{ github.ref_type == 'tag' && github.ref_name || '' }}
