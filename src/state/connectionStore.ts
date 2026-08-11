@@ -67,6 +67,7 @@ interface ConnectionState {
   setMasqueNoize: (masque_noize: MasqueNoize) => void;
   setWgNoize: (wg_noize: WgNoize) => void;
   setBindAddress: (bind_address: string) => void;
+  setHttpProxyAddress: (http_proxy_address: string | null) => void;
   setLogLevel: (log_level: LogLevel | null) => void;
   setPerf: (perf: PerfLevel | null) => void;
   setCaptureMode: (capture_mode: CaptureMode) => void;
@@ -105,6 +106,7 @@ export const useConnectionStore = create<ConnectionState>((set, get) => ({
     masque_noize: "firewall",
     wg_noize: "balanced",
     bind_address: "127.0.0.1:1819",
+    http_proxy_address: null,
     log_level: null,
     perf: null,
     capture_mode: "proxy",
@@ -179,6 +181,9 @@ export const useConnectionStore = create<ConnectionState>((set, get) => ({
 
   setBindAddress: (bind_address) =>
     set((s) => ({ profile: { ...s.profile, bind_address } })),
+
+  setHttpProxyAddress: (http_proxy_address) =>
+    set((s) => ({ profile: { ...s.profile, http_proxy_address } })),
 
   setLogLevel: (log_level) =>
     set((s) => ({ profile: { ...s.profile, log_level } })),

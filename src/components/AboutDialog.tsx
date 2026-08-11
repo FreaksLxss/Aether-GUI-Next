@@ -50,7 +50,7 @@ export function AboutDialog() {
 
           <div className="mt-3 flex items-center justify-between rounded-lg bg-surface-3 px-3 py-1.5 font-mono text-[10px] text-muted-foreground ring-1 ring-inset ring-white/5">
             <span>Aether engine</span>
-            <span className="text-foreground">v1.5.0</span>
+            <span className="text-foreground">v1.6.0</span>
           </div>
 
           <Separator className="my-3 bg-white/5" />

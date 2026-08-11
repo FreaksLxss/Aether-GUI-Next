@@ -26,6 +26,13 @@ pub fn disconnect(app: AppHandle, state: State<AppState>) -> Result<(), AetherEr
     aether::request_disconnect(&app, &state.manager)
 }
 
+/// Forwards a user-typed line to the live Aether PTY — used for the Zero
+/// Trust one-time-code prompt (Aether ≥1.6.0 answers it on stdin).
+#[tauri::command]
+pub fn send_input(app: AppHandle, state: State<AppState>, line: String) -> Result<(), AetherError> {
+    aether::send_input(&app, &state.manager, line)
+}
+
 #[tauri::command]
 pub fn get_status(state: State<AppState>) -> ConnectionState {
     state.manager.lock().unwrap().status()

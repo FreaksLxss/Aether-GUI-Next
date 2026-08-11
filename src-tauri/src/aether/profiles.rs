@@ -88,11 +88,14 @@ impl IpVersion {
 
 /// Obfuscation profile for MASQUE connections. The profile shapes how much
 /// junk/padding Aether injects to disguise the handshake from DPI.
+/// `Light` is Aether ≥1.6.0: a gentler profile for networks that only need a
+/// nudge.
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, Eq)]
 #[serde(rename_all = "lowercase")]
 pub enum MasqueNoize {
     Firewall,
     Gfw,
+    Light,
     Off,
 }
 
@@ -101,6 +104,7 @@ impl MasqueNoize {
         match self {
             MasqueNoize::Firewall => "firewall",
             MasqueNoize::Gfw => "gfw",
+            MasqueNoize::Light => "light",
             MasqueNoize::Off => "off",
         }
     }
@@ -201,6 +205,12 @@ pub struct ConnectionProfile {
     /// 127.0.0.1:1819; users can change the port or bind to 0.0.0.0 for LAN.
     #[serde(default = "default_bind_address")]
     pub bind_address: String,
+    /// Aether ≥1.6.0: local HTTP CONNECT proxy listen address
+    /// (`--http-proxy`), exposed next to the SOCKS5 one for clients that
+    /// can't speak SOCKS. `None` omits the flag (no HTTP proxy). Only
+    /// forwarded when parseable, like `bind_address`.
+    #[serde(default)]
+    pub http_proxy_address: Option<String>,
     /// Aether ≥1.4.0: log verbosity. Passed as `--log-level <value>`.
     /// `info` stays quiet; `debug` adds tunnel internals; `trace` adds full
     /// per-packet detail. When `None`, the flag is omitted (Aether defaults
@@ -342,6 +352,15 @@ impl ConnectionProfile {
         {
             args.push("--bind".into());
             args.push(self.bind_address.clone());
+        }
+        // Aether ≥1.6.0: HTTP CONNECT proxy next to the SOCKS5 one. Only
+        // forwarded when parseable, so a half-typed address can't reach the
+        // binary as a mangled flag.
+        if let Some(ref addr) = self.http_proxy_address {
+            if !addr.trim().is_empty() && addr.parse::<std::net::SocketAddr>().is_ok() {
+                args.push("--http-proxy".into());
+                args.push(addr.trim().into());
+            }
         }
         // Aether ≥1.4.0: log level override.
         if let Some(ref level) = self.log_level {
@@ -491,6 +510,7 @@ mod tests {
             "--access-email",
             "--access-token",
             "--gateway",
+            "--http-proxy",
         ] {
             assert!(
                 !args.iter().any(|a| a == flag),
@@ -536,6 +556,26 @@ mod tests {
             .expect("missing --noize");
         assert_eq!(args.get(i + 1).map(String::as_str), Some("firewall"));
     }
+
+    #[test]
+    fn valid_http_proxy_emits_flag() {
+        let mut p = ConnectionProfile::default();
+        p.http_proxy_address = Some("127.0.0.1:1818".into());
+        let args = p.as_args();
+        let i = args
+            .iter()
+            .position(|a| a == "--http-proxy")
+            .expect("missing --http-proxy");
+        assert_eq!(args.get(i + 1).map(String::as_str), Some("127.0.0.1:1818"));
+    }
+
+    #[test]
+    fn invalid_http_proxy_is_not_forwarded() {
+        let mut p = ConnectionProfile::default();
+        p.http_proxy_address = Some("127.0.0.1:".into());
+        let args = p.as_args();
+        assert!(!args.iter().any(|a| a == "--http-proxy"), "args={args:?}");
+    }
 }
 
 impl Default for ConnectionProfile {
@@ -550,6 +590,7 @@ impl Default for ConnectionProfile {
             masque_noize: MasqueNoize::Firewall,
             wg_noize: WgNoize::Balanced,
             bind_address: default_bind_address(),
+            http_proxy_address: None,
             log_level: None,
             perf: None,
             capture_mode: CaptureMode::Proxy,

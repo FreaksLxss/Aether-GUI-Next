@@ -6,6 +6,7 @@ import type { MasqueNoize, WgNoize } from "@/types/connection";
 const MASQUE_LABELS: Record<MasqueNoize, string> = {
   firewall: "Firewall",
   gfw: "GFW",
+  light: "Light",
   off: "Off",
 };
 
@@ -14,6 +15,7 @@ const MASQUE_DESCRIPTIONS: Record<MasqueNoize, string> = {
     "Balanced obfuscation — gets through most filtered networks without much speed cost. Recommended default.",
   gfw:
     "Heavier obfuscation with more decoy traffic. Try this when Firewall can't get through.",
+  light: "Aether ≥1.6.0: gentlest obfuscation — for networks that only need a nudge.",
   off: "No obfuscation. Only for open networks or testing.",
 };
 

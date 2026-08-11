@@ -10,6 +10,7 @@ import { IpVersionToggle } from "@/components/IpVersionToggle";
 import { MasqueTransportToggle } from "@/components/MasqueTransportToggle";
 import { NoizeProfileToggle } from "@/components/NoizeProfileToggle";
 import { BindAddressField } from "@/components/BindAddressField";
+import { HttpProxyAddressField } from "@/components/HttpProxyAddressField";
 import { TunnelDnsField } from "@/components/TunnelDnsField";
 import { RouteRulesField } from "@/components/RouteRulesField";
 import { ZeroTrustPanel } from "@/components/ZeroTrustPanel";
@@ -166,6 +167,13 @@ export function AdvancedPanel({
               tooltip="The local address Aether's SOCKS5 proxy listens on. Change the port to avoid conflicts, or enable LAN to share the tunnel with other devices on your network."
             >
               <BindAddressField id="aether-field-socks-port" />
+            </FieldRow>
+            <FieldRow
+              label="HTTP Proxy (Aether ≥1.6.0)"
+              htmlFor="aether-field-http-proxy"
+              tooltip="An optional HTTP CONNECT proxy next to the SOCKS5 one (--http-proxy), for clients that can't speak SOCKS. Address:port, e.g. 127.0.0.1:1818. Leave empty to disable."
+            >
+              <HttpProxyAddressField id="aether-field-http-proxy" />
             </FieldRow>
             <FieldRow
               label="Tunnel DNS"

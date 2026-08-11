@@ -144,6 +144,7 @@ fn main() {
         .invoke_handler(tauri::generate_handler![
             commands::connect,
             commands::disconnect,
+            commands::send_input,
             commands::get_status,
             commands::get_default_profile,
             commands::set_default_profile,

@@ -442,6 +442,39 @@ fn monitor_connected(
     }
 }
 
+/// Forwards a user-typed line (e.g. a Zero Trust one-time code, which Aether
+/// ≥1.6.0 accepts on stdin and announces when it is waiting for) to the live
+/// session's PTY. Nothing to send to if there is no session.
+pub fn send_input(
+    app: &AppHandle,
+    manager: &Arc<Mutex<AetherManager>>,
+    line: String,
+) -> Result<(), AetherError> {
+    let sent = {
+        let mgr = manager.lock().unwrap();
+        match mgr.session.as_ref() {
+            Some(session) => {
+                session.send_line(&line);
+                true
+            }
+            None => false,
+        }
+    };
+    if !sent {
+        return Err(AetherError::NotConnected);
+    }
+    // Never echo the code itself; ack the action so the user sees the input
+    // reached the tunnel.
+    let _ = app.emit(
+        LOG_EVENT,
+        LogEvent {
+            line: "[gui] one-time code sent to Aether".into(),
+            timestamp: now_millis(),
+        },
+    );
+    Ok(())
+}
+
 pub fn request_disconnect(
     app: &AppHandle,
     manager: &Arc<Mutex<AetherManager>>,

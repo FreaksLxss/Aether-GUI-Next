@@ -42,6 +42,18 @@ impl PtySession {
         }
     }
 
+    /// Sends a line to the PTY's stdin, exactly like the prompt answering in
+    /// the read loop does. Used for Aether ≥1.6.0's Zero Trust one-time-code
+    /// prompt, which the GUI can't auto-answer — the user types the emailed
+    /// code here.
+    pub fn send_line(&self, line: &str) {
+        if let Ok(mut w) = self.writer.lock() {
+            let _ = w.write_all(line.as_bytes());
+            let _ = w.write_all(b"\r\n");
+            let _ = w.flush();
+        }
+    }
+
     pub fn kill(&mut self) {
         let _ = self.child.kill();
     }

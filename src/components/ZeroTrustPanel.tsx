@@ -1,5 +1,6 @@
-import { type ReactNode } from "react";
+import { type ReactNode, useState } from "react";
 import { Info } from "lucide-react";
+import { invoke } from "@tauri-apps/api/core";
 import { Input } from "@/components/ui/input";
 import { Switch } from "@/components/ui/switch";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
@@ -19,6 +20,22 @@ export function ZeroTrustPanel() {
   const setGateway = useConnectionStore((s) => s.setZtGateway);
   const status = useConnectionStore((s) => s.status);
   const locked = status.state !== "Idle" && status.state !== "Error";
+  // The one-time code can only reach Aether while a session is live.
+  const sessionActive =
+    status.state !== "Idle" && status.state !== "Error";
+  const [code, setCode] = useState("");
+  const [sent, setSent] = useState(false);
+
+  const submitCode = (e: React.FormEvent) => {
+    e.preventDefault();
+    const trimmed = code.trim();
+    if (!trimmed || !sessionActive) return;
+    setCode("");
+    setSent(false);
+    void invoke("send_input", { line: trimmed })
+      .then(() => setSent(true))
+      .catch(() => {});
+  };
 
   return (
     <div className="flex flex-col gap-2.5">
@@ -34,7 +51,7 @@ export function ZeroTrustPanel() {
         />
       </Field>
 
-      <Field label="Email one-time code" htmlFor="zt-email" tooltip="Send a one-time sign-in code to this address (--access-email). Aether prompts for the code after startup.">
+      <Field label="Email one-time code" htmlFor="zt-email" tooltip="Send a one-time sign-in code to this address (--access-email). Aether waits for the code on its input after startup — paste it into the Sign-in code field below.">
         <Input
           id="zt-email"
           type="email"
@@ -45,6 +62,46 @@ export function ZeroTrustPanel() {
           className="h-9 bg-surface-3 font-mono text-[10px] ring-1 ring-inset ring-white/5 focus-visible:ring-primary"
         />
       </Field>
+
+      {p.zt_access_email && (
+        <form
+          className="flex flex-col gap-1.5"
+          onSubmit={submitCode}
+        >
+          <label
+            htmlFor="zt-code"
+            className="flex w-fit items-center gap-1 text-xs text-muted-foreground"
+          >
+            Sign-in code
+            <Tooltip>
+              <TooltipTrigger aria-label="About Sign-in code">
+                <Info size={12} />
+              </TooltipTrigger>
+              <TooltipContent>
+                Aether emails a one-time code to the address above and waits for it on its
+                standard input (Aether ≥1.6.0). Paste it here and press Enter while connected.
+              </TooltipContent>
+            </Tooltip>
+          </label>
+          <Input
+            id="zt-code"
+            type="text"
+            value={code}
+            disabled={!sessionActive}
+            onChange={(e) => setCode(e.target.value)}
+            placeholder={
+              sessionActive
+                ? "Paste the emailed code and press Enter"
+                : "Aether emails this code once you connect"
+            }
+            className="h-9 bg-surface-3 font-mono text-[10px] ring-1 ring-inset ring-white/5 focus-visible:ring-primary"
+            aria-label="Zero Trust sign-in code"
+          />
+          {sent && (
+            <p className="text-[10px] text-emerald-400/80">Code sent to Aether.</p>
+          )}
+        </form>
+      )}
 
       <div className="flex items-center gap-2">
         <div className="flex-1">

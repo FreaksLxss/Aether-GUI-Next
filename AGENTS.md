@@ -28,7 +28,7 @@ Vite is pinned to port 1420 with `strictPort: true` and ignores `src-tauri/**` i
 ## The `aether` binary (required before `tauri dev` works)
 
 - The binary is gitignored; the bundled `src-tauri/binaries/aether.exe` on your machine is a local fetched copy.
-- `src-tauri/binaries/fetch-aether.sh` pins `AETHER_VERSION` (currently `v1.4.0`) and verifies SHA256SUMS, but is **unix-only**. On Windows, download `aether-windows-x86_64.zip` + `SHA256SUMS.txt` from the pinned Aether release and extract `aether.exe` into `src-tauri/binaries/` (CI does this via the PowerShell block in `.github/workflows/build.yml`). Keep the pin in `fetch-aether.sh` in sync when bumping.
+- `src-tauri/binaries/fetch-aether.sh` pins `AETHER_VERSION` (currently `v1.6.0`) and verifies SHA256SUMS, but is **unix-only**. On Windows, download `aether-windows-x86_64.zip` + `SHA256SUMS.txt` from the pinned Aether release and extract `aether.exe` into `src-tauri/binaries/` (CI does this via the PowerShell block in `.github/workflows/build.yml`). Keep the pin in `fetch-aether.sh` in sync when bumping.
 - `src-tauri/binaries/wintun.dll` IS committed (needed for TUN mode). Never commit `aether.exe` or the `*.toml` files — Aether writes its provisioned identity (private keys/tokens) there when run with `binaries/` as cwd.
 
 ## Non-obvious architecture facts

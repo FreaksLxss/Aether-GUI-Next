@@ -13,7 +13,8 @@ export type ConnectionStatus =
 export type Protocol = "auto" | "masque" | "wireguard" | "gool";
 export type ScanMode = "turbo" | "balanced" | "thorough" | "stealth" | "ironclad";
 export type IpVersion = "v4" | "v6" | "both";
-export type MasqueNoize = "firewall" | "gfw" | "off";
+/** Aether ≥1.6.0: "light" added as a gentler MASQUE obfuscation profile. */
+export type MasqueNoize = "firewall" | "gfw" | "light" | "off";
 export type WgNoize = "balanced" | "aggressive" | "light" | "off";
 /** Aether ≥1.4.0: log verbosity level. */
 export type LogLevel = "error" | "warn" | "info" | "debug" | "trace";
@@ -34,12 +35,15 @@ export interface ConnectionProfile {
   /** Aether ≥1.2.0: run MASQUE over HTTP/2 (TCP) instead of the default
    * HTTP/3 (QUIC) — for networks that block or throttle UDP. */
   masque_http2: boolean;
-  /** Obfuscation profile for MASQUE (firewall/gfw/off). */
+  /** Obfuscation profile for MASQUE (firewall/gfw/light/off). "light" is Aether ≥1.6.0. */
   masque_noize: MasqueNoize;
   /** Obfuscation profile for WireGuard/gool (balanced/aggressive/light/off). */
   wg_noize: WgNoize;
   /** Local SOCKS5 listen address (--bind). Default 127.0.0.1:1819. */
   bind_address: string;
+  /** Aether ≥1.6.0: local HTTP CONNECT proxy listen address (--http-proxy),
+   * next to the SOCKS5 one for clients that can't speak SOCKS. null = omit flag. */
+  http_proxy_address: string | null;
   /** Aether ≥1.4.0: log verbosity (error/warn/info/debug/trace). null = omit flag (Aether defaults to info). */
   log_level: LogLevel | null;
   /** Aether ≥1.4.0: resource scaling override (low/medium/high). null = omit flag (Aether auto-detects). */
