@@ -44,7 +44,7 @@ export function PerfSelect({ id }: { id?: string }) {
           >
             <div className="flex flex-col gap-0.5">
               <span className="font-medium">{opt.label}</span>
-              <span className="text-[9px] text-muted-foreground">{opt.desc}</span>
+              <span className="text-[10px] text-muted-foreground">{opt.desc}</span>
             </div>
           </SelectItem>
         ))}

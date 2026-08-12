@@ -27,7 +27,7 @@ export function LogViewer() {
   return (
     <div className="flex flex-col gap-1.5">
       <div className="flex items-center justify-between">
-        <span className="text-[10px] font-medium tracking-wide text-primary uppercase">
+        <span className="text-[10px] font-medium tracking-wide text-muted-foreground uppercase">
           Live log
         </span>
         <Button
@@ -56,7 +56,7 @@ export function LogViewer() {
           </span>
         ) : (
           logs.map((l, i) => (
-            <div key={i} className="flex gap-1.5 whitespace-pre-wrap break-words">
+            <div key={i} className="anim-log-in flex gap-1.5 whitespace-pre-wrap break-words">
               <span className="shrink-0 text-muted-foreground/40 tabular-nums">
                 {TIME_FMT.format(l.timestamp)}
               </span>

@@ -1,9 +1,11 @@
 import { useEffect, useRef, useState } from "react";
 import { Check, Clock, Trash2, X } from "lucide-react";
+import { motion } from "motion/react";
 import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { GlassAccordion } from "@/components/GlassAccordion";
 import { useConnectionStore } from "@/state/connectionStore";
+import { SPRING_FAST } from "@/lib/motion";
 import type { ConnectionHistoryEntry } from "@/types/connection";
 
 function formatDuration(secs: number): string {
@@ -25,9 +27,18 @@ function formatTime(ts: number): string {
   });
 }
 
-function HistoryEntry({ entry }: { entry: ConnectionHistoryEntry }) {
+function HistoryEntry({
+  entry,
+  index,
+}: {
+  entry: ConnectionHistoryEntry;
+  index: number;
+}) {
   return (
-    <li
+    <motion.li
+      initial={{ opacity: 0, y: 6 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ ...SPRING_FAST, delay: Math.min(index * 0.04, 0.24) }}
       className="flex items-center justify-between rounded-md bg-black/10 px-2 py-1.5 text-xs"
       aria-label={`${entry.success ? "Connected" : "Failed"} via ${entry.protocol}, ${entry.scan_mode} mode, lasted ${formatDuration(entry.duration_secs)}`}
     >
@@ -51,7 +62,7 @@ function HistoryEntry({ entry }: { entry: ConnectionHistoryEntry }) {
         </span>
         <span className="text-[10px] text-muted-foreground/80">{formatTime(entry.timestamp)}</span>
       </div>
-    </li>
+    </motion.li>
   );
 }
 
@@ -103,7 +114,7 @@ export function ConnectionHistory({
               <ScrollArea className="max-h-48">
                 <ul className="flex flex-col gap-1.5">
                   {history.map((entry, i) => (
-                    <HistoryEntry key={`${entry.timestamp}-${i}`} entry={entry} />
+                    <HistoryEntry key={`${entry.timestamp}-${i}`} entry={entry} index={i} />
                   ))}
                 </ul>
               </ScrollArea>

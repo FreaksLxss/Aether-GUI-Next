@@ -1,8 +1,11 @@
 import { useEffect, useState } from "react";
 import { AnimatePresence, motion } from "motion/react";
+import { EyeOff, Terminal } from "lucide-react";
+import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
 import { useConnectionStore } from "@/state/connectionStore";
 import { useWindowFocused } from "@/state/windowFocus";
+import { openLogWindow } from "@/lib/log-window";
 import { SPRING_FAST } from "@/lib/motion";
 
 const TEXT_TRANSITION = {
@@ -46,7 +49,7 @@ function ScanProgressBar({ percent }: { percent: number | null }) {
   );
 }
 
-export function ConnectionStatusLine() {
+export function ConnectionStatusLine({ onTryStealth }: { onTryStealth?: () => void }) {
   const status = useConnectionStore((s) => s.status);
   const scanBudgetSecs = useConnectionStore((s) => s.scanBudgetSecs);
 
@@ -87,7 +90,7 @@ export function ConnectionStatusLine() {
       break;
     case "Reconnecting":
       primary = "Reconnecting…";
-      secondary = `Attempt ${status.attempt} of ${status.max_attempts}`;
+      secondary = `The tunnel dropped — getting you back · attempt ${status.attempt} of ${status.max_attempts}`;
       break;
     case "Connected":
       primary = "Connected";
@@ -98,7 +101,7 @@ export function ConnectionStatusLine() {
       secondary = "";
       break;
     case "Error":
-      primary = "Connection failed";
+      primary = "Couldn't connect";
       secondary = status.message;
       break;
   }
@@ -135,6 +138,29 @@ export function ConnectionStatusLine() {
           {secondary}
         </motion.span>
       </AnimatePresence>
+      {status.state === "Error" && (
+        <div className="flex flex-col items-center gap-1.5">
+          <p className="max-w-xs text-[12px] text-muted-foreground">
+            If the tunnel can&apos;t get through, Stealth mode probes more
+            cautiously and is harder for a censor to detect.
+          </p>
+          <div className="flex items-center gap-1.5">
+            <Button size="sm" variant="outline" onClick={onTryStealth} className="h-7 gap-1.5 text-[12px]">
+              <EyeOff size={11} />
+              Try Stealth mode
+            </Button>
+            <Button
+              size="sm"
+              variant="ghost"
+              onClick={() => void openLogWindow()}
+              className="h-7 gap-1.5 text-[12px] text-muted-foreground hover:text-foreground"
+            >
+              <Terminal size={11} />
+              View log
+            </Button>
+          </div>
+        </div>
+      )}
       {status.state === "Connecting" && <ScanProgressBar percent={scanPercent} />}
     </div>
   );

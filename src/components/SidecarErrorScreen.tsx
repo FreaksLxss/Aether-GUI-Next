@@ -40,7 +40,7 @@ export function SidecarErrorScreen({ message, onRetry }: Props) {
         <h1 className="text-sm font-medium text-foreground">
           Aether engine failed to start
         </h1>
-        <p className="max-w-xs font-mono text-[11px] text-muted-foreground">{message}</p>
+        <p className="max-w-xs font-mono text-[12px] text-muted-foreground">{message}</p>
 
         {isMissing ? (
           <div className="flex flex-col items-center gap-2">

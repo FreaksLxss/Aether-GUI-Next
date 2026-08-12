@@ -1,4 +1,5 @@
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
+import { SegIndicator } from "@/components/ui/segment";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { useConnectionStore } from "@/state/connectionStore";
 import type { ScanMode } from "@/types/connection";
@@ -31,33 +32,36 @@ export function ScanModeToggle() {
   const locked = status.state !== "Idle" && status.state !== "Error";
 
   return (
-    <ToggleGroup
-      type="single"
-      value={scanMode}
-      onValueChange={(v) => {
-        if (v) setScanMode(v as ScanMode);
-      }}
-      disabled={locked}
-      aria-label="Scan mode"
-      className="w-full gap-0.5 rounded-lg bg-surface-3 p-0.5 ring-1 ring-inset ring-white/5"
-    >
-      {(Object.keys(LABELS) as ScanMode[]).map((mode) => (
-        <Tooltip key={mode}>
-          <TooltipTrigger asChild>
-            <span className="flex-1">
-              <ToggleGroupItem
-                value={mode}
-                size="sm"
-                aria-label={LABELS[mode]}
-                className="w-full rounded-md text-[10px] text-muted-foreground transition-all duration-150 hover:text-foreground data-[state=on]:bg-primary data-[state=on]:text-primary-foreground data-[state=on]:shadow-sm data-[state=on]:shadow-primary/20 data-[state=on]:ring-1 data-[state=on]:ring-inset data-[state=on]:ring-primary-foreground/80"
-              >
-                {LABELS[mode]}
-              </ToggleGroupItem>
-            </span>
-          </TooltipTrigger>
-          <TooltipContent>{DESCRIPTIONS[mode]}</TooltipContent>
-        </Tooltip>
-      ))}
-    </ToggleGroup>
+    <div className="flex w-full flex-col gap-1.5">
+      <ToggleGroup
+        type="single"
+        value={scanMode}
+        onValueChange={(v) => {
+          if (v) setScanMode(v as ScanMode);
+        }}
+        disabled={locked}
+        aria-label="Scan mode"
+        className="w-full gap-0.5 rounded-lg bg-surface-3 p-0.5 ring-1 ring-inset ring-white/5"
+      >
+        {(Object.keys(LABELS) as ScanMode[]).map((mode) => (
+          <Tooltip key={mode}>
+              <TooltipTrigger asChild>
+                <span className="flex-1">
+                  <ToggleGroupItem
+                    value={mode}
+                    size="sm"
+                    aria-label={LABELS[mode]}
+                    className="relative w-full rounded-md text-[10px] text-muted-foreground transition-colors duration-150 hover:text-foreground data-[state=on]:text-primary-foreground"
+                  >
+                    <SegIndicator active={mode === scanMode} groupId="scan-mode" />
+                    <span className="relative z-10">{LABELS[mode]}</span>
+                  </ToggleGroupItem>
+                </span>
+              </TooltipTrigger>
+              <TooltipContent>{DESCRIPTIONS[mode]}</TooltipContent>
+            </Tooltip>
+        ))}
+      </ToggleGroup>
+    </div>
   );
 }

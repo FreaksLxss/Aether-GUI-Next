@@ -48,7 +48,7 @@ function ColorSwatches({
           aria-label={`Color: ${name}`}
           className={`size-7 cursor-pointer rounded-md ring-1 transition-all hover:scale-110 ${
             selected === hex
-              ? "ring-2 ring-white ring-offset-1 ring-offset-surface-1"
+              ? "ring-2 ring-primary ring-offset-1 ring-offset-surface-1"
               : "ring-white/15 hover:ring-white/40"
           }`}
           style={{ backgroundColor: hex }}

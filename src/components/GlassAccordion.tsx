@@ -62,9 +62,15 @@ export function GlassAccordion({
           />
           {label}
           {count != null && count > 0 && (
-            <span className="rounded-lg bg-white/10 px-1.5 py-0.5 text-[9px] leading-none text-muted-foreground tabular-nums">
+            <motion.span
+              key={count}
+              initial={{ scale: 0.8 }}
+              animate={{ scale: 1 }}
+              transition={{ type: "spring", bounce: 0.4, duration: 0.4 }}
+              className="rounded-lg bg-white/10 px-1.5 py-0.5 text-[10px] leading-none text-muted-foreground tabular-nums"
+            >
               {count}
-            </span>
+            </motion.span>
           )}
           {badge}
           <motion.span

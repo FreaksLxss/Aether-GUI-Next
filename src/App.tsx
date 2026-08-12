@@ -8,6 +8,7 @@ import { CopyProxyButton } from "@/components/CopyProxyButton";
 import { PacUrl } from "@/components/PacUrl";
 import { QuickConnect } from "@/components/QuickConnect";
 import { QuickProtocol } from "@/components/QuickProtocol";
+import { LeakBanner } from "@/components/LeakBanner";
 import { AdvancedPanel } from "@/components/AdvancedPanel";
 import { ConnectionHistory } from "@/components/ConnectionHistory";
 import { ProfilePresets } from "@/components/ProfilePresets";
@@ -36,6 +37,10 @@ export type AccordionPanel =
 
 function MainScreen() {
   const isConnected = useConnectionStore((s) => s.status.state === "Connected");
+  const isLeaking = useConnectionStore(
+    (s) => s.leakStatus === "leak" && s.status.state === "Connected",
+  );
+  const setScanMode = useConnectionStore((s) => s.setScanMode);
   const [activePanel, setActivePanel] = useState<AccordionPanel>(null);
   const [highlightScanMode, setHighlightScanMode] = useState(false);
 
@@ -54,12 +59,28 @@ function MainScreen() {
       <NotificationBanner />
       {/* Button centered in a fixed-height area — height never changes
           so the button position is rock-stable regardless of what's below */}
-      <div className="flex h-60 shrink-0 items-center justify-center">
+      <motion.div
+        className="flex h-60 shrink-0 items-center justify-center"
+        initial={{ opacity: 0, scale: 0.96 }}
+        animate={{ opacity: 1, scale: 1 }}
+        transition={SPRING}
+      >
         <ConnectButton />
-      </div>
+      </motion.div>
       {/* Status + details flow below the fixed button area */}
-      <div className="flex flex-col items-center gap-3">
-        <ConnectionStatusLine />
+      <motion.div
+        className="flex flex-col items-center gap-3"
+        initial={{ opacity: 0, y: 8 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ ...SPRING, delay: 0.04 }}
+      >
+        {isLeaking && <LeakBanner />}
+        <ConnectionStatusLine
+          onTryStealth={() => {
+            setScanMode("stealth");
+            openAdvancedHighlightScan();
+          }}
+        />
         <PublicLocation key={isConnected ? "connected" : "disconnected"} />
         <AnimatePresence>
           {isConnected && (
@@ -81,8 +102,13 @@ function MainScreen() {
         </AnimatePresence>
         <QuickConnect onMoreOptions={openAdvancedHighlightScan} />
         <QuickProtocol />
-      </div>
-      <div className="mt-auto flex w-full max-w-sm flex-col gap-1.5 pt-3">
+      </motion.div>
+      <motion.div
+        className="mt-auto flex w-full max-w-sm flex-col gap-1.5 pt-3"
+        initial={{ opacity: 0, y: 12 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ ...SPRING, delay: 0.08 }}
+      >
         <div className="flex items-center gap-2 px-1">
           <div className="h-px flex-1 bg-white/5" />
           <span className="text-[10px] font-medium tracking-widest text-muted-foreground/70 uppercase">
@@ -95,7 +121,7 @@ function MainScreen() {
         <IpChangerPanel open={activePanel === "ipchanger"} onToggle={() => togglePanel("ipchanger")} />
         <ConnectionHistory open={activePanel === "history"} onToggle={() => togglePanel("history")} />
         <SettingsPanel open={activePanel === "settings"} onToggle={() => togglePanel("settings")} />
-      </div>
+      </motion.div>
     </div>
   );
 }

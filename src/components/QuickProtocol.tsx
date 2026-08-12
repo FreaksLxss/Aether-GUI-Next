@@ -73,6 +73,7 @@ export function QuickProtocol() {
               >
                 {active && (
                   <motion.span
+                    layoutId="quick-protocol-pill"
                     initial={{ opacity: 0, scale: 0.85 }}
                     animate={{ opacity: 1, scale: 1 }}
                     transition={SPRING_FAST}

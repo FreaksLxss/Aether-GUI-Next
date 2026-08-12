@@ -87,8 +87,8 @@ interface MagicRingsProps {
 }
 
 export default function MagicRings({
-  color = '#fc42ff',
-  colorTwo = '#42fcff',
+  color = '#f2711c',
+  colorTwo = '#fbbf24',
   speed = 1,
   ringCount = 6,
   attenuation = 10,

@@ -24,6 +24,11 @@ export function PublicLocation() {
   const connected = status.state === "Connected";
   const ownIp = !connected;
 
+  // On censored networks the direct-IP lookup can fail; don't whisper a
+  // permanent "Location unavailable" at idle — the pill only earns space
+  // when there is data to show or a tunnel to prove.
+  if (!connected && !publicIp) return null;
+
   const place =
     publicIp && publicIp.country_code
       ? `${countryName(publicIp.country_code)}${

@@ -41,7 +41,7 @@ export function IpDisplay() {
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: -4 }}
             transition={SPRING}
-            className="font-mono text-[19px] font-semibold tracking-tight text-foreground tabular-nums"
+            className="font-mono text-[16px] font-semibold tracking-tight text-foreground tabular-nums"
           >
             {currentIp?.ip ?? "–" }
           </motion.span>
@@ -69,14 +69,14 @@ export function IpDisplay() {
             />
           </div>
           {bootstrapPhase && (
-            <span className="text-[9px] text-muted-foreground/60">{bootstrapPhase.replace(/_/g, " ")}</span>
+            <span className="text-[10px] text-muted-foreground/60">{bootstrapPhase.replace(/_/g, " ")}</span>
           )}
-          <span className="text-[9px] text-muted-foreground/40">
+          <span className="text-[10px] text-muted-foreground/40">
             exit IP appears when the circuit is ready
           </span>
         </div>
       ) : (
-        <div className="flex items-center gap-1 text-[11px] text-muted-foreground">
+        <div className="flex items-center gap-1 text-[12px] text-muted-foreground">
           {waiting ? (
             <span className="text-muted-foreground/70">looking up exit IP…</span>
           ) : place ? (
@@ -98,7 +98,7 @@ export function IpDisplay() {
         </div>
       )}
 
-      <div className="flex items-center gap-2 text-[9px] text-muted-foreground/60">
+      <div className="flex items-center gap-2 text-[10px] text-muted-foreground/60">
         <span>{formatRotated(lastRotatedAt)}</span>
         {rotationCount > 0 && (
           <>

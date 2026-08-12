@@ -23,7 +23,7 @@ export function StatusIndicator() {
       initial={{ opacity: 0, y: -4 }}
       animate={{ opacity: 1, y: 0 }}
       transition={SPRING_FAST}
-      className="flex items-center gap-2 px-1 text-[11px] text-muted-foreground"
+      className="flex items-center gap-2 px-1 text-[12px] text-muted-foreground"
     >
       <span className="relative flex size-2">
         {meta.pulse && (

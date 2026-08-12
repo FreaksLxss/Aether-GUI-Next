@@ -29,7 +29,7 @@ export function ProxyIndicator() {
 
   return (
     <span
-      className={`inline-flex items-center gap-1 text-[11px] font-medium ${
+      className={`inline-flex items-center gap-1 text-[12px] font-medium ${
         active ? "text-primary" : "text-muted-foreground"
       }`}
       title={title}

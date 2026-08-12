@@ -1,4 +1,5 @@
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
+import { SegIndicator } from "@/components/ui/segment";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { useConnectionStore } from "@/state/connectionStore";
 
@@ -46,9 +47,10 @@ export function MasqueTransportToggle() {
                 value={t}
                 size="sm"
                 aria-label={LABELS[t]}
-                className="w-full rounded-md text-[10px] text-muted-foreground transition-all duration-150 hover:text-foreground data-[state=on]:bg-primary data-[state=on]:text-primary-foreground data-[state=on]:shadow-sm data-[state=on]:shadow-primary/20 data-[state=on]:ring-1 data-[state=on]:ring-inset data-[state=on]:ring-primary-foreground/80"
+                className="relative w-full rounded-md text-[10px] text-muted-foreground transition-colors duration-150 hover:text-foreground data-[state=on]:text-primary-foreground"
               >
-                {LABELS[t]}
+                <SegIndicator active={(t === "http2") === masqueHttp2} groupId="masque-transport" />
+                <span className="relative z-10">{LABELS[t]}</span>
               </ToggleGroupItem>
             </span>
           </TooltipTrigger>

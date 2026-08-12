@@ -162,7 +162,7 @@ export function ProfilePresets({
                     </button>
                     {confirmDelete === p.name ? (
                       <span className="flex items-center gap-0.5">
-                        <span className="mr-0.5 text-[9px] font-medium text-destructive">
+                        <span className="mr-0.5 text-[10px] font-medium text-destructive">
                           Delete?
                         </span>
                         <Button

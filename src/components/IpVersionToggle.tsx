@@ -1,4 +1,5 @@
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
+import { SegIndicator } from "@/components/ui/segment";
 import { useConnectionStore } from "@/state/connectionStore";
 import type { IpVersion } from "@/types/connection";
 
@@ -33,9 +34,10 @@ export function IpVersionToggle() {
           value={v}
           size="sm"
           aria-label={LABELS[v]}
-          className="flex-1 rounded-md text-[10px] text-muted-foreground transition-all duration-150 hover:text-foreground data-[state=on]:bg-primary data-[state=on]:text-primary-foreground data-[state=on]:shadow-sm data-[state=on]:shadow-primary/20 data-[state=on]:ring-1 data-[state=on]:ring-inset data-[state=on]:ring-primary-foreground/80"
+          className="relative flex-1 rounded-md text-[10px] text-muted-foreground transition-colors duration-150 hover:text-foreground data-[state=on]:text-primary-foreground"
         >
-          {LABELS[v]}
+          <SegIndicator active={v === ipVersion} groupId="ip-version" />
+          <span className="relative z-10">{LABELS[v]}</span>
         </ToggleGroupItem>
       ))}
     </ToggleGroup>

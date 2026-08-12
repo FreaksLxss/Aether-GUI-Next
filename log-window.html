@@ -213,6 +213,13 @@
         word-break: break-all;
         color: var(--text-dim);
         transition: background 0.1s;
+        animation: log-in 0.22s ease-out;
+      }
+      @keyframes log-in {
+        from {
+          opacity: 0;
+          transform: translateY(2px);
+        }
       }
       .log-line:hover {
         background: rgba(255,255,255,0.02);
@@ -248,6 +255,11 @@
       }
       .empty-state p {
         font-size: 12px;
+      }
+      @media (prefers-reduced-motion: reduce) {
+        .log-line {
+          animation: none;
+        }
       }
     </style>
   </head>

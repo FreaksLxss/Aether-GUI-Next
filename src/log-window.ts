@@ -75,7 +75,7 @@ function highlightMatch(text: string, query: string): string {
   );
   return escaped.replace(
     re,
-    '<mark style="background:rgba(99,102,241,0.3);color:#c7d2fe;border-radius:2px;padding:0 1px">$1</mark>',
+    '<mark style="background:color-mix(in srgb,var(--primary) 28%,transparent);color:var(--primary);border-radius:2px;padding:0 1px">$1</mark>',
   );
 }
 

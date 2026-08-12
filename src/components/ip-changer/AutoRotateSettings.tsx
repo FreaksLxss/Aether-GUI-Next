@@ -50,7 +50,7 @@ export function AutoRotateSettings() {
         <div className="flex items-center justify-between gap-2 pl-1.5 pr-1">
           <span className="text-[10px] text-muted-foreground/80">every</span>
           <Select value={String(minuteValue)} onValueChange={(v) => setMinutes(Number(v))}>
-            <SelectTrigger size="sm" className="h-7 text-[11px]" aria-label="Rotation interval">
+            <SelectTrigger size="sm" className="h-7 text-[12px]" aria-label="Rotation interval">
               <SelectValue />
             </SelectTrigger>
             <SelectContent>

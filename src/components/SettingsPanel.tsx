@@ -35,7 +35,7 @@ export function SettingsPanel({
         <div className="flex flex-col gap-2.5">
           {/* System toggles */}
           <div className="flex flex-col gap-1.5">
-            <span className="text-[10px] font-medium tracking-wide text-primary uppercase">
+            <span className="text-[10px] font-medium tracking-wide text-muted-foreground uppercase">
               System
             </span>
             <AlwaysOnTopToggle />
@@ -47,7 +47,7 @@ export function SettingsPanel({
           {/* Network */}
           <Separator className="bg-border" />
           <div className="flex flex-col gap-1.5">
-            <span className="text-[10px] font-medium tracking-wide text-primary uppercase">
+            <span className="text-[10px] font-medium tracking-wide text-muted-foreground uppercase">
               Network
             </span>
             <CaptureModeSelect />
@@ -63,7 +63,7 @@ export function SettingsPanel({
           {/* Appearance */}
           <Separator className="bg-border" />
           <div className="flex flex-col gap-2">
-            <span className="text-[10px] font-medium tracking-wide text-primary uppercase">
+            <span className="text-[10px] font-medium tracking-wide text-muted-foreground uppercase">
               Appearance
             </span>
             <div className="flex items-center justify-between">
@@ -78,13 +78,12 @@ export function SettingsPanel({
           {/* About & Updates */}
           <Separator className="bg-border" />
           <div className="flex flex-col gap-2">
-            <span className="text-[10px] font-medium tracking-wide text-primary uppercase">
+            <span className="text-[10px] font-medium tracking-wide text-muted-foreground uppercase">
               About
             </span>
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2">
                 <AboutDialog />
-                <span className="pt-0.5 text-[10px] text-muted-foreground/70">further improvements by freaky:3</span>
               </div>
               <UpdateChecker />
             </div>

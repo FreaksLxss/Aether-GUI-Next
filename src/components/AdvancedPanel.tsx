@@ -115,7 +115,7 @@ export function AdvancedPanel({
         <div className="flex flex-col gap-3">
           {/* Protocol section */}
           <div className="flex flex-col gap-2.5">
-            <span className="text-[10px] font-medium tracking-wide text-primary uppercase">
+            <span className="text-[10px] font-medium tracking-wide text-muted-foreground uppercase">
               Protocol
             </span>
             <FieldRow
@@ -158,7 +158,7 @@ export function AdvancedPanel({
 
           {/* Proxy section */}
           <div className="flex flex-col gap-2.5">
-            <span className="text-[10px] font-medium tracking-wide text-primary uppercase">
+            <span className="text-[10px] font-medium tracking-wide text-muted-foreground uppercase">
               Proxy
             </span>
             <FieldRow
@@ -186,7 +186,7 @@ export function AdvancedPanel({
 
           {/* Routing section (Aether ≥1.5.0) */}
           <div className="flex flex-col gap-2.5">
-            <span className="text-[10px] font-medium tracking-wide text-primary uppercase">
+            <span className="text-[10px] font-medium tracking-wide text-muted-foreground uppercase">
               Routing
             </span>
             <FieldRow
@@ -212,7 +212,7 @@ export function AdvancedPanel({
 
           {/* Zero Trust section (Aether ≥1.5.0) */}
           <div className="flex flex-col gap-2.5">
-            <span className="text-[10px] font-medium tracking-wide text-primary uppercase">
+            <span className="text-[10px] font-medium tracking-wide text-muted-foreground uppercase">
               Zero Trust
             </span>
             <FieldRow
@@ -225,7 +225,7 @@ export function AdvancedPanel({
 
           {/* Behavior section */}
           <div className="flex flex-col gap-2.5">
-            <span className="text-[10px] font-medium tracking-wide text-primary uppercase">
+            <span className="text-[10px] font-medium tracking-wide text-muted-foreground uppercase">
               Behavior
             </span>
 

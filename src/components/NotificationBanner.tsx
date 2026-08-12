@@ -64,6 +64,7 @@ export function NotificationBanner() {
               size="icon"
               variant="ghost"
               onClick={() => dismiss(false)}
+              aria-label="Dismiss notification prompt"
               className="mt-0.5 h-5 w-5 shrink-0 text-muted-foreground hover:text-foreground"
             >
               <X size={12} />

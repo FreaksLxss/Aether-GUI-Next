@@ -87,6 +87,7 @@ export function QuickConnect({ onMoreOptions }: { onMoreOptions: () => void }) {
               >
                 {active && (
                   <motion.span
+                    layoutId="quick-connect-pill"
                     initial={{ opacity: 0, scale: 0.85 }}
                     animate={{ opacity: 1, scale: 1 }}
                     transition={SPRING_FAST}

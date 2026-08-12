@@ -494,6 +494,17 @@
   animation: spin 0.8s linear infinite;
 }
 
+/* Terminal bloom: freshly arrived log lines assemble with a 2px rise. */
+@keyframes log-in {
+  from {
+    opacity: 0;
+    transform: translateY(2px);
+  }
+}
+.anim-log-in {
+  animation: log-in 0.22s ease-out;
+}
+
 /* The decorative loops (idle breathing, background orbs) honor reduced
    motion; the connecting/connected pulses are active state feedback and are
    deliberately left running (matches the original Motion behavior). */
@@ -501,7 +512,8 @@
   .anim-ring-breathe,
   .anim-orb-a,
   .anim-orb-b,
-  .anim-scan-sweep {
+  .anim-scan-sweep,
+  .anim-log-in {
     animation: none;
   }
 }
