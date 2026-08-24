@@ -30,12 +30,17 @@ impl PtySession {
     }
 
     pub fn try_wait(&mut self) -> Option<i32> {
+        // Ok(None) means the process is still running — that MUST stay None.
+        // A previous `.or(Some(0))` here reported every live process as
+        // "exited with code 0", making the monitor tear down and reconnect in
+        // a loop ~400ms after each spawn. Err (rare OS failure) also maps to
+        // None: treating it as "running" is safe — a real exit is caught on a
+        // later tick, and the connect deadline covers a true hang.
         self.child
             .try_wait()
             .ok()
             .flatten()
-            .and_then(|es| Some(es.exit_code() as i32))
-            .or(Some(0))
+            .map(|es| es.exit_code() as i32)
     }
 
     /// Ctrl-C (ETX) — the same byte a real terminal sends for SIGINT. See

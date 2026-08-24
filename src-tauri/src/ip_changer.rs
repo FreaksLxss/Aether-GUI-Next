@@ -509,6 +509,7 @@ fn do_start(app: &AppHandle, manager: &Arc<Mutex<TorManager>>) -> Result<(), Aet
     let socks_host = if lan_bind { "0.0.0.0" } else { "127.0.0.1" };
 
     let mut cmd = Command::new(&binary);
+    crate::childproc::hidden(&mut cmd); // no console flash on Windows
     cmd.arg("--SocksPort")
         .arg(format!("{socks_host}:{socks_port}"))
         .arg("--ControlPort")

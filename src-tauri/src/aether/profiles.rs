@@ -656,7 +656,9 @@ impl Default for ConnectionProfile {
         // Mirrors Aether's own defaults.
         Self {
             protocol: Protocol::Auto,
-            scan_mode: ScanMode::Balanced,
+            // GUI default: fast first-connect (Aether's own default is
+            // Balanced; users can pick a slower, stealthier mode anytime).
+            scan_mode: ScanMode::Turbo,
             ip_version: IpVersion::V4,
             quick_reconnect: true,
             masque_http2: false,

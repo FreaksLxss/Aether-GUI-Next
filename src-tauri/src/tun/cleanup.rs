@@ -58,7 +58,7 @@ pub fn reap_orphan_tun(data_dir: &Path) {
         restore_routes(&state.original_gateway);
     }
 
-    let _ = std::process::Command::new("ipconfig")
+    let _ = crate::childproc::hidden(&mut std::process::Command::new("ipconfig"))
         .arg("/flushdns")
         .output();
 
@@ -92,13 +92,13 @@ fn is_process_alive(pid: u32) -> bool {
 }
 
 fn destroy_adapter(name: &str) {
-    let _ = std::process::Command::new("netsh")
+    let _ = crate::childproc::hidden(&mut std::process::Command::new("netsh"))
         .args(["interface", "delete", "interface", name])
         .output();
 }
 
 fn restore_routes(gateway: &str) {
-    let _ = std::process::Command::new("route")
+    let _ = crate::childproc::hidden(&mut std::process::Command::new("route"))
         .args([
             "change", "0.0.0.0", "mask", "0.0.0.0", gateway, "metric", "1",
         ])

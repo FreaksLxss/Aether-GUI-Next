@@ -162,7 +162,7 @@ fn get_tun_gateway(tun_adapter: &TunAdapter) -> Result<String, String> {
     // The TUN adapter's IP was configured during creation
     // Read it from the adapter's network configuration
     let name = tun_adapter.name();
-    let output = std::process::Command::new("netsh")
+    let output = crate::childproc::hidden(&mut std::process::Command::new("netsh"))
         .args(["interface", "ip", "show", "addresses", &name])
         .output()
         .map_err(|e| format!("netsh failed: {e}"))?;
@@ -186,7 +186,7 @@ fn run_cmd(args: &[&str]) -> Result<String, String> {
         return Err("empty command".into());
     }
 
-    let output = std::process::Command::new(args[0])
+    let output = crate::childproc::hidden(&mut std::process::Command::new(args[0]))
         .args(&args[1..])
         .output()
         .map_err(|e| format!("command '{}' failed: {e}", args[0]))?;

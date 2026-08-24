@@ -39,12 +39,8 @@ impl PtySession {
     }
 
     pub fn try_wait(&mut self) -> Option<i32> {
-        self.child
-            .try_wait()
-            .ok()
-            .flatten()
-            .and_then(|st| st.code())
-            .or(Some(0))
+        // Same contract as pty.rs: None = still running, never fake it.
+        self.child.try_wait().ok().flatten().and_then(|st| st.code())
     }
 
     /// No-op on Android: a piped stdin carries no terminal signals. See the

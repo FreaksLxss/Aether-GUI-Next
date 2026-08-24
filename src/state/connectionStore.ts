@@ -103,7 +103,7 @@ export const useConnectionStore = create<ConnectionState>((set, get) => ({
   status: { state: "Idle" },
   profile: {
     protocol: "auto",
-    scan_mode: "balanced",
+    scan_mode: "turbo",
     ip_version: "v4",
     quick_reconnect: true,
     masque_http2: false,

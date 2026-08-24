@@ -273,6 +273,17 @@ fn handle_unexpected_failure(
     };
     orphan::clear_pid(&data_dir);
 
+    // Surface the actual reason (incl. the process exit code on Windows) in
+    // the advanced log — without this, a crash-looping binary looks silent
+    // because Reconnecting/Error states alone carry no detail.
+    let _ = app.emit(
+        LOG_EVENT,
+        LogEvent {
+            line: format!("[gui] {failure_message}"),
+            timestamp: now_millis(),
+        },
+    );
+
     if attempt > status::MAX_AUTO_RETRIES {
         // Giving up on the attempt — the tunnel's SOCKS socket is dead, so the
         // OS proxy (if the user turned it on) would now point at a port with

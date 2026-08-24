@@ -1,4 +1,5 @@
 mod aether;
+mod childproc;
 mod commands;
 mod error;
 mod events;
