@@ -68,6 +68,7 @@ interface ConnectionState {
   setWgNoize: (wg_noize: WgNoize) => void;
   setBindAddress: (bind_address: string) => void;
   setHttpProxyAddress: (http_proxy_address: string | null) => void;
+  setUpstreamProxy: (upstream_proxy: string | null) => void;
   setLogLevel: (log_level: LogLevel | null) => void;
   setPerf: (perf: PerfLevel | null) => void;
   setCaptureMode: (capture_mode: CaptureMode) => void;
@@ -77,6 +78,9 @@ interface ConnectionState {
   setDnsServers: (dns_servers: string | null) => void;
   setRouteBlock: (route_block: string[]) => void;
   setRouteDirect: (route_direct: string[]) => void;
+  setRouteSniff: (route_sniff: boolean) => void;
+  setRouteSniffMs: (route_sniff_ms: number | null) => void;
+  setAutoReprovision: (auto_reprovision: boolean) => void;
   setZtTeam: (zt_team: string | null) => void;
   setZtAccessEmail: (zt_access_email: string | null) => void;
   setZtAccessId: (zt_access_id: string | null) => void;
@@ -107,6 +111,7 @@ export const useConnectionStore = create<ConnectionState>((set, get) => ({
     wg_noize: "balanced",
     bind_address: "127.0.0.1:1819",
     http_proxy_address: null,
+    upstream_proxy: null,
     log_level: null,
     perf: null,
     capture_mode: "proxy",
@@ -116,6 +121,9 @@ export const useConnectionStore = create<ConnectionState>((set, get) => ({
     dns_servers: null,
     route_block: [],
     route_direct: [],
+    route_sniff: true,
+    route_sniff_ms: null,
+    auto_reprovision: true,
     zt_team: null,
     zt_access_email: null,
     zt_access_id: null,
@@ -185,6 +193,9 @@ export const useConnectionStore = create<ConnectionState>((set, get) => ({
   setHttpProxyAddress: (http_proxy_address) =>
     set((s) => ({ profile: { ...s.profile, http_proxy_address } })),
 
+  setUpstreamProxy: (upstream_proxy) =>
+    set((s) => ({ profile: { ...s.profile, upstream_proxy } })),
+
   setLogLevel: (log_level) =>
     set((s) => ({ profile: { ...s.profile, log_level } })),
 
@@ -211,6 +222,15 @@ export const useConnectionStore = create<ConnectionState>((set, get) => ({
 
   setRouteDirect: (route_direct) =>
     set((s) => ({ profile: { ...s.profile, route_direct } })),
+
+  setRouteSniff: (route_sniff) =>
+    set((s) => ({ profile: { ...s.profile, route_sniff } })),
+
+  setRouteSniffMs: (route_sniff_ms) =>
+    set((s) => ({ profile: { ...s.profile, route_sniff_ms } })),
+
+  setAutoReprovision: (auto_reprovision) =>
+    set((s) => ({ profile: { ...s.profile, auto_reprovision } })),
 
   setZtTeam: (zt_team) =>
     set((s) => ({ profile: { ...s.profile, zt_team } })),

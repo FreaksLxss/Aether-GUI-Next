@@ -259,7 +259,7 @@ fn handle_tcp_packet(
                 // Close the SOCKS5 stream
                 let st = state.lock();
                 if let Some(fl) = st.flows.get(&key) {
-                    let mut fl2 = fl.lock();
+                    let fl2 = fl.lock();
                     let _ = fl2.stream.shutdown(std::net::Shutdown::Both);
                 }
             }

@@ -1,8 +1,12 @@
 [package]
 name = "aether-gui"
-version = "0.13.1"
+version = "0.14.0"
 description = "One-click GUI for the Aether censorship-circumvention tunnel"
 edition = "2021"
+
+[lib]
+name = "aether_gui_lib"
+crate-type = ["staticlib", "cdylib", "rlib"]
 
 [build-dependencies]
 tauri-build = { version = "2", features = [] }
@@ -17,13 +21,16 @@ tauri-plugin-dialog = "2"
 tauri-plugin-clipboard-manager = "2"
 serde = { version = "1", features = ["derive"] }
 serde_json = "1"
-portable-pty = "0.8"
 thiserror = "1"
-reqwest = { version = "0.12", features = ["json", "socks"] }
+reqwest = { version = "0.12", default-features = false, features = ["json", "socks", "rustls-tls"] }
 zip = "2"
 tar = "0.4"
 flate2 = "1"
 log = "0.4"
+base64 = "0.22"
+
+[target.'cfg(not(target_os = "android"))'.dependencies]
+portable-pty = "0.8"
 
 [target.'cfg(windows)'.dependencies]
 windows-sys = { version = "0.59", features = ["Win32_Foundation", "Win32_UI_WindowsAndMessaging", "Win32_Networking_WinInet", "Win32_System_Threading", "Win32_Security"] }

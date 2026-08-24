@@ -1,7 +1,12 @@
 pub mod orphan;
 pub mod profiles;
 pub mod prompts;
+#[cfg(not(target_os = "android"))]
 pub mod pty;
+#[cfg(target_os = "android")]
+#[path = "pty_android.rs"]
+pub mod pty;
+pub mod pty_output;
 pub mod status;
 
 use crate::error::AetherError;
@@ -59,9 +64,25 @@ fn resolve_binary(app: &AppHandle) -> Result<PathBuf, AetherError> {
         "aether"
     };
 
+    // Android bundles one aether per ABI under `binaries/android/<arch>/`.
+    #[cfg(target_os = "android")]
+    let rel_bin_dir: &str = match std::env::consts::ARCH {
+        "aarch64" => "binaries/android",
+        "x86_64" => "binaries/android/x86_64",
+        "arm" => "binaries/android/armv7",
+        _ => {
+            return Err(AetherError::BinaryMissing(format!(
+                "no bundled aether for CPU arch {}",
+                std::env::consts::ARCH
+            )))
+        }
+    };
+    #[cfg(not(target_os = "android"))]
+    let rel_bin_dir: &str = "binaries";
+
     // Check resource dir first (bundled binary from installer)
     if let Ok(dir) = app.path().resource_dir() {
-        let path = dir.join("binaries").join(name);
+        let path = dir.join(rel_bin_dir).join(name);
         if path.exists() {
             fix_exec_bit(&path);
             return Ok(path);
@@ -69,7 +90,7 @@ fn resolve_binary(app: &AppHandle) -> Result<PathBuf, AetherError> {
     }
 
     // Fall back to app data dir (auto-downloaded binary)
-    let data_path = app_data_dir(app).join("binaries").join(name);
+    let data_path = app_data_dir(app).join(rel_bin_dir).join(name);
     if data_path.exists() {
         fix_exec_bit(&data_path);
         return Ok(data_path);

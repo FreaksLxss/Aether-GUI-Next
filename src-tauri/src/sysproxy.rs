@@ -18,6 +18,7 @@
 //! plus the upstream SOCKS port, so the two toggles can't silently clobber
 //! each other and the navbar can show *which* proxy is live.
 
+#[cfg(not(target_os = "windows"))]
 use std::process::Command;
 use std::sync::atomic::{AtomicBool, AtomicU16, AtomicU8, Ordering};
 
@@ -156,9 +157,6 @@ fn notify_proxy_changed() {
 fn set_proxy_windows(port: u16) -> Result<(), String> {
     use winreg::enums::*;
     use winreg::RegKey;
-
-    let listen = crate::httpproxy::local_addr()
-        .ok_or_else(|| "HTTP proxy bridge is not running".to_string())?;
 
     let internet = RegKey::predef(HKEY_CURRENT_USER)
         .open_subkey_with_flags(

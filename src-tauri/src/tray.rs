@@ -1,8 +1,11 @@
 use std::sync::atomic::{AtomicBool, Ordering};
+use tauri::AppHandle;
+
+#[cfg(not(target_os = "android"))]
 use tauri::{
     menu::{Menu, MenuItem},
     tray::{MouseButton, MouseButtonState, TrayIconBuilder, TrayIconEvent},
-    AppHandle, Manager,
+    Manager,
 };
 
 /// Global flag — toggled from the frontend via the `set_close_to_tray` command
@@ -41,6 +44,9 @@ fn load_preference(app: &AppHandle) {
 }
 
 /// Create the system-tray icon, menu, and event handlers. Call from `setup`.
+/// No tray exists on Android — the preference is still loaded/persisted so
+/// the rest of the app behaves the same.
+#[cfg(not(target_os = "android"))]
 pub fn init(app: &mut tauri::App) -> Result<(), Box<dyn std::error::Error>> {
     load_preference(app.handle());
 
@@ -76,6 +82,13 @@ pub fn init(app: &mut tauri::App) -> Result<(), Box<dyn std::error::Error>> {
     Ok(())
 }
 
+#[cfg(target_os = "android")]
+pub fn init(app: &mut tauri::App) -> Result<(), Box<dyn std::error::Error>> {
+    load_preference(app.handle());
+    Ok(())
+}
+
+#[cfg(not(target_os = "android"))]
 fn show_window(app: &AppHandle) {
     if let Some(w) = app.get_webview_window("main") {
         let _ = w.unminimize();

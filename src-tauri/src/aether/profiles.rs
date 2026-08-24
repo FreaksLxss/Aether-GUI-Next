@@ -211,6 +211,14 @@ pub struct ConnectionProfile {
     /// forwarded when parseable, like `bind_address`.
     #[serde(default)]
     pub http_proxy_address: Option<String>,
+    /// Aether ≥1.7.0: dial out through another proxy already on the machine
+    /// (`--upstream`), chaining Aether behind e.g. a VPN or proxy app.
+    /// Accepts socks5://host:port, http://host:port, or bare host:port
+    /// (SOCKS5), with optional user:pass@ credentials. A SOCKS5 upstream
+    /// with UDP associate carries every transport; an HTTP upstream only
+    /// carries the MASQUE HTTP/2 carrier. `None`/empty omits the flag.
+    #[serde(default)]
+    pub upstream_proxy: Option<String>,
     /// Aether ≥1.4.0: log verbosity. Passed as `--log-level <value>`.
     /// `info` stays quiet; `debug` adds tunnel internals; `trace` adds full
     /// per-packet detail. When `None`, the flag is omitted (Aether defaults
@@ -247,6 +255,23 @@ pub struct ConnectionProfile {
     /// (`--route-direct`). An empty list omits the flag.
     #[serde(default)]
     pub route_direct: Vec<String>,
+    /// Aether ≥1.7.0: sniff the TLS SNI / HTTP Host of each flow's first
+    /// bytes so domain-based --route-block/--route-direct rules also match
+    /// behind a TUN front end (which otherwise resolves names itself and
+    /// hands the core only an address). Default on; `false` sets
+    /// AETHER_ROUTE_SNIFF=0.
+    #[serde(default = "default_true")]
+    pub route_sniff: bool,
+    /// Aether ≥1.7.0: how long to wait for the sniffed name, in ms
+    /// (AETHER_ROUTE_SNIFF_MS). `None` omits the env var (Aether's default).
+    #[serde(default)]
+    pub route_sniff_ms: Option<u32>,
+    /// Aether ≥1.7.0: when Cloudflare refuses the saved identity at startup,
+    /// say so and register a fresh device automatically. Only an account-API
+    /// rejection counts — being offline or rate-limited never discards a good
+    /// identity. Default on; `false` sets AETHER_REPROVISION=0 (report only).
+    #[serde(default = "default_true")]
+    pub auto_reprovision: bool,
     /// Aether ≥1.5.0: Zero Trust organization team name (`--team`). When
     /// `None`, no Zero Trust enrolment is attempted.
     #[serde(default)]
@@ -360,6 +385,17 @@ impl ConnectionProfile {
             if !addr.trim().is_empty() && addr.parse::<std::net::SocketAddr>().is_ok() {
                 args.push("--http-proxy".into());
                 args.push(addr.trim().into());
+            }
+        }
+        // Aether ≥1.7.0: upstream proxy chaining. The value is scheme+URL
+        // shaped (socks5://user:pass@host:port, http://host:port, host:port),
+        // so unlike --bind it can't be SocketAddr-validated — only forwarded
+        // when non-whitespace.
+        if let Some(ref up) = self.upstream_proxy {
+            let up = up.trim();
+            if !up.is_empty() {
+                args.push("--upstream".into());
+                args.push(up.into());
             }
         }
         // Aether ≥1.4.0: log level override.
@@ -494,6 +530,10 @@ mod tests {
         assert_eq!(p.dns_mode, DnsMode::Forward);
         assert_eq!(p.tun_address, "10.0.0.2/24");
         assert_eq!(p.tun_dns, "8.8.8.8");
+        // Aether ≥1.7.0 opt-outs default to the core's own behavior
+        assert!(p.route_sniff);
+        assert!(p.auto_reprovision);
+        assert_eq!(p.route_sniff_ms, None);
     }
 
     #[test]
@@ -576,6 +616,39 @@ mod tests {
         let args = p.as_args();
         assert!(!args.iter().any(|a| a == "--http-proxy"), "args={args:?}");
     }
+
+    #[test]
+    fn default_omits_upstream() {
+        let p = ConnectionProfile::default();
+        assert!(!p.as_args().iter().any(|a| a == "--upstream"));
+    }
+
+    #[test]
+    fn empty_upstream_is_not_forwarded() {
+        let mut p = ConnectionProfile::default();
+        p.upstream_proxy = Some("   ".into());
+        let args = p.as_args();
+        assert!(!args.iter().any(|a| a == "--upstream"), "args={args:?}");
+    }
+
+    #[test]
+    fn socks_upstream_emits_flag_with_credentials() {
+        for v in [
+            "socks5://127.0.0.1:1080",
+            "socks5://user:pass@127.0.0.1:1080",
+            "http://proxy.example:8080",
+            "192.168.1.10:1080",
+        ] {
+            let mut p = ConnectionProfile::default();
+            p.upstream_proxy = Some(v.into());
+            let args = p.as_args();
+            let i = args
+                .iter()
+                .position(|a| a == "--upstream")
+                .unwrap_or_else(|| panic!("missing --upstream for {v} in {:?}", args));
+            assert_eq!(args.get(i + 1).map(String::as_str), Some(v));
+        }
+    }
 }
 
 impl Default for ConnectionProfile {
@@ -591,6 +664,7 @@ impl Default for ConnectionProfile {
             wg_noize: WgNoize::Balanced,
             bind_address: default_bind_address(),
             http_proxy_address: None,
+            upstream_proxy: None,
             log_level: None,
             perf: None,
             capture_mode: CaptureMode::Proxy,
@@ -600,6 +674,9 @@ impl Default for ConnectionProfile {
             dns_servers: None,
             route_block: Vec::new(),
             route_direct: Vec::new(),
+            route_sniff: true,
+            route_sniff_ms: None,
+            auto_reprovision: true,
             zt_team: None,
             zt_access_email: None,
             zt_access_id: None,

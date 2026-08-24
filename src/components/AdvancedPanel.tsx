@@ -11,6 +11,8 @@ import { MasqueTransportToggle } from "@/components/MasqueTransportToggle";
 import { NoizeProfileToggle } from "@/components/NoizeProfileToggle";
 import { BindAddressField } from "@/components/BindAddressField";
 import { HttpProxyAddressField } from "@/components/HttpProxyAddressField";
+import { UpstreamProxyField } from "@/components/UpstreamProxyField";
+import { RouteSniffMsField } from "@/components/RouteSniffMsField";
 import { TunnelDnsField } from "@/components/TunnelDnsField";
 import { RouteRulesField } from "@/components/RouteRulesField";
 import { ZeroTrustPanel } from "@/components/ZeroTrustPanel";
@@ -77,6 +79,10 @@ export function AdvancedPanel({
   const status = useConnectionStore((s) => s.status);
   const quickReconnect = useConnectionStore((s) => s.profile.quick_reconnect);
   const setQuickReconnect = useConnectionStore((s) => s.setQuickReconnect);
+  const routeSniff = useConnectionStore((s) => s.profile.route_sniff);
+  const setRouteSniff = useConnectionStore((s) => s.setRouteSniff);
+  const autoReprovision = useConnectionStore((s) => s.profile.auto_reprovision);
+  const setAutoReprovision = useConnectionStore((s) => s.setAutoReprovision);
   const locked = status.state !== "Idle" && status.state !== "Error";
   const [autoScroll, setAutoScroll] = useState(true);
   const [logFilter, setLogFilter] = useState("");
@@ -176,6 +182,13 @@ export function AdvancedPanel({
               <HttpProxyAddressField id="aether-field-http-proxy" />
             </FieldRow>
             <FieldRow
+              label="Upstream Proxy (Aether ≥1.7.0)"
+              htmlFor="aether-field-upstream"
+              tooltip="Chain Aether behind another proxy or VPN app already running on this machine (--upstream). socks5://host:port, http://host:port, or bare host:port (SOCKS5), with user:pass@ credentials if needed. SOCKS5 upstreams carry every transport; HTTP ones only carry MASQUE over HTTP/2. Leave empty to dial directly."
+            >
+              <UpstreamProxyField id="aether-field-upstream" />
+            </FieldRow>
+            <FieldRow
               label="Tunnel DNS"
               htmlFor="aether-field-dns"
               tooltip="Resolvers used inside the tunnel (--dns, comma-separated). Left blank, Aether uses its default (1.1.1.1,1.0.0.1). This is separate from the TUN-DNS option used when the TUN adapter is active."
@@ -203,6 +216,37 @@ export function AdvancedPanel({
             >
               <RouteRulesField id="aether-field-route-direct" kind="direct" />
             </FieldRow>
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-1 text-xs text-muted-foreground">
+                Domain sniffing
+                <Tooltip>
+                  <TooltipTrigger aria-label="About Domain sniffing">
+                    <Info size={12} />
+                  </TooltipTrigger>
+                  <TooltipContent>
+                    Behind a TUN front end, domain-based block/direct rules never used to match —
+                    the name was resolved before reaching Aether. The core now reads it from the
+                    TLS SNI or HTTP Host header (Aether ≥1.7.0). Turn off only if this causes
+                    trouble.
+                  </TooltipContent>
+                </Tooltip>
+              </div>
+              <Switch
+                checked={routeSniff}
+                onCheckedChange={setRouteSniff}
+                disabled={locked}
+                aria-label="Domain sniffing"
+              />
+            </div>
+            {routeSniff && (
+              <FieldRow
+                label="Sniff Wait"
+                htmlFor="aether-field-sniff-ms"
+                tooltip="How long to wait for a flow's domain name before applying route rules (AETHER_ROUTE_SNIFF_MS), in milliseconds. Leave empty for Aether's default."
+              >
+                <RouteSniffMsField id="aether-field-sniff-ms" />
+              </FieldRow>
+            )}
             <p className="text-[10px] text-muted-foreground/70">
               Entries: <code>example.com</code> (and subdomains), <code>full:example.com</code>,{" "}
               <code>keyword:ad</code>, <code>regexp:^ad[0-9]+</code>, <code>10.0.0.0/8</code>,{" "}
@@ -248,6 +292,27 @@ export function AdvancedPanel({
                 onCheckedChange={setQuickReconnect}
                 disabled={locked}
                 aria-label="Quick reconnect"
+              />
+            </div>
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-1 text-xs text-muted-foreground">
+                Auto re-provision
+                <Tooltip>
+                  <TooltipTrigger aria-label="About Auto re-provision">
+                    <Info size={12} />
+                  </TooltipTrigger>
+                  <TooltipContent>
+                    If Cloudflare stops accepting this device's saved identity, Aether registers a
+                    fresh device automatically (Aether ≥1.7.0). Turn off to only report it and keep
+                    the old identity.
+                  </TooltipContent>
+                </Tooltip>
+              </div>
+              <Switch
+                checked={autoReprovision}
+                onCheckedChange={setAutoReprovision}
+                disabled={locked}
+                aria-label="Auto re-provision"
               />
             </div>
             <FieldRow

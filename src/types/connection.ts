@@ -44,6 +44,11 @@ export interface ConnectionProfile {
   /** Aether ≥1.6.0: local HTTP CONNECT proxy listen address (--http-proxy),
    * next to the SOCKS5 one for clients that can't speak SOCKS. null = omit flag. */
   http_proxy_address: string | null;
+  /** Aether ≥1.7.0: dial out through another proxy already on the machine
+   * (--upstream), chaining Aether behind it. socks5://host:port,
+   * http://host:port, or bare host:port (SOCKS5); optional user:pass@ creds.
+   * An HTTP upstream only carries the MASQUE HTTP/2 carrier. null = omit flag. */
+  upstream_proxy: string | null;
   /** Aether ≥1.4.0: log verbosity (error/warn/info/debug/trace). null = omit flag (Aether defaults to info). */
   log_level: LogLevel | null;
   /** Aether ≥1.4.0: resource scaling override (low/medium/high). null = omit flag (Aether auto-detects). */
@@ -63,6 +68,14 @@ export interface ConnectionProfile {
   route_block: string[];
   /** Aether ≥1.5.0: destinations sent straight out, bypassing the tunnel (--route-direct). */
   route_direct: string[];
+  /** Aether ≥1.7.0: sniff TLS SNI / HTTP Host so domain rules also match
+   * behind a TUN front end. false = AETHER_ROUTE_SNIFF=0. */
+  route_sniff: boolean;
+  /** Aether ≥1.7.0: sniff wait in ms (AETHER_ROUTE_SNIFF_MS). null = core default. */
+  route_sniff_ms: number | null;
+  /** Aether ≥1.7.0: auto-register a fresh device when Cloudflare rejects the
+   * saved identity. false = AETHER_REPROVISION=0 (report only). */
+  auto_reprovision: boolean;
   /** Aether ≥1.5.0: Zero Trust organization team name (--team). null = no enrolment. */
   zt_team: string | null;
   /** Aether ≥1.5.0: Zero Trust one-time-code sign-in email (--access-email). */

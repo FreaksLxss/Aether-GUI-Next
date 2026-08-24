@@ -7,9 +7,11 @@ use crate::sysproxy;
 use crate::tray;
 use crate::updater;
 use serde::Serialize;
+#[cfg(not(target_os = "android"))]
 use std::sync::atomic::{AtomicBool, Ordering};
 use tauri::{AppHandle, Manager, State};
 
+#[cfg(not(target_os = "android"))]
 static ALWAYS_ON_TOP: AtomicBool = AtomicBool::new(false);
 
 #[tauri::command]
@@ -59,6 +61,7 @@ pub fn set_close_to_tray(app: AppHandle, enabled: bool) {
     tray::set_close_to_tray(&app, enabled);
 }
 
+#[cfg(not(target_os = "android"))]
 #[tauri::command]
 pub fn set_always_on_top(app: AppHandle, enabled: bool) -> Result<(), AetherError> {
     let window = app
@@ -76,6 +79,16 @@ pub fn set_always_on_top(app: AppHandle, enabled: bool) -> Result<(), AetherErro
     Ok(())
 }
 
+/// Android windows are always full-screen — nothing to pin on top of.
+#[cfg(target_os = "android")]
+#[tauri::command]
+pub fn set_always_on_top(_app: AppHandle, _enabled: bool) -> Result<(), AetherError> {
+    Err(AetherError::Internal(
+        "always-on-top is a desktop-only feature".into(),
+    ))
+}
+
+#[cfg(not(target_os = "android"))]
 #[tauri::command]
 pub fn get_always_on_top(app: AppHandle) -> bool {
     use tauri_plugin_store::StoreExt;
@@ -91,6 +104,13 @@ pub fn get_always_on_top(app: AppHandle) -> bool {
         let _ = window.set_always_on_top(enabled);
     }
     enabled
+}
+
+/// Android windows are always full-screen — nothing to pin on top of.
+#[cfg(target_os = "android")]
+#[tauri::command]
+pub fn get_always_on_top(_app: AppHandle) -> bool {
+    false
 }
 
 #[tauri::command]

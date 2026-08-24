@@ -12,7 +12,10 @@ pub struct UpdateInfo {
     pub download_url: String,
 }
 
-/// Check GitHub releases for a newer version of Aether-GUI itself.
+/// Check GitHub releases for a newer version of Aether-GUI itself. On Android
+/// the GUI ships via APK (no auto-update path here), so this reports nothing
+/// available rather than pointing at desktop installers.
+#[cfg(not(target_os = "android"))]
 pub async fn check_for_update(current_version: &str) -> Result<UpdateInfo, String> {
     let url = format!("https://api.github.com/repos/{GUI_REPO}/releases/latest");
     let client = reqwest::Client::new();
@@ -51,6 +54,16 @@ pub async fn check_for_update(current_version: &str) -> Result<UpdateInfo, Strin
     })
 }
 
+#[cfg(target_os = "android")]
+pub async fn check_for_update(_current_version: &str) -> Result<UpdateInfo, String> {
+    Ok(UpdateInfo {
+        available: false,
+        latest_version: String::new(),
+        current_version: _current_version.to_string(),
+        download_url: String::new(),
+    })
+}
+
 /// Search release assets for an .exe or .msi installer.
 fn find_download_url(release: &serde_json::Value) -> Option<String> {
     let assets = release["assets"].as_array()?;
@@ -70,6 +83,7 @@ fn find_download_url(release: &serde_json::Value) -> Option<String> {
 
 /// Download the Aether binary for the current platform into `dest_dir`.
 /// Extracts both the executable and run-aether.bat (if present).
+#[cfg(not(target_os = "android"))]
 pub async fn download_aether_binary(dest_dir: &PathBuf) -> Result<PathBuf, String> {
     let client = reqwest::Client::new();
 
@@ -253,6 +267,13 @@ fn extract_tar_gz_all(bytes: &[u8], dest: &PathBuf) -> Result<(), String> {
         return Err("aether binary not found inside tar.gz".into());
     }
     Ok(())
+}
+
+/// The aether binary is bundled in the APK per-ABI — never downloaded on
+/// Android.
+#[cfg(target_os = "android")]
+pub async fn download_aether_binary(_dest_dir: &PathBuf) -> Result<PathBuf, String> {
+    Err("Aether is bundled in the APK on Android".into())
 }
 
 fn is_newer(current: &str, latest: &str) -> bool {
