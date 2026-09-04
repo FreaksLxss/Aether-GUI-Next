@@ -12,6 +12,7 @@ import { NoizeProfileToggle } from "@/components/NoizeProfileToggle";
 import { BindAddressField } from "@/components/BindAddressField";
 import { HttpProxyAddressField } from "@/components/HttpProxyAddressField";
 import { UpstreamProxyField } from "@/components/UpstreamProxyField";
+import { WiwPeersField } from "@/components/WiwPeersField";
 import { RouteSniffMsField } from "@/components/RouteSniffMsField";
 import { TunnelDnsField } from "@/components/TunnelDnsField";
 import { RouteRulesField } from "@/components/RouteRulesField";
@@ -79,6 +80,7 @@ export function AdvancedPanel({
   const status = useConnectionStore((s) => s.status);
   const quickReconnect = useConnectionStore((s) => s.profile.quick_reconnect);
   const setQuickReconnect = useConnectionStore((s) => s.setQuickReconnect);
+  const protocol = useConnectionStore((s) => s.profile.protocol);
   const routeSniff = useConnectionStore((s) => s.profile.route_sniff);
   const setRouteSniff = useConnectionStore((s) => s.setRouteSniff);
   const autoReprovision = useConnectionStore((s) => s.profile.auto_reprovision);
@@ -160,6 +162,15 @@ export function AdvancedPanel({
             >
               <NoizeProfileToggle />
             </FieldRow>
+            {protocol === "gool" && (
+              <FieldRow
+                label="WIW Endpoints (Aether ≥1.9.0)"
+                htmlFor="aether-field-wiw-peers"
+                tooltip="Manual WARP-in-WARP hop endpoints (--wiw-peers), comma-separated host:port. If you already know addresses that work on your network, name them here; give one and the scan finds the other. The port is required. Leave empty to scan both hops (default)."
+              >
+                <WiwPeersField id="aether-field-wiw-peers" />
+              </FieldRow>
+            )}
           </div>
 
           {/* Proxy section */}

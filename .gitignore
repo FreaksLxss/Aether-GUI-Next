@@ -35,6 +35,7 @@ src-tauri/binaries/SHA256SUMS.txt
 # tokens) here when run with binaries/ as its cwd (e.g. manual testing) —
 # must never be committed.
 src-tauri/binaries/*.toml
+src-tauri/binaries/android/
 
 # === IDE / Editor ===
 .vscode/*

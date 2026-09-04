@@ -219,6 +219,14 @@ pub struct ConnectionProfile {
     /// carries the MASQUE HTTP/2 carrier. `None`/empty omits the flag.
     #[serde(default)]
     pub upstream_proxy: Option<String>,
+    /// Aether ≥1.9.0: manual WARP-in-WARP hop endpoints for gool
+    /// (`--wiw-peers "outer:port,inner:port"`). Giving one hop lets the
+    /// scan find the other; the port is required. `None`/empty omits the
+    /// flag so both hops are scanned, which stays Aether's default. Only
+    /// forwarded when the protocol is gool and every entry parses as a
+    /// full host:port.
+    #[serde(default)]
+    pub wiw_peers: Option<String>,
     /// Aether ≥1.4.0: log verbosity. Passed as `--log-level <value>`.
     /// `info` stays quiet; `debug` adds tunnel internals; `trace` adds full
     /// per-packet detail. When `None`, the flag is omitted (Aether defaults
@@ -396,6 +404,27 @@ impl ConnectionProfile {
             if !up.is_empty() {
                 args.push("--upstream".into());
                 args.push(up.into());
+            }
+        }
+        // Aether ≥1.9.0: manual WARP-in-WARP endpoints, gool only. One hop
+        // may be given alone (the scan finds the other); every entry must
+        // carry a port (SocketAddr parsing enforces it) or the flag is
+        // dropped whole, mirroring the --bind/--http-proxy guardrails.
+        if self.protocol == Protocol::Gool {
+            if let Some(ref wiw) = self.wiw_peers {
+                let entries: Vec<&str> = wiw
+                    .split(',')
+                    .map(str::trim)
+                    .filter(|s| !s.is_empty())
+                    .collect();
+                if !entries.is_empty()
+                    && entries
+                        .iter()
+                        .all(|s| s.parse::<std::net::SocketAddr>().is_ok())
+                {
+                    args.push("--wiw-peers".into());
+                    args.push(entries.join(","));
+                }
             }
         }
         // Aether ≥1.4.0: log level override.
@@ -649,6 +678,65 @@ mod tests {
             assert_eq!(args.get(i + 1).map(String::as_str), Some(v));
         }
     }
+
+    #[test]
+    fn default_omits_wiw_peers() {
+        let p = ConnectionProfile::default();
+        assert!(!p.as_args().iter().any(|a| a == "--wiw-peers"));
+    }
+
+    #[test]
+    fn wiw_peers_only_for_gool() {
+        for proto in [Protocol::Auto, Protocol::Masque, Protocol::Wireguard] {
+            let mut p = ConnectionProfile::default();
+            p.protocol = proto.clone();
+            p.wiw_peers = Some("162.159.192.1:2408".into());
+            assert!(
+                !p.as_args().iter().any(|a| a == "--wiw-peers"),
+                "emitted for {proto:?}"
+            );
+        }
+    }
+
+    #[test]
+    fn gool_wiw_peers_emitted_and_normalized() {
+        let mut p = ConnectionProfile::default();
+        p.protocol = Protocol::Gool;
+        p.wiw_peers = Some(" 162.159.192.1:2408, 188.114.96.1:2408 ".into());
+        let args = p.as_args();
+        let i = args
+            .iter()
+            .position(|a| a == "--wiw-peers")
+            .expect("missing --wiw-peers");
+        assert_eq!(
+            args.get(i + 1).map(String::as_str),
+            Some("162.159.192.1:2408,188.114.96.1:2408")
+        );
+    }
+
+    #[test]
+    fn gool_single_wiw_hop_emitted() {
+        let mut p = ConnectionProfile::default();
+        p.protocol = Protocol::Gool;
+        p.wiw_peers = Some("162.159.192.1:2408".into());
+        let args = p.as_args();
+        let i = args
+            .iter()
+            .position(|a| a == "--wiw-peers")
+            .expect("missing --wiw-peers");
+        assert_eq!(
+            args.get(i + 1).map(String::as_str),
+            Some("162.159.192.1:2408")
+        );
+    }
+
+    #[test]
+    fn gool_wiw_peer_without_port_is_dropped() {
+        let mut p = ConnectionProfile::default();
+        p.protocol = Protocol::Gool;
+        p.wiw_peers = Some("162.159.192.1:2408,188.114.96.1".into());
+        assert!(!p.as_args().iter().any(|a| a == "--wiw-peers"));
+    }
 }
 
 impl Default for ConnectionProfile {
@@ -667,6 +755,7 @@ impl Default for ConnectionProfile {
             bind_address: default_bind_address(),
             http_proxy_address: None,
             upstream_proxy: None,
+            wiw_peers: None,
             log_level: None,
             perf: None,
             capture_mode: CaptureMode::Proxy,

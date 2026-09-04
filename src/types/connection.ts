@@ -49,6 +49,10 @@ export interface ConnectionProfile {
    * http://host:port, or bare host:port (SOCKS5); optional user:pass@ creds.
    * An HTTP upstream only carries the MASQUE HTTP/2 carrier. null = omit flag. */
   upstream_proxy: string | null;
+  /** Aether ≥1.9.0: manual WARP-in-WARP hop endpoints for gool (--wiw-peers),
+   * comma-separated "host:port". One hop alone is fine (the scan finds the
+   * other). null = omit flag (both hops scanned). */
+  wiw_peers: string | null;
   /** Aether ≥1.4.0: log verbosity (error/warn/info/debug/trace). null = omit flag (Aether defaults to info). */
   log_level: LogLevel | null;
   /** Aether ≥1.4.0: resource scaling override (low/medium/high). null = omit flag (Aether auto-detects). */

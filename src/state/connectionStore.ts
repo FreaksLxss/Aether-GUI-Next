@@ -69,6 +69,7 @@ interface ConnectionState {
   setBindAddress: (bind_address: string) => void;
   setHttpProxyAddress: (http_proxy_address: string | null) => void;
   setUpstreamProxy: (upstream_proxy: string | null) => void;
+  setWiwPeers: (wiw_peers: string | null) => void;
   setLogLevel: (log_level: LogLevel | null) => void;
   setPerf: (perf: PerfLevel | null) => void;
   setCaptureMode: (capture_mode: CaptureMode) => void;
@@ -112,6 +113,7 @@ export const useConnectionStore = create<ConnectionState>((set, get) => ({
     bind_address: "127.0.0.1:1819",
     http_proxy_address: null,
     upstream_proxy: null,
+    wiw_peers: null,
     log_level: null,
     perf: null,
     capture_mode: "proxy",
@@ -195,6 +197,9 @@ export const useConnectionStore = create<ConnectionState>((set, get) => ({
 
   setUpstreamProxy: (upstream_proxy) =>
     set((s) => ({ profile: { ...s.profile, upstream_proxy } })),
+
+  setWiwPeers: (wiw_peers) =>
+    set((s) => ({ profile: { ...s.profile, wiw_peers } })),
 
   setLogLevel: (log_level) =>
     set((s) => ({ profile: { ...s.profile, log_level } })),

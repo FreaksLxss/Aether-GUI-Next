@@ -30,6 +30,7 @@ export function ProfilePresets({
   const setMasqueNoize = useConnectionStore((s) => s.setMasqueNoize);
   const setWgNoize = useConnectionStore((s) => s.setWgNoize);
   const setBindAddress = useConnectionStore((s) => s.setBindAddress);
+  const setWiwPeers = useConnectionStore((s) => s.setWiwPeers);
   const setDnsServers = useConnectionStore((s) => s.setDnsServers);
   const setRouteBlock = useConnectionStore((s) => s.setRouteBlock);
   const setRouteDirect = useConnectionStore((s) => s.setRouteDirect);
@@ -73,6 +74,7 @@ export function ProfilePresets({
     setMasqueNoize(p.profile.masque_noize);
     setWgNoize(p.profile.wg_noize);
     setBindAddress(p.profile.bind_address);
+    setWiwPeers(p.profile.wiw_peers ?? null);
     setDnsServers(p.profile.dns_servers ?? null);
     setRouteBlock(p.profile.route_block ?? []);
     setRouteDirect(p.profile.route_direct ?? []);
