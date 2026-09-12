@@ -28,6 +28,9 @@ function schedulePersist() {
   }, 500);
 }
 
+let ipCheckAbort: AbortController | null = null;
+let ipCheckInFlight: Promise<void> | null = null;
+
 async function sendNotification(title: string, body: string) {
   try {
     const { isPermissionGranted, requestPermission, sendNotification } = await import(
@@ -115,7 +118,13 @@ interface ConnectionState {
   reloadProfile: () => Promise<void>;
 }
 
-export const useConnectionStore = create<ConnectionState>((set, get) => ({
+export const useConnectionStore = create<ConnectionState>((set, get) => {
+  const createPersistSetter = <K extends keyof ConnectionProfile>(key: K) =>
+    (value: ConnectionProfile[K]) => {
+      set((st) => ({ profile: { ...st.profile, [key]: value } }));
+      schedulePersist();
+    };
+  return {
   status: { state: "Idle" },
   profile: {
     protocol: "auto",
@@ -163,6 +172,7 @@ export const useConnectionStore = create<ConnectionState>((set, get) => ({
     try {
       await invoke("connect", { profileOverride: get().profile });
     } catch (e) {
+      // TODO(F2): replace String(e) with typed AppError {code,message}
       const message = String(e);
       // "Binary not found" (src-tauri/src/aether/mod.rs::resolve_binary) means
       // the tunnel engine itself can't run at all — structurally different
@@ -180,45 +190,25 @@ export const useConnectionStore = create<ConnectionState>((set, get) => ({
     try {
       await invoke("disconnect");
     } catch {
+      // TODO(F2): typed error handling — surface typed disconnect errors when backend provides them
       // Backend rejects disconnect() when there's nothing to stop (already
       // Idle) — nothing for the UI to do since status already reflects that.
     }
   },
 
-  setProtocol: (protocol) => {
-    set((s) => ({ profile: { ...s.profile, protocol } }));
-    schedulePersist();
-  },
+  setProtocol: createPersistSetter("protocol"),
 
-  setScanMode: (scan_mode) => {
-    set((s) => ({ profile: { ...s.profile, scan_mode } }));
-    schedulePersist();
-  },
+  setScanMode: createPersistSetter("scan_mode"),
 
-  setIpVersion: (ip_version) => {
-    set((s) => ({ profile: { ...s.profile, ip_version } }));
-    schedulePersist();
-  },
+  setIpVersion: createPersistSetter("ip_version"),
 
-  setQuickReconnect: (quick_reconnect) => {
-    set((s) => ({ profile: { ...s.profile, quick_reconnect } }));
-    schedulePersist();
-  },
+  setQuickReconnect: createPersistSetter("quick_reconnect"),
 
-  setMasqueHttp2: (masque_http2) => {
-    set((s) => ({ profile: { ...s.profile, masque_http2 } }));
-    schedulePersist();
-  },
+  setMasqueHttp2: createPersistSetter("masque_http2"),
 
-  setMasqueNoize: (masque_noize) => {
-    set((s) => ({ profile: { ...s.profile, masque_noize } }));
-    schedulePersist();
-  },
+  setMasqueNoize: createPersistSetter("masque_noize"),
 
-  setWgNoize: (wg_noize) => {
-    set((s) => ({ profile: { ...s.profile, wg_noize } }));
-    schedulePersist();
-  },
+  setWgNoize: createPersistSetter("wg_noize"),
 
   setBindAddress: (bind_address) => {
     set((s) => ({ profile: { ...s.profile, bind_address } }));
@@ -240,35 +230,17 @@ export const useConnectionStore = create<ConnectionState>((set, get) => ({
     schedulePersist();
   },
 
-  setLogLevel: (log_level) => {
-    set((s) => ({ profile: { ...s.profile, log_level } }));
-    schedulePersist();
-  },
+  setLogLevel: createPersistSetter("log_level"),
 
-  setPerf: (perf) => {
-    set((s) => ({ profile: { ...s.profile, perf } }));
-    schedulePersist();
-  },
+  setPerf: createPersistSetter("perf"),
 
-  setCaptureMode: (capture_mode) => {
-    set((s) => ({ profile: { ...s.profile, capture_mode } }));
-    schedulePersist();
-  },
+  setCaptureMode: createPersistSetter("capture_mode"),
 
-  setDnsMode: (dns_mode) => {
-    set((s) => ({ profile: { ...s.profile, dns_mode } }));
-    schedulePersist();
-  },
+  setDnsMode: createPersistSetter("dns_mode"),
 
-  setTunAddress: (tun_address) => {
-    set((s) => ({ profile: { ...s.profile, tun_address } }));
-    schedulePersist();
-  },
+  setTunAddress: createPersistSetter("tun_address"),
 
-  setTunDns: (tun_dns) => {
-    set((s) => ({ profile: { ...s.profile, tun_dns } }));
-    schedulePersist();
-  },
+  setTunDns: createPersistSetter("tun_dns"),
 
   setDnsServers: (dns_servers) => {
     set((s) => ({ profile: { ...s.profile, dns_servers } }));
@@ -285,20 +257,14 @@ export const useConnectionStore = create<ConnectionState>((set, get) => ({
     schedulePersist();
   },
 
-  setRouteSniff: (route_sniff) => {
-    set((s) => ({ profile: { ...s.profile, route_sniff } }));
-    schedulePersist();
-  },
+  setRouteSniff: createPersistSetter("route_sniff"),
 
   setRouteSniffMs: (route_sniff_ms) => {
     set((s) => ({ profile: { ...s.profile, route_sniff_ms } }));
     schedulePersist();
   },
 
-  setAutoReprovision: (auto_reprovision) => {
-    set((s) => ({ profile: { ...s.profile, auto_reprovision } }));
-    schedulePersist();
-  },
+  setAutoReprovision: createPersistSetter("auto_reprovision"),
 
   setZtTeam: (zt_team) => {
     set((s) => ({ profile: { ...s.profile, zt_team } }));
@@ -325,10 +291,7 @@ export const useConnectionStore = create<ConnectionState>((set, get) => ({
     schedulePersist();
   },
 
-  setZtGateway: (zt_gateway) => {
-    set((s) => ({ profile: { ...s.profile, zt_gateway } }));
-    schedulePersist();
-  },
+  setZtGateway: createPersistSetter("zt_gateway"),
 
   // Clears the fallback screen so the user can attempt Connect again (e.g.
   // after fixing a broken install) — the next connect() call will re-set
@@ -346,43 +309,53 @@ export const useConnectionStore = create<ConnectionState>((set, get) => ({
   },
 
   runPublicIpCheck: async () => {
-    const connected = get().status.state === "Connected";
-    set({ publicIpLoading: true });
-    const t0 = performance.now();
-    const [tunnel, direct] = await Promise.all([
-      invoke<PublicInfo | null>("get_public_ip", {
-        throughTunnel: connected,
-      }).catch(() => null),
-      invoke<PublicInfo | null>("get_public_ip", {
-        throughTunnel: false,
-      }).catch(() => null),
-    ]);
-    const latencyMs = Math.round(performance.now() - t0);
-
-    let leakStatus: "none" | "leak" | "unavailable" = "unavailable";
-    if (connected && tunnel) {
-      if (direct) {
-        leakStatus = tunnel.ip === direct.ip ? "leak" : "none";
-      } else {
-        leakStatus = "none";
+    if (ipCheckInFlight) return ipCheckInFlight;
+    if (ipCheckAbort) ipCheckAbort.abort();
+    const controller = new AbortController();
+    ipCheckAbort = controller;
+    const { signal } = controller;
+    const p = (async () => {
+      const connected = get().status.state === "Connected";
+      if (signal.aborted) return;
+      set({ publicIpLoading: true });
+      const t0 = performance.now();
+      const [tunnel, direct] = await Promise.all([
+        invoke<PublicInfo | null>("get_public_ip", { throughTunnel: connected }).catch(() => null),
+        invoke<PublicInfo | null>("get_public_ip", { throughTunnel: false }).catch(() => null),
+      ]);
+      if (signal.aborted) return;
+      const latencyMs = Math.round(performance.now() - t0);
+      let leakStatus: "none" | "leak" | "unavailable" = "unavailable";
+      if (connected && tunnel) {
+        leakStatus = direct ? (tunnel.ip === direct.ip ? "leak" : "none") : "none";
       }
-    }
-
-    set((s) => ({
-      publicIp: tunnel,
-      directIp: direct,
-      publicIpLoading: false,
-      publicIpLatencyMs: latencyMs,
-      publicIpHistory: [...s.publicIpHistory, latencyMs].slice(-20),
-      leakStatus,
-    }));
+      if (signal.aborted) return;
+      set((st) => ({
+        publicIp: tunnel,
+        directIp: direct,
+        publicIpLoading: false,
+        publicIpLatencyMs: latencyMs,
+        publicIpHistory: [...st.publicIpHistory, latencyMs].slice(-20),
+        leakStatus,
+      }));
+    })().finally(() => {
+      if (ipCheckInFlight === p) ipCheckInFlight = null;
+    });
+    ipCheckInFlight = p;
+    return p;
   },
 
   reloadProfile: async () => {
-    const profile = await invoke<ConnectionProfile>("get_default_profile");
-    set({ profile });
+    try {
+      const profile = await invoke<ConnectionProfile>("get_default_profile");
+      set({ profile });
+    } catch (e) {
+      // TODO(F2): typed error handling for reloadProfile
+      console.error("Failed to reload profile:", e);
+    }
   },
-}));
+  };
+});
 
 // Dev-only: lets the 3D backdrop's per-state moods be driven from the WebView2
 // devtools console without a live tunnel, e.g.

@@ -165,6 +165,8 @@ function resetColors() {
     "--secondary", "--color-secondary", "--card", "--color-card",
     "--popover", "--color-popover", "--muted", "--color-muted",
     "--accent", "--color-accent",
+    "--card-foreground", "--popover-foreground", "--secondary-foreground",
+    "--muted-foreground", "--accent-foreground",
     "--surface-1", "--surface-2", "--surface-3", "--surface-4",
     "--color-surface-1", "--color-surface-2", "--color-surface-3", "--color-surface-4",
   ]) root.style.removeProperty(p);

@@ -21,6 +21,20 @@ pub enum AetherError {
 // Tauri v2 command errors must be Serialize; Aether-GUI has no need to
 // distinguish error variants on the frontend beyond the message text, so
 // this serializes to a plain string rather than a tagged enum.
+impl AetherError {
+    pub fn code(&self) -> &'static str {
+        match self {
+            Self::AlreadyRunning => "already_running",
+            Self::BinaryMissing(_) => "binary_missing",
+            Self::SpawnFailed(_) => "spawn_failed",
+            Self::PortInUse(_) => "port_in_use",
+            Self::NotConnected => "not_connected",
+            Self::ProxyConflict => "proxy_conflict",
+            Self::Internal(_) => "internal",
+        }
+    }
+}
+
 impl serde::Serialize for AetherError {
     fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
     where

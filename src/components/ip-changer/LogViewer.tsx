@@ -1,5 +1,5 @@
 import { useEffect, useRef } from "react";
-import { Trash2 } from "lucide-react";
+import { Terminal, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useIpChangerStore } from "@/stores/ipChangerStore";
 
@@ -50,9 +50,13 @@ export function LogViewer() {
         className="h-28 overflow-y-auto rounded-xl bg-[#0a0a0c] px-3 py-2.5 font-mono text-[11px] leading-[1.45] text-muted-foreground ring-1 ring-white/[0.06] light:bg-[#f6f6f5] light:ring-black/10"
       >
         {logs.length === 0 ? (
-          <span className="text-muted-foreground/40 italic">
-            Tor output appears here when it starts.
-          </span>
+          <div className="flex flex-col items-center gap-2 py-8 text-center" role="status">
+            <span className="flex size-9 items-center justify-center rounded-xl bg-white/[0.04] ring-1 ring-white/[0.05]">
+              <Terminal size={16} className="opacity-60" />
+            </span>
+            <p className="text-xs font-medium text-foreground/70">No output yet</p>
+            <p className="max-w-[22ch] text-[11px] leading-relaxed text-muted-foreground/60">Tor output appears here once it starts. Start the engine to see live logs.</p>
+          </div>
         ) : (
           logs.map((l, i) => (
             <div key={i} className="anim-log-in flex gap-1.5 whitespace-pre-wrap break-words">

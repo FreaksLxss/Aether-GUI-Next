@@ -76,7 +76,14 @@ export function PublicLocation() {
         <>
           <span className="text-muted-foreground/50">·</span>
           <span className="shrink-0 tabular-nums text-muted-foreground/60">{latencyMs} ms</span>
-          {history.length >= 2 && (() => {
+          {history.length > 0 && (() => {
+            if (history.length === 1) {
+              return (
+                <svg width="32" height="12" viewBox="0 0 32 12" className="shrink-0" role="img" aria-label={`Latency ${history[0]} ms`}>
+                  <circle cx="16" cy="6" r="2" fill="var(--primary)" opacity="0.9" />
+                </svg>
+              );
+            }
             const min = Math.min(...history);
             const max = Math.max(...history);
             const range = max - min || 1;
@@ -87,8 +94,9 @@ export function PublicLocation() {
                 return `${x.toFixed(1)},${y.toFixed(1)}`;
               })
               .join(" ");
+            const label = `Latency sparkline: ${history.join(", ")} ms`;
             return (
-              <svg width="32" height="12" viewBox="0 0 32 12" className="shrink-0" aria-hidden>
+              <svg width="32" height="12" viewBox="0 0 32 12" className="shrink-0" role="img" aria-label={label}>
                 <polyline fill="none" stroke="var(--primary)" strokeWidth="1" opacity="0.7" points={points} />
               </svg>
             );

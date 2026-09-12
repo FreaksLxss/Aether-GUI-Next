@@ -1,5 +1,6 @@
 import type { ReactNode } from "react";
 import { Info } from "lucide-react";
+import { Switch } from "@/components/ui/switch";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { cn } from "@/lib/utils";
 
@@ -78,3 +79,33 @@ export function Section({
     </div>
   );
 }
+
+export function SwitchRow({
+  label,
+  tooltip,
+  checked,
+  onCheckedChange,
+  disabled,
+}: {
+  label: string;
+  tooltip: string;
+  checked: boolean;
+  onCheckedChange: (v: boolean) => void;
+  disabled?: boolean;
+}) {
+  return (
+    <div className="flex items-center justify-between rounded-lg bg-black/15 px-3 py-2.5 ring-1 ring-white/[0.04] light:bg-black/[0.03] light:ring-black/[0.05]">
+      <div className="flex items-center gap-1.5 text-[11px] font-medium text-foreground/80">
+        {label}
+        <Tooltip>
+          <TooltipTrigger aria-label={`About ${label}`} className="rounded-full p-0.5 text-muted-foreground/60 hover:bg-white/5 hover:text-muted-foreground">
+            <Info size={12} />
+          </TooltipTrigger>
+          <TooltipContent className="max-w-[260px] leading-relaxed">{tooltip}</TooltipContent>
+        </Tooltip>
+      </div>
+      <Switch checked={checked} onCheckedChange={onCheckedChange} disabled={disabled} aria-label={label} />
+    </div>
+  );
+}
+

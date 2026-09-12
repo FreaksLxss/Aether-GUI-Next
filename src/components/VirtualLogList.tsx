@@ -4,7 +4,7 @@ import { writeText } from "@tauri-apps/plugin-clipboard-manager";
 import { save } from "@tauri-apps/plugin-dialog";
 import { invoke } from "@tauri-apps/api/core";
 import { toast } from "sonner";
-import { Copy, Download } from "lucide-react";
+import { Copy, Download, FileText, SearchX } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import type { LogLine } from "@/types/connection";
 
@@ -153,12 +153,24 @@ export function VirtualLogList({
         >
         {logs.length === 0 ? (
           filter ? (
-            <p className="text-muted-foreground/60">No matching lines.</p>
+            <div className="flex flex-col items-center gap-2 py-8 text-center" role="status">
+              <span className="flex size-9 items-center justify-center rounded-xl bg-white/[0.04] ring-1 ring-white/[0.05]">
+                <SearchX size={16} className="opacity-60" />
+              </span>
+              <p className="text-xs font-medium text-foreground/70">No matching lines</p>
+              <p className="max-w-[26ch] text-[11px] leading-relaxed text-muted-foreground/60">
+                No lines match &quot;{deferredFilter}&quot;. Try a different keyword or clear the filter.
+              </p>
+            </div>
           ) : (
-            <div className="flex flex-col gap-1.5 py-2">
-              <div className="h-3 w-3/4 animate-pulse rounded bg-white/[0.06]" />
-              <div className="h-3 w-1/2 animate-pulse rounded bg-white/[0.06]" />
-              <div className="h-3 w-2/3 animate-pulse rounded bg-white/[0.06]" />
+            <div className="flex flex-col items-center gap-2 py-6 text-center" role="status">
+              <span className="flex size-9 items-center justify-center rounded-xl bg-white/[0.04] ring-1 ring-white/[0.05]">
+                <FileText size={16} className="opacity-60" />
+              </span>
+              <p className="font-mono text-[11px] text-muted-foreground/60">
+                <span className="text-primary/60">$</span> aether --connect
+              </p>
+              <p className="text-[11px] text-muted-foreground/40">No logs yet — connect to see output</p>
             </div>
           )
         ) : (

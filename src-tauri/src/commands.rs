@@ -47,6 +47,9 @@ pub fn get_default_profile(app: AppHandle) -> ConnectionProfile {
 
 #[tauri::command]
 pub fn set_default_profile(app: AppHandle, profile: ConnectionProfile) -> Result<(), AetherError> {
+    if let Err(msg) = aether::profiles::validate(&profile) {
+        return Err(AetherError::Internal(msg));
+    }
     aether::profiles::save(&app, &profile);
     Ok(())
 }
@@ -211,6 +214,34 @@ pub fn set_ip_proxy(state: State<AppState>, enabled: bool) -> Result<(), AetherE
     }
 }
 
+#[derive(Serialize, Clone, Debug)]
+pub struct Diagnostics {
+    pub profile: ConnectionProfile,
+    pub history: Vec<ConnectionEntry>,
+    pub status: ConnectionState,
+}
+
+fn redact_profile(mut p: ConnectionProfile) -> ConnectionProfile {
+    p.zt_access_secret = None;
+    p.zt_access_token = None;
+    p
+}
+
+#[tauri::command]
+pub fn get_diagnostics(app: AppHandle, state: State<AppState>) -> Diagnostics {
+    let profile = redact_profile(aether::profiles::load(&app));
+    let history = history::load(&app);
+    let status = state.manager.lock().unwrap().status();
+    Diagnostics { profile, history, status }
+}
+
+#[tauri::command]
+pub fn get_history_paginated(app: AppHandle, offset: Option<usize>, limit: Option<usize>) -> Vec<ConnectionEntry> {
+    let o = offset.unwrap_or(0);
+    let l = limit.unwrap_or(20);
+    history::load_paginated(&app, o, l)
+}
+
 #[tauri::command]
 pub fn get_app_version() -> String {
     env!("CARGO_PKG_VERSION").to_string()
@@ -234,7 +265,10 @@ pub fn save_preset(
     name: String,
     profile: ConnectionProfile,
 ) -> Result<(), AetherError> {
-    presets::save_preset(&app, &name, &profile).map_err(AetherError::Internal)
+    if let Err(msg) = aether::profiles::validate(&profile) {
+        return Err(AetherError::Internal(msg));
+    }
+    presets::save_preset(&app, &name, &profile).map_err(AetherError::Internal) // preset
 }
 
 #[tauri::command]

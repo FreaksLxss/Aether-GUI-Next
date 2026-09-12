@@ -39,6 +39,13 @@ pub fn save(app: &AppHandle, entry: &ConnectionEntry) {
     }
 }
 
+pub fn load_paginated(app: &AppHandle, offset: usize, limit: usize) -> Vec<ConnectionEntry> {
+    let all = load(app);
+    let offset = offset.min(all.len());
+    let limit = limit.clamp(1, 50);
+    all.into_iter().skip(offset).take(limit).collect()
+}
+
 pub fn clear(app: &AppHandle) {
     use tauri_plugin_store::StoreExt;
     if let Ok(store) = app.store(STORE_FILE) {

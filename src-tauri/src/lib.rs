@@ -155,6 +155,8 @@ pub fn run() {
             commands::set_always_on_top,
             commands::get_always_on_top,
             commands::get_history,
+            commands::get_history_paginated,
+            commands::get_diagnostics,
             commands::clear_history,
             commands::get_minimize_on_startup,
             commands::set_minimize_on_startup,

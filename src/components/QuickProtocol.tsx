@@ -2,6 +2,7 @@ import { Cloud, Layers, Sparkles, Zap } from "lucide-react";
 import { motion, type Transition } from "motion/react";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { useConnectionStore } from "@/state/connectionStore";
+import { useLocked } from "@/hooks/useLocked";
 import type { Protocol } from "@/types/connection";
 import { SPRING_FAST } from "@/lib/motion";
 
@@ -47,8 +48,7 @@ const OPTIONS: QuickProtocolOption[] = [
 export function QuickProtocol() {
   const protocol = useConnectionStore((s) => s.profile.protocol);
   const setProtocol = useConnectionStore((s) => s.setProtocol);
-  const status = useConnectionStore((s) => s.status);
-  const locked = status.state !== "Idle" && status.state !== "Error";
+  const locked = useLocked();
 
   return (
     <div className="flex w-full max-w-[320px] flex-col gap-1.5">

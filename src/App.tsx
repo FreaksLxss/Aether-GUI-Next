@@ -12,6 +12,7 @@ import { QuickProtocol } from "@/components/QuickProtocol";
 import { LeakBanner } from "@/components/LeakBanner";
 import { PanelDialog } from "@/components/PanelDialog";
 import { PanelSkeleton } from "@/components/ui/panel-skeleton";
+import { ErrorBoundary } from "@/components/ErrorBoundary";
 
 const AdvancedPanelContent = lazy(() =>
   import("@/components/AdvancedPanel").then((m) => ({ default: m.AdvancedPanelContent })),
@@ -134,9 +135,9 @@ function MainScreen() {
         transition={{ ...SPRING, delay: 0.08 }}
       >
         <AppMenu onOpen={setPanel} onOpenPalette={() => setPaletteOpen(true)} />
-        <p className="text-center text-[11px] tracking-wide text-muted-foreground/60">
-          <kbd className="rounded bg-foreground/[0.06] px-1 py-0.5 font-mono ring-1 ring-border">⌘K</kbd> to search everything ·{" "}
-          <button type="button" onClick={() => window.dispatchEvent(new CustomEvent("aether:open-shortcuts"))} className="underline decoration-dotted underline-offset-2 hover:text-foreground">
+        <p className="text-center text-xs tracking-wide text-muted-foreground">
+          <kbd aria-hidden className="rounded bg-foreground/[0.06] px-1 py-0.5 font-mono ring-1 ring-border">⌘K</kbd> to search everything ·{" "}
+          <button type="button" aria-label="Open keyboard shortcuts" onClick={() => window.dispatchEvent(new CustomEvent("aether:open-shortcuts"))} className="underline decoration-dotted underline-offset-2 hover:text-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring focus-visible:ring-offset-1">
             shortcuts ?
           </button>
         </p>
@@ -154,7 +155,9 @@ function MainScreen() {
         description="Protocol, proxy, routing & logs."
       >
         <Suspense fallback={<PanelSkeleton />}>
-          <AdvancedPanelContent highlightScanMode={highlightScanMode} />
+          <ErrorBoundary label="advanced" onReset={() => setPanel(null)}>
+            <AdvancedPanelContent highlightScanMode={highlightScanMode} />
+          </ErrorBoundary>
         </Suspense>
       </PanelDialog>
 
@@ -166,7 +169,9 @@ function MainScreen() {
         description="Save the current profile or apply a saved one."
       >
         <Suspense fallback={<PanelSkeleton />}>
-          <ProfilePresetsContent />
+          <ErrorBoundary label="presets" onReset={() => setPanel(null)}>
+            <ProfilePresetsContent />
+          </ErrorBoundary>
         </Suspense>
       </PanelDialog>
 
@@ -178,7 +183,9 @@ function MainScreen() {
         description="Tor circuit, exit IP & auto-rotate."
       >
         <Suspense fallback={<PanelSkeleton />}>
-          <IpChangerContent />
+          <ErrorBoundary label="ipchanger" onReset={() => setPanel(null)}>
+            <IpChangerContent />
+          </ErrorBoundary>
         </Suspense>
       </PanelDialog>
 
@@ -190,7 +197,9 @@ function MainScreen() {
         description="Recent connection attempts."
       >
         <Suspense fallback={<PanelSkeleton />}>
-          <ConnectionHistoryContent />
+          <ErrorBoundary label="history" onReset={() => setPanel(null)}>
+            <ConnectionHistoryContent />
+          </ErrorBoundary>
         </Suspense>
       </PanelDialog>
 
@@ -202,7 +211,9 @@ function MainScreen() {
         description="System, network & appearance."
       >
         <Suspense fallback={<PanelSkeleton />}>
-          <SettingsContent />
+          <ErrorBoundary label="settings" onReset={() => setPanel(null)}>
+            <SettingsContent />
+          </ErrorBoundary>
         </Suspense>
       </PanelDialog>
     </div>

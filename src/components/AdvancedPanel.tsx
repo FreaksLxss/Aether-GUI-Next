@@ -1,7 +1,6 @@
 import { useDeferredValue, useEffect, useMemo, useRef, useState } from "react";
 import {
   ExternalLink,
-  Info,
   Layers,
   Network,
   Route,
@@ -11,8 +10,7 @@ import {
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
-import { Switch } from "@/components/ui/switch";
-import { FieldRow, Section } from "@/components/ui/panel-section";
+import { FieldRow, Section, SwitchRow } from "@/components/ui/panel-section";
 import { VirtualLogList } from "@/components/VirtualLogList";
 import { InlineErrorBanner } from "@/components/ui/inline-alert";
 import { ProtocolSelect } from "@/components/ProtocolSelect";
@@ -32,6 +30,7 @@ import { LogLevelSelect } from "@/components/LogLevelSelect";
 import { PerfSelect } from "@/components/PerfSelect";
 import { LogSearch } from "@/components/LogSearch";
 import { useConnectionStore } from "@/state/connectionStore";
+import { useLocked } from "@/hooks/useLocked";
 import { openLogWindow } from "@/lib/log-window";
 import { cn } from "@/lib/utils";
 import {
@@ -51,7 +50,6 @@ export function AdvancedPanelContent({
   highlightScanMode?: boolean;
 }) {
   const logs = useConnectionStore((s) => s.logs);
-  const status = useConnectionStore((s) => s.status);
   const profile = useConnectionStore((s) => s.profile);
   const quickReconnect = profile.quick_reconnect;
   const setQuickReconnect = useConnectionStore((s) => s.setQuickReconnect);
@@ -60,7 +58,7 @@ export function AdvancedPanelContent({
   const setRouteSniff = useConnectionStore((s) => s.setRouteSniff);
   const autoReprovision = profile.auto_reprovision;
   const setAutoReprovision = useConnectionStore((s) => s.setAutoReprovision);
-  const locked = status.state !== "Idle" && status.state !== "Error";
+  const locked = useLocked();
   const [autoScroll, setAutoScroll] = useState(true);
   const [logFilter, setLogFilter] = useState("");
   const deferredFilter = useDeferredValue(logFilter);
@@ -194,31 +192,13 @@ export function AdvancedPanelContent({
             >
               <RouteRulesField id="aether-field-route-direct" kind="direct" />
             </FieldRow>
-            <div className="flex items-center justify-between rounded-lg bg-black/15 px-3 py-2.5 ring-1 ring-white/[0.04] light:bg-black/[0.03] light:ring-black/[0.05]">
-              <div className="flex items-center gap-1.5 text-[11px] font-medium text-foreground/80">
-                Domain sniffing
-                <Tooltip>
-                  <TooltipTrigger
-                    aria-label="About Domain sniffing"
-                    className="rounded-full p-0.5 text-muted-foreground/60 hover:bg-white/5 hover:text-muted-foreground"
-                  >
-                    <Info size={12} />
-                  </TooltipTrigger>
-                  <TooltipContent className="max-w-[260px] leading-relaxed">
-                    Behind a TUN front end, domain-based block/direct rules never used to match —
-                    the name was resolved before reaching Aether. The core now reads it from the
-                    TLS SNI or HTTP Host header (Aether ≥1.7.0). Turn off only if this causes
-                    trouble.
-                  </TooltipContent>
-                </Tooltip>
-              </div>
-              <Switch
-                checked={routeSniff}
-                onCheckedChange={setRouteSniff}
-                disabled={locked}
-                aria-label="Domain sniffing"
-              />
-            </div>
+            <SwitchRow
+              label="Domain sniffing"
+              tooltip="Behind a TUN front end, domain-based block/direct rules never used to match — the name was resolved before reaching Aether. The core now reads it from the TLS SNI or HTTP Host header (Aether ≥1.7.0). Turn off only if this causes trouble."
+              checked={routeSniff}
+              onCheckedChange={setRouteSniff}
+              disabled={locked}
+            />
             {routeSniff && (
               <FieldRow
                 label="Sniff Wait"
@@ -250,54 +230,20 @@ export function AdvancedPanelContent({
           </Section>
 
           <Section title="Behavior" icon={SlidersHorizontal}>
-            <div className="flex items-center justify-between rounded-lg bg-black/15 px-3 py-2.5 ring-1 ring-white/[0.04] light:bg-black/[0.03] light:ring-black/[0.05]">
-              <div className="flex items-center gap-1.5 text-[11px] font-medium text-foreground/80">
-                Quick reconnect
-                <Tooltip>
-                  <TooltipTrigger
-                    aria-label="About Quick reconnect"
-                    className="rounded-full p-0.5 text-muted-foreground/60 hover:bg-white/5 hover:text-muted-foreground"
-                  >
-                    <Info size={12} />
-                  </TooltipTrigger>
-                  <TooltipContent className="max-w-[260px] leading-relaxed">
-                    Remembers the last gateway that worked and re-tests it first on the next
-                    connect, skipping the full scan when it still works. Turn off to always scan
-                    fresh.
-                  </TooltipContent>
-                </Tooltip>
-              </div>
-              <Switch
-                checked={quickReconnect}
-                onCheckedChange={setQuickReconnect}
-                disabled={locked}
-                aria-label="Quick reconnect"
-              />
-            </div>
-            <div className="flex items-center justify-between rounded-lg bg-black/15 px-3 py-2.5 ring-1 ring-white/[0.04] light:bg-black/[0.03] light:ring-black/[0.05]">
-              <div className="flex items-center gap-1.5 text-[11px] font-medium text-foreground/80">
-                Auto re-provision
-                <Tooltip>
-                  <TooltipTrigger
-                    aria-label="About Auto re-provision"
-                    className="rounded-full p-0.5 text-muted-foreground/60 hover:bg-white/5 hover:text-muted-foreground"
-                  >
-                    <Info size={12} />
-                  </TooltipTrigger>
-                  <TooltipContent className="max-w-[260px] leading-relaxed">
-                    If Cloudflare stops accepting this device's saved identity, Aether registers a
-                    fresh device automatically (Aether ≥1.7.0). Turn off to only report it and keep
-                    the old identity.
-                  </TooltipContent>
-                </Tooltip>
-              </div>
-              <Switch
-                checked={autoReprovision}
-                onCheckedChange={setAutoReprovision}
-                disabled={locked}
-                aria-label="Auto re-provision"
-              />
-            </div>
+            <SwitchRow
+              label="Quick reconnect"
+              tooltip="Remembers the last gateway that worked and re-tests it first on the next connect, skipping the full scan when it still works. Turn off to always scan fresh."
+              checked={quickReconnect}
+              onCheckedChange={setQuickReconnect}
+              disabled={locked}
+            />
+            <SwitchRow
+              label="Auto re-provision"
+              tooltip="If Cloudflare stops accepting this device's saved identity, Aether registers a fresh device automatically (Aether ≥1.7.0). Turn off to only report it and keep the old identity."
+              checked={autoReprovision}
+              onCheckedChange={setAutoReprovision}
+              disabled={locked}
+            />
             <FieldRow
               label="Log Level"
               htmlFor="aether-field-log-level"

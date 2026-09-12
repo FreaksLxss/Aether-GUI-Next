@@ -127,7 +127,9 @@ export function ConnectionStatusLine({ onTryStealth }: { onTryStealth?: () => vo
       </AnimatePresence>
       <AnimatePresence mode="wait">
         <motion.span
-          key={status.state}
+          key={`${status.state}-secondary`}
+          role={status.state === "Error" ? "alert" : undefined}
+          aria-live={status.state === "Error" ? "assertive" : undefined}
           className={
             status.state === "Error"
               ? "block max-w-sm whitespace-pre-wrap font-mono text-[11px] leading-relaxed text-status-error"

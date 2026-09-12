@@ -3,6 +3,7 @@ import { motion, type Transition } from "motion/react";
 import { Button } from "@/components/ui/button";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { useConnectionStore } from "@/state/connectionStore";
+import { useLocked } from "@/hooks/useLocked";
 import { SPRING_FAST } from "@/lib/motion";
 
 const UNDERLINE_SPRING: Transition = { type: "spring", stiffness: 380, damping: 30, mass: 0.7 };
@@ -62,8 +63,7 @@ const ACTIVE_PRESET: Record<string, string> = {
 export function QuickConnect({ onMoreOptions }: { onMoreOptions: () => void }) {
   const profile = useConnectionStore((s) => s.profile);
   const setScanMode = useConnectionStore((s) => s.setScanMode);
-  const status = useConnectionStore((s) => s.status);
-  const locked = status.state !== "Idle" && status.state !== "Error";
+  const locked = useLocked();
 
   const activePreset = ACTIVE_PRESET[profile.scan_mode] ?? null;
   const isActive = (p: QuickPreset) => activePreset === p.label;

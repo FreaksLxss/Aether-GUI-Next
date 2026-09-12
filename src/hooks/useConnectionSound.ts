@@ -26,14 +26,27 @@ export function useConnectionSound() {
   }, []);
 }
 
+let sharedCtx: AudioContext | null = null;
+function getCtx(): AudioContext | null {
+  if (sharedCtx && sharedCtx.state !== "closed") return sharedCtx;
+  try {
+    sharedCtx = new AudioContext();
+    return sharedCtx;
+  } catch {
+    return null;
+  }
+}
 function playTone(
   freq: number,
   duration: number,
   type: OscillatorType,
   volume: number,
 ) {
+  const ctx = getCtx();
+  if (!ctx) return;
+  // resume if suspended (autoplay policy)
+  if (ctx.state === "suspended") void ctx.resume().catch(() => {});
   try {
-    const ctx = new AudioContext();
     const osc = ctx.createOscillator();
     const gain = ctx.createGain();
     osc.type = type;
@@ -44,7 +57,11 @@ function playTone(
     gain.connect(ctx.destination);
     osc.start();
     osc.stop(ctx.currentTime + duration);
+    // auto-disconnect after duration + small tail to avoid node leak
+    setTimeout(() => {
+      try { osc.disconnect(); gain.disconnect(); } catch {}
+    }, (duration + 0.05) * 1000);
   } catch {
-    // AudioContext not available — silently ignore
+    // Audio graph error — silently ignore
   }
 }

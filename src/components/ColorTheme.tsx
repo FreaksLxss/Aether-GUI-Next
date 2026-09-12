@@ -91,13 +91,17 @@ export function ColorTheme() {
   const pickPrimary = (hex: string) => {
     setPrimary(hex);
     localStorage.setItem(PRIMARY_KEY, hex);
-    applyColors(hex, secondary ?? SECONDARY_DEFAULT);
+    // read the other accent directly from storage/state snapshot to avoid
+    // stale closure when both pickers are used in the same tick
+    const other = localStorage.getItem(SECONDARY_KEY) ?? secondary ?? SECONDARY_DEFAULT;
+    applyColors(hex, other);
   };
 
   const pickSecondary = (hex: string) => {
     setSecondary(hex);
     localStorage.setItem(SECONDARY_KEY, hex);
-    applyColors(primary ?? PRIMARY_COLORS[0][0], hex);
+    const other = localStorage.getItem(PRIMARY_KEY) ?? primary ?? PRIMARY_COLORS[0][0];
+    applyColors(other, hex);
   };
 
   const reset = () => {

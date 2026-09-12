@@ -41,17 +41,45 @@ function Highlight({ text, query }: { text: string; query: string }) {
   );
 }
 
-function scoreItem(hay: string, words: string[], q: string): number {
-  if (!q) return 0;
+function isWordBoundary(c: string) {
+  return /[\s\-_\/.:]/.test(c);
+}
+function scoreToken(hay: string, token: string): number {
   let score = 0;
-  if (hay.includes(q)) score += 10;
-  for (const w of words) {
-    if (w.startsWith(q)) score += 6;
-    else if (w.includes(q)) score += 2;
+  let lastIdx = -2;
+  let hayPos = 0;
+  let consec = 0;
+  for (let i = 0; i < token.length; i++) {
+    const ch = token[i]!;
+    const idx = hay.indexOf(ch, hayPos);
+    if (idx === -1) return 0;
+    let bonus = 0;
+    if (idx === 0) bonus += 10;
+    else if (isWordBoundary(hay[idx - 1]!)) bonus += 6;
+    if (idx === lastIdx + 1) {
+      consec++;
+      bonus += 4 + Math.min(consec, 3) * 2;
+    } else {
+      if (lastIdx !== -2) score -= (idx - lastIdx - 1) * 0.6;
+      consec = 0;
+    }
+    score += 10 + bonus;
+    lastIdx = idx;
+    hayPos = idx + 1;
   }
-  // bonus if label starts with query
-  if (hay.startsWith(q)) score += 4;
+  if (hay.startsWith(token)) score += 6;
   return score;
+}
+function fuzzyScore(hay: string, query: string): number {
+  const tokens = query.trim().toLowerCase().split(/\s+/).filter(Boolean);
+  if (!tokens.length) return 0;
+  let total = 0;
+  for (const t of tokens) {
+    const sc = scoreToken(hay, t);
+    if (sc === 0) return 0;
+    total += sc;
+  }
+  return total;
 }
 
 export function CommandPalette({
@@ -74,11 +102,10 @@ export function CommandPalette({
     const scored = items
       .map((it) => {
         const hay = `${it.label} ${it.hint ?? ""} ${it.keywords ?? ""} ${it.group}`.toLowerCase();
-        const words = hay.split(/\s+/);
-        const s = scoreItem(hay, words, q);
-        return { it, s, hay };
+        const s = fuzzyScore(hay, q);
+        return { it, s };
       })
-      .filter((x) => x.hay.includes(q))
+      .filter((x) => x.s > 0)
       .sort((a, b) => b.s - a.s || a.it.label.localeCompare(b.it.label));
     return scored.map((x) => x.it);
   }, [items, query]);
@@ -149,10 +176,18 @@ export function CommandPalette({
             onKeyDown={(e) => {
               if (e.key === "ArrowDown") {
                 e.preventDefault();
-                setActive((a) => Math.min(a + 1, filtered.length - 1));
+                if (!filtered.length) return;
+                setActive((a) => (a + 1) % filtered.length);
               } else if (e.key === "ArrowUp") {
                 e.preventDefault();
-                setActive((a) => Math.max(a - 1, 0));
+                if (!filtered.length) return;
+                setActive((a) => (a - 1 + filtered.length) % filtered.length);
+              } else if (e.key === "Home") {
+                e.preventDefault();
+                setActive(0);
+              } else if (e.key === "End") {
+                e.preventDefault();
+                setActive(filtered.length - 1);
               } else if (e.key === "Enter") {
                 e.preventDefault();
                 choose(activeItem);
@@ -164,7 +199,7 @@ export function CommandPalette({
           </kbd>
         </div>
 
-        <div ref={listRef} id="palette-listbox" role="listbox" className="max-h-[min(46vh,360px)] overflow-y-auto p-1.5">
+        <div ref={listRef} id="palette-listbox" role="listbox" aria-label="Search results" className="max-h-[min(46vh,360px)] overflow-y-auto p-1.5">
           {filtered.length === 0 ? (
             <p className="px-3 py-6 text-center text-xs text-muted-foreground">No matches for "{query}".</p>
           ) : (

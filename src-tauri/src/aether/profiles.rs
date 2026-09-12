@@ -794,6 +794,42 @@ pub fn load(app: &tauri::AppHandle) -> ConnectionProfile {
         .unwrap_or_default()
 }
 
+pub fn validate(p: &ConnectionProfile) -> Result<(), String> {
+    use std::net::{IpAddr, SocketAddr};
+    p.bind_address.parse::<SocketAddr>().map_err(|_| format!("invalid bind_address: {}", p.bind_address))?;
+    if let Some(ref a) = p.http_proxy_address {
+        if !a.trim().is_empty() {
+            a.trim().parse::<SocketAddr>().map_err(|_| format!("invalid http_proxy_address: {a}"))?;
+        }
+    }
+    if let Some(ref w) = p.wiw_peers {
+        if p.protocol == Protocol::Gool && !w.trim().is_empty() {
+            for seg in w.split(',').map(str::trim).filter(|x| !x.is_empty()) {
+                seg.parse::<SocketAddr>().map_err(|_| format!("invalid wiw_peers entry: {seg}"))?;
+            }
+        }
+    }
+    // tun_address is CIDR (ip/prefix)
+    {
+        let parts: Vec<&str> = p.tun_address.split('/').collect();
+        if parts.len() != 2 {
+            return Err(format!("invalid tun_address: {}", p.tun_address));
+        }
+        parts[0].parse::<IpAddr>().map_err(|_| format!("invalid tun_address ip: {}", p.tun_address))?;
+        let prefix: u8 = parts[1].parse().map_err(|_| format!("invalid tun_address prefix: {}", p.tun_address))?;
+        if prefix > 32 {
+            return Err(format!("invalid tun_address prefix: {}", p.tun_address));
+        }
+    }
+    p.tun_dns.parse::<IpAddr>().map_err(|_| format!("invalid tun_dns: {}", p.tun_dns))?;
+    if let Some(ms) = p.route_sniff_ms {
+        if ms > 10_000 {
+            return Err("route_sniff_ms too large (max 10000)".into());
+        }
+    }
+    Ok(())
+}
+
 pub fn save(app: &tauri::AppHandle, profile: &ConnectionProfile) {
     use tauri_plugin_store::StoreExt;
     if let Ok(store) = app.store(STORE_FILE) {
