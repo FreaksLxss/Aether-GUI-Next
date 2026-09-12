@@ -1,9 +1,11 @@
 import { ChevronRight, Zap, Shield, Gauge, EyeOff } from "lucide-react";
-import { motion } from "motion/react";
+import { motion, type Transition } from "motion/react";
 import { Button } from "@/components/ui/button";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { useConnectionStore } from "@/state/connectionStore";
 import { SPRING_FAST } from "@/lib/motion";
+
+const UNDERLINE_SPRING: Transition = { type: "spring", stiffness: 380, damping: 30, mass: 0.7 };
 
 interface QuickPreset {
   label: string;
@@ -54,6 +56,9 @@ const ACTIVE_PRESET: Record<string, string> = {
   ironclad: "Secure",
 };
 
+/** Tuning — underline indicator: no fill, just a sliding 2px orange
+ * underline + bolder type + tinted badge for the active chip. Keeps
+ * Protocol as the only pill in the pair — hierarchy without twinned fills. */
 export function QuickConnect({ onMoreOptions }: { onMoreOptions: () => void }) {
   const profile = useConnectionStore((s) => s.profile);
   const setScanMode = useConnectionStore((s) => s.setScanMode);
@@ -61,61 +66,84 @@ export function QuickConnect({ onMoreOptions }: { onMoreOptions: () => void }) {
   const locked = status.state !== "Idle" && status.state !== "Error";
 
   const activePreset = ACTIVE_PRESET[profile.scan_mode] ?? null;
-
   const isActive = (p: QuickPreset) => activePreset === p.label;
 
   return (
-    <Tooltip>
-      <TooltipTrigger asChild>
-        <div className="glass-float flex rounded-xl p-0.5 shadow-glass ring-1 ring-white/10">
+    <div className="flex w-full max-w-[320px] flex-col gap-1.5">
+      <span className="px-1 text-[10px] font-medium tracking-widest text-muted-foreground/60 uppercase">
+        Tuning
+      </span>
+      <div className="flex items-center gap-1 rounded-[14px] bg-surface-2 p-1.5 ring-1 ring-border">
+        <div className="flex flex-1 gap-1">
           {PRESETS.map((p) => {
             const Icon = p.icon;
             const active = isActive(p);
+            const tip = locked
+              ? `Disconnect first — ${p.label}: ${p.description}`
+              : active
+                ? `${p.label} · active — ${p.description}`
+                : `${p.label} — ${p.description}`;
             return (
-              <motion.button
-                key={p.label}
-                type="button"
-                onClick={() => setScanMode(p.scanMode)}
-                disabled={locked}
-                aria-pressed={active}
-                title={active ? `${p.description} · active` : p.description}
-                whileTap={{ scale: 0.96 }}
-                transition={SPRING_FAST}
-                className={`relative flex h-auto flex-col items-center justify-center gap-0.5 px-3 py-2 text-[10px] outline-none transition-colors duration-150 select-none disabled:opacity-50 disabled:pointer-events-none focus-visible:ring-1 focus-visible:ring-primary focus-visible:ring-inset rounded-lg ${
-                  active ? "font-semibold text-primary-foreground" : "text-muted-foreground hover:text-foreground"
-                }`}
-              >
-                {active && (
-                  <motion.span
-                    layoutId="quick-connect-pill"
-                    initial={{ opacity: 0, scale: 0.85 }}
-                    animate={{ opacity: 1, scale: 1 }}
+              <Tooltip key={p.label} delayDuration={80}>
+                <TooltipTrigger asChild>
+                  <motion.button
+                    type="button"
+                    onClick={() => setScanMode(p.scanMode)}
+                    disabled={locked}
+                    aria-pressed={active}
+                    aria-label={tip}
+                    whileTap={{ scale: 0.97 }}
                     transition={SPRING_FAST}
-                    className="absolute inset-0 rounded-xl bg-primary shadow-md shadow-primary/40"
-                  />
-                )}
-                <Icon size={12} className="relative" aria-hidden />
-                <span className="relative">{p.label}</span>
-              </motion.button>
+                    className={`relative flex min-w-0 flex-1 flex-col items-center justify-center gap-1.5 overflow-hidden rounded-[10px] px-1.5 pb-3 pt-2.5 text-[10px] leading-none outline-none select-none disabled:opacity-50 disabled:pointer-events-none focus-visible:ring-1 focus-visible:ring-primary focus-visible:ring-inset ${
+                      active
+                        ? "font-semibold text-foreground"
+                        : "font-medium text-muted-foreground hover:bg-foreground/[0.04] hover:text-foreground"
+                    }`}
+                  >
+                    <span
+                      className={`relative flex size-[20px] shrink-0 items-center justify-center rounded-full transition-colors duration-150 ${
+                        active
+                          ? "bg-primary text-primary-foreground shadow-sm"
+                          : "bg-foreground/[0.07] text-muted-foreground"
+                      }`}
+                      aria-hidden
+                    >
+                      <Icon size={11} strokeWidth={active ? 2.25 : 1.9} />
+                    </span>
+                    <span className="relative min-w-0 truncate tracking-wide text-center">
+                      {p.label}
+                    </span>
+                    {/* sliding underline — only motion on the rail */}
+                    {active && (
+                      <motion.span
+                        layoutId="quick-connect-underline"
+                        transition={UNDERLINE_SPRING}
+                        className="pointer-events-none absolute bottom-1 left-2 right-2 h-0.5 rounded-full bg-primary"
+                        aria-hidden
+                      />
+                    )}
+                  </motion.button>
+                </TooltipTrigger>
+                <TooltipContent side="bottom" sideOffset={6} className="max-w-[260px] text-center leading-snug">
+                  {tip}
+                </TooltipContent>
+              </Tooltip>
             );
           })}
-          <Button
-            variant="ghost"
-            size="icon"
-            onClick={onMoreOptions}
-            disabled={locked}
-            title="More options"
-            className="h-auto w-auto rounded-lg px-2 py-2 text-muted-foreground hover:bg-white/5 hover:text-foreground active:scale-95 transition"
-          >
-            <ChevronRight size={12} />
-          </Button>
         </div>
-      </TooltipTrigger>
-      {locked && (
-        <TooltipContent side="bottom">
-          Disconnect first to change quick settings
-        </TooltipContent>
-      )}
-    </Tooltip>
+        <span aria-hidden className="h-7 w-px shrink-0 bg-border" />
+        <Button
+          variant="ghost"
+          size="icon"
+          onClick={onMoreOptions}
+          disabled={locked}
+          title="More options"
+          aria-label="More tuning options"
+          className="size-7 shrink-0 rounded-[10px] text-muted-foreground hover:bg-foreground/[0.06] hover:text-foreground active:scale-95"
+        >
+          <ChevronRight size={13} />
+        </Button>
+      </div>
+    </div>
   );
 }

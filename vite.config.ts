@@ -20,6 +20,13 @@ export default defineConfig({
         main: path.resolve(__dirname, "index.html"),
         "log-window": path.resolve(__dirname, "log-window.html"),
       },
+      output: {
+        manualChunks(id) {
+          if (id.includes("node_modules/three")) return "three"
+          if (id.includes("node_modules/motion")) return "motion"
+          if (id.includes("node_modules/radix-ui") || id.includes("node_modules/radix")) return "radix"
+        },
+      },
     },
   },
   clearScreen: false,

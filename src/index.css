@@ -65,74 +65,79 @@
   --shadow-glass: var(--shadow-glass);
 }
 
-/* Dark theme (default) — the app starts dark; .light class toggles to light. */
+/* Dark theme (default) — the app starts dark; .light class toggles to light.
+   Refined: warm-tinted charcoal (not pure gray), single accent slot, tinted
+   shadows and a single composed light source instead of scattered orbs. */
 :root {
-  --background: #09090b;
-  --foreground: #fafafa;
-  --card: #18181b;
-  --card-foreground: #fafafa;
-  --popover: #18181b;
-  --popover-foreground: #fafafa;
+  --background: #0d0d0f;
+  --foreground: #f4f4f3;
+  --card: #19191c;
+  --card-foreground: #f4f4f3;
+  --popover: #1e1e20;
+  --popover-foreground: #f4f4f3;
   --primary: #ea580c;
   --primary-foreground: #0d0d0f;
-  --secondary: #27272a;
-  --secondary-foreground: #fafafa;
-  --muted: #27272a;
-  --muted-foreground: #a1a1aa;
-  --accent: #27272a;
-  --accent-foreground: #fafafa;
+  --secondary: #232326;
+  --secondary-foreground: #f4f4f3;
+  --muted: #232326;
+  --muted-foreground: #9f9fa3;
+  --accent: #232326;
+  --accent-foreground: #f4f4f3;
   --destructive: oklch(0.577 0.245 27.325);
-  --border: rgba(255, 255, 255, 0.08);
-  --input: rgba(255, 255, 255, 0.08);
+  --border: rgba(255, 255, 255, 0.07);
+  --input: rgba(255, 255, 255, 0.07);
   --ring: #ea580c;
   --radius: 0.625rem;
-  --sidebar: #09090b;
-  --sidebar-foreground: #fafafa;
+  --sidebar: #0d0d0f;
+  --sidebar-foreground: #f4f4f3;
   --sidebar-primary: #ea580c;
   --sidebar-primary-foreground: #0d0d0f;
-  --sidebar-accent: #27272a;
-  --sidebar-accent-foreground: #fafafa;
-  --sidebar-border: rgba(255, 255, 255, 0.08);
+  --sidebar-accent: #232326;
+  --sidebar-accent-foreground: #f4f4f3;
+  --sidebar-border: rgba(255, 255, 255, 0.07);
   --sidebar-ring: oklch(0.708 0 0);
 
-  --surface-1: #1a1a1a;
-  --surface-2: #1e1e1e;
-  --surface-3: #242424;
-  --surface-4: #2a2a2a;
+  --surface-1: #131316;
+  --surface-2: #1a1a1e;
+  --surface-3: #212126;
+  --surface-4: #28282e;
   --status-connected: #2dd4bf;
   --status-connecting: #f2711c;
   --status-error: #ef4444;
-  --status-idle: #6b7280;
+  --status-idle: #6b6b70;
   --chart-1: oklch(0.87 0 0);
   --chart-2: oklch(0.556 0 0);
   --chart-3: oklch(0.439 0 0);
   --chart-4: oklch(0.371 0 0);
   --chart-5: oklch(0.269 0 0);
 
-  /* Frosted-glass material (Apple-style translucent layers). Components
-       reference the --glass-* tokens through the .glass-* utilities below;
-       the blur + saturation is what lets the ambient orbs read through. */
-  --glass-blur: 26px;
-  --glass-saturate: 1.6;
-  --glass-bg: color-mix(in srgb, var(--surface-2) 58%, transparent);
-  --glass-bg-strong: color-mix(in srgb, var(--surface-3) 80%, transparent);
-  --glass-bg-float: color-mix(in srgb, var(--surface-3) 86%, transparent);
-  --glass-ring: rgba(255, 255, 255, 0.1);
-  --glass-highlight: rgba(255, 255, 255, 0.06);
+  /* Frosted material — authored, not default glass-everywhere.
+     Keep blur but add warm tint and a tinted shadow so it reads as
+     material rather than generic translucency. Only hero + TitleBar
+     should use the strongest variant. */
+  --glass-blur: 20px;
+  --glass-saturate: 1.35;
+  --glass-bg: color-mix(in srgb, var(--surface-2) 62%, transparent);
+  --glass-bg-strong: color-mix(in srgb, var(--surface-2) 78%, transparent);
+  --glass-bg-float: color-mix(in srgb, var(--surface-3) 84%, transparent);
+  --glass-ring: rgba(255, 255, 255, 0.08);
+  --glass-highlight: rgba(255, 255, 255, 0.05);
   --shadow-glass:
-    0 12px 40px -12px rgba(0, 0, 0, 0.55),
-    inset 0 1px 0 0 rgba(255, 255, 255, 0.05);
+    0 16px 48px -16px rgba(0, 0, 0, 0.6),
+    0 2px 10px -4px rgba(234, 88, 12, 0.08),
+    inset 0 1px 0 0 rgba(255, 255, 255, 0.04);
 
   /* Rounded window frame (transparent native window + CSS rounding).
        Per-corner overrides default to the shared radius; change any of
-       --window-radius-tl/-tr/-br/-bl for individual corners. */
-  --window-radius: 18px;
+       --window-radius-tl/-tr/-br/-bl for individual corners.
+       Asymmetric squircle: tighter top, full squircle bottom. */
+  --window-radius: 22px;
   --window-radius-tl: var(--window-radius);
   --window-radius-tr: var(--window-radius);
   --window-radius-bl: 30px; /* bottom-left */
   --window-radius-br: 30px; /* bottom-right */
-  --window-ring: rgba(255, 255, 255, 0.09);
-  --window-highlight: rgba(255, 255, 255, 0.06);
+  --window-ring: rgba(255, 255, 255, 0.08);
+  --window-highlight: rgba(255, 255, 255, 0.05);
 }
 
 @media (prefers-reduced-transparency: reduce) {
@@ -151,47 +156,49 @@
   }
 }
 
-/* Light theme — overrides CSS variables when .light is on <html>. */
+/* Light theme — overrides CSS variables when .light is on <html>.
+   Same material language: tonal steps + hairline, not flat white. */
 :root.light {
-  --background: #f5f5f5;
-  --foreground: #171717;
+  --background: #f4f4f3;
+  --foreground: #111113;
   --card: #ffffff;
-  --card-foreground: #171717;
+  --card-foreground: #111113;
   --popover: #ffffff;
-  --popover-foreground: #171717;
+  --popover-foreground: #111113;
   --primary: #ea580c;
   --primary-foreground: #0d0d0f;
-  --secondary: #e5e5e5;
-  --secondary-foreground: #171717;
-  --muted: #e5e5e5;
-  --muted-foreground: #525252;
-  --accent: #d4d4d4;
-  --accent-foreground: #171717;
+  --secondary: #ececec;
+  --secondary-foreground: #111113;
+  --muted: #ececec;
+  --muted-foreground: #6f6f74;
+  --accent: #e3e3e6;
+  --accent-foreground: #111113;
   --destructive: #dc2626;
-  --border: rgba(0, 0, 0, 0.08);
-  --input: rgba(0, 0, 0, 0.12);
+  --border: rgba(0, 0, 0, 0.07);
+  --input: rgba(0, 0, 0, 0.08);
   --ring: #ea580c;
   --surface-1: #ffffff;
-  --surface-2: #f0f0f0;
-  --surface-3: #e5e5e5;
-  --surface-4: #d4d4d4;
+  --surface-2: #f2f2f0;
+  --surface-3: #e8e8e6;
+  --surface-4: #dddcd8;
   --status-connected: #0d9488;
   --status-connecting: #ea580c;
   --status-error: #dc2626;
   --status-idle: #9ca3af;
-  --glass-blur: 22px;
-  --glass-saturate: 1.4;
-  --glass-bg: color-mix(in srgb, #ffffff 66%, transparent);
-  --glass-bg-strong: color-mix(in srgb, #ffffff 82%, transparent);
+  --glass-blur: 18px;
+  --glass-saturate: 1.25;
+  --glass-bg: color-mix(in srgb, #ffffff 72%, transparent);
+  --glass-bg-strong: color-mix(in srgb, #ffffff 86%, transparent);
   --glass-bg-float: color-mix(in srgb, #ffffff 92%, transparent);
-  --glass-ring: rgba(0, 0, 0, 0.08);
-  --glass-highlight: rgba(255, 255, 255, 0.7);
+  --glass-ring: rgba(0, 0, 0, 0.06);
+  --glass-highlight: rgba(255, 255, 255, 0.85);
   --shadow-glass:
-    0 12px 40px -14px rgba(0, 0, 0, 0.18),
-    inset 0 1px 0 0 rgba(255, 255, 255, 0.8);
-  --window-radius: 18px;
-  --window-ring: rgba(0, 0, 0, 0.08);
-  --window-highlight: rgba(255, 255, 255, 0.7);
+    0 14px 36px -16px rgba(0, 0, 0, 0.14),
+    0 2px 10px -6px rgba(0, 0, 0, 0.06),
+    inset 0 1px 0 0 rgba(255, 255, 255, 0.9);
+  --window-radius: 22px;
+  --window-ring: rgba(0, 0, 0, 0.07);
+  --window-highlight: rgba(255, 255, 255, 0.9);
 }
 
 .light .bg-background {

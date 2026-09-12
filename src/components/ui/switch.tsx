@@ -11,7 +11,7 @@ function Switch({ className, checked, ...props }: React.ComponentProps<typeof Sw
       data-slot="switch"
       checked={checked}
       className={cn(
-        "peer inline-flex h-6 w-11 shrink-0 cursor-pointer items-center rounded-full bg-white/10 ring-1 ring-inset ring-white/10 transition-colors duration-200 outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background disabled:cursor-not-allowed disabled:opacity-50 data-[state=checked]:bg-primary data-[state=checked]:ring-primary/50",
+        "peer inline-flex h-6 w-11 shrink-0 cursor-pointer items-center rounded-full bg-surface-3 ring-1 ring-inset ring-border transition-colors duration-200 outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background disabled:cursor-not-allowed disabled:opacity-50 data-[state=checked]:bg-primary data-[state=checked]:ring-primary/50",
         className,
       )}
       {...props}

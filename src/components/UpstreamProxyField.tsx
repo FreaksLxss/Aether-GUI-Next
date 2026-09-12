@@ -1,5 +1,7 @@
+import { useRef, useState } from "react";
 import { Input } from "@/components/ui/input";
 import { useConnectionStore } from "@/state/connectionStore";
+import { validateUpstream } from "@/lib/validators";
 
 /** Aether ≥1.7.0: dial out through another proxy already on the machine
  * (--upstream), chaining Aether behind e.g. a VPN or proxy app. Empty input
@@ -9,20 +11,39 @@ export function UpstreamProxyField({ id }: { id?: string }) {
   const setUrl = useConnectionStore((s) => s.setUpstreamProxy);
   const status = useConnectionStore((s) => s.status);
   const locked = status.state !== "Idle" && status.state !== "Error";
+  const [err, setErr] = useState<string | null>(null);
+  const timerRef = useRef<ReturnType<typeof setTimeout>>(null);
+
+  const validate = (v: string | null) => {
+    const e = validateUpstream(v);
+    setErr(e);
+    if (e) {
+      if (timerRef.current) clearTimeout(timerRef.current);
+      timerRef.current = setTimeout(() => setErr(null), 2500);
+    }
+  };
 
   return (
-    <Input
-      id={id}
-      type="text"
-      value={url ?? ""}
-      disabled={locked}
-      onChange={(e) => {
-        const v = e.target.value.trim();
-        setUrl(v ? v : null);
-      }}
-      placeholder="socks5://127.0.0.1:1080 (off)"
-      className="h-9 bg-surface-3 font-mono text-[10px] ring-1 ring-inset ring-white/5 focus-visible:ring-primary"
-      aria-label="Upstream proxy URL"
-    />
+    <div className="flex flex-col gap-1">
+      <Input
+        id={id}
+        type="text"
+        value={url ?? ""}
+        disabled={locked}
+        onChange={(e) => {
+          const v = e.target.value.trim();
+          const next = v ? v : null;
+          setUrl(next);
+          if (err) setErr(validateUpstream(next));
+        }}
+        onBlur={() => validate(url)}
+        placeholder="socks5://127.0.0.1:1080 (off)"
+        aria-invalid={!!err}
+        aria-describedby={err ? "upstream-error" : undefined}
+        className={`h-9 rounded-xl bg-black/20 font-mono text-[11px] ring-1 ring-inset focus-visible:ring-primary ${err ? "ring-status-error focus-visible:ring-status-error" : "ring-white/[0.07]"}`}
+        aria-label="Upstream proxy URL"
+      />
+      {err && <p id="upstream-error" className="text-[11px] text-status-error">{err}</p>}
+    </div>
   );
 }

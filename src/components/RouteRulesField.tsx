@@ -1,6 +1,7 @@
 import { useRef, useState } from "react";
 import { Input } from "@/components/ui/input";
 import { useConnectionStore } from "@/state/connectionStore";
+import { validateRouteRules } from "@/lib/validators";
 
 /** Aether ≥1.5.0: one of the routing-rule lists (block/direct) as a
  * comma-or-newline separated field. Entries are stored as an array and joined
@@ -18,17 +19,13 @@ export function RouteRulesField({ id, kind }: { id?: string; kind: "block" | "di
   const value = kind === "block" ? block.join(", ") : direct.join(", ");
   const onChange = kind === "block" ? setBlock : setDirect;
 
-  /** A rule must be a single token without whitespace (domains, full:/keyword:/
-   *  regexp:/port: prefixes, CIDRs, or the bare `private` keyword). Whitespace
-   *  inside an entry is the common typo that silently breaks matching. */
   const validate = (v: string) => {
-    const hasBadToken = v
+    const rules = v
       .split(/[,;\n]/)
-      .some((t) => {
-        const trimmed = t.trim();
-        return trimmed !== "" && /[\s]/.test(trimmed);
-      });
-    setInvalid(hasBadToken);
+      .map((s) => s.trim())
+      .filter(Boolean);
+    const err = validateRouteRules(rules);
+    setInvalid(!!err);
     if (timerRef.current) clearTimeout(timerRef.current);
     timerRef.current = setTimeout(() => setInvalid(false), 2500);
   };
@@ -57,15 +54,15 @@ export function RouteRulesField({ id, kind }: { id?: string; kind: "block" | "di
             : "full:bank.example.com, private"
         }
         aria-invalid={invalid}
-        className={`h-9 bg-surface-3 text-[10px] font-mono ring-1 ring-inset focus-visible:ring-primary ${
+        className={`h-9 rounded-xl bg-black/20 font-mono text-[11px] ring-1 ring-inset focus-visible:ring-primary ${
           invalid
             ? "ring-status-error focus-visible:ring-status-error"
-            : "ring-white/5 focus-visible:ring-primary"
+            : "ring-white/[0.07] focus-visible:ring-primary"
         }`}
         aria-label={kind === "block" ? "Route block list" : "Route direct list"}
       />
       {invalid && (
-        <p className="text-[10px] text-status-error">
+        <p className="text-[11px] text-status-error">
           Rules can't contain spaces — separate entries with commas or new lines.
         </p>
       )}

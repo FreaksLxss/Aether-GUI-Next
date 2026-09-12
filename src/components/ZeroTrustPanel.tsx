@@ -47,7 +47,7 @@ export function ZeroTrustPanel() {
           disabled={locked}
           onChange={(e) => setTeam(e.target.value.trim() || null)}
           placeholder="your-org"
-          className="h-9 bg-surface-3 text-[10px] font-mono ring-1 ring-inset ring-white/5 focus-visible:ring-primary"
+          className="h-9 rounded-xl bg-black/20 font-mono text-[11px] ring-1 ring-inset ring-white/[0.07] focus-visible:ring-primary"
         />
       </Field>
 
@@ -59,7 +59,7 @@ export function ZeroTrustPanel() {
           disabled={locked}
           onChange={(e) => setEmail(e.target.value.trim() || null)}
           placeholder="you@org.com"
-          className="h-9 bg-surface-3 font-mono text-[10px] ring-1 ring-inset ring-white/5 focus-visible:ring-primary"
+          className="h-9 rounded-xl bg-black/20 font-mono text-[11px] ring-1 ring-inset ring-white/[0.07] focus-visible:ring-primary"
         />
       </Field>
 
@@ -94,11 +94,11 @@ export function ZeroTrustPanel() {
                 ? "Paste the emailed code and press Enter"
                 : "Aether emails this code once you connect"
             }
-            className="h-9 bg-surface-3 font-mono text-[10px] ring-1 ring-inset ring-white/5 focus-visible:ring-primary"
+            className="h-9 rounded-xl bg-black/20 font-mono text-[11px] ring-1 ring-inset ring-white/[0.07] focus-visible:ring-primary"
             aria-label="Zero Trust sign-in code"
           />
           {sent && (
-            <p className="text-[10px] text-emerald-400/80">Code sent to Aether.</p>
+            <p className="text-[11px] font-medium text-emerald-400/80">Code sent to Aether.</p>
           )}
         </form>
       )}
@@ -113,7 +113,7 @@ export function ZeroTrustPanel() {
               disabled={locked}
               onChange={(e) => setId(e.target.value.trim() || null)}
               placeholder="client id"
-              className="h-9 bg-surface-3 font-mono text-[10px] ring-1 ring-inset ring-white/5 focus-visible:ring-primary"
+              className="h-9 rounded-xl bg-black/20 font-mono text-[11px] ring-1 ring-inset ring-white/[0.07] focus-visible:ring-primary"
             />
           </Field>
         </div>
@@ -126,7 +126,7 @@ export function ZeroTrustPanel() {
               disabled={locked}
               onChange={(e) => setSecret(e.target.value ? e.target.value : null)}
               placeholder="client secret"
-              className="h-9 bg-surface-3 font-mono text-[10px] ring-1 ring-inset ring-white/5 focus-visible:ring-primary"
+              className="h-9 rounded-xl bg-black/20 font-mono text-[11px] ring-1 ring-inset ring-white/[0.07] focus-visible:ring-primary"
             />
           </Field>
         </div>
@@ -140,7 +140,7 @@ export function ZeroTrustPanel() {
           disabled={locked}
           onChange={(e) => setToken(e.target.value ? e.target.value : null)}
           placeholder="warp token"
-          className="h-9 bg-surface-3 font-mono text-[10px] ring-1 ring-inset ring-white/5 focus-visible:ring-primary"
+          className="h-9 rounded-xl bg-black/20 font-mono text-[11px] ring-1 ring-inset ring-white/[0.07] focus-visible:ring-primary"
         />
       </Field>
 

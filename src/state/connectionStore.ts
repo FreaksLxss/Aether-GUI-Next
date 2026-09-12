@@ -17,6 +17,17 @@ import type {
 
 const MAX_LOG_LINES = 500;
 
+let persistTimer: ReturnType<typeof setTimeout> | null = null;
+function schedulePersist() {
+  if (persistTimer) clearTimeout(persistTimer);
+  persistTimer = setTimeout(async () => {
+    try {
+      const profile = useConnectionStore.getState().profile;
+      await invoke("set_default_profile", { profile });
+    } catch {}
+  }, 500);
+}
+
 async function sendNotification(title: string, body: string) {
   try {
     const { isPermissionGranted, requestPermission, sendNotification } = await import(
@@ -53,6 +64,10 @@ interface ConnectionState {
    * baseline for the leak check. */
   directIp: PublicInfo | null;
   publicIpLoading: boolean;
+  /** Milliseconds the last public-IP probe took (tunnel path when connected, else direct). */
+  publicIpLatencyMs: number | null;
+  /** Last up to 20 probe latencies for a future sparkline. */
+  publicIpHistory: number[];
   /** Result of comparing exit IP vs direct IP while connected:
    * "none" (tunnel is masking), "leak" (exit IP == direct IP), or
    * "unavailable" when no comparison was possible. */
@@ -140,6 +155,8 @@ export const useConnectionStore = create<ConnectionState>((set, get) => ({
   publicIp: null,
   directIp: null,
   publicIpLoading: false,
+  publicIpLatencyMs: null,
+  publicIpHistory: [],
   leakStatus: "unavailable",
 
   connect: async () => {
@@ -168,92 +185,150 @@ export const useConnectionStore = create<ConnectionState>((set, get) => ({
     }
   },
 
-  setProtocol: (protocol) =>
-    set((s) => ({ profile: { ...s.profile, protocol } })),
+  setProtocol: (protocol) => {
+    set((s) => ({ profile: { ...s.profile, protocol } }));
+    schedulePersist();
+  },
 
-  setScanMode: (scan_mode) =>
-    set((s) => ({ profile: { ...s.profile, scan_mode } })),
+  setScanMode: (scan_mode) => {
+    set((s) => ({ profile: { ...s.profile, scan_mode } }));
+    schedulePersist();
+  },
 
-  setIpVersion: (ip_version) =>
-    set((s) => ({ profile: { ...s.profile, ip_version } })),
+  setIpVersion: (ip_version) => {
+    set((s) => ({ profile: { ...s.profile, ip_version } }));
+    schedulePersist();
+  },
 
-  setQuickReconnect: (quick_reconnect) =>
-    set((s) => ({ profile: { ...s.profile, quick_reconnect } })),
+  setQuickReconnect: (quick_reconnect) => {
+    set((s) => ({ profile: { ...s.profile, quick_reconnect } }));
+    schedulePersist();
+  },
 
-  setMasqueHttp2: (masque_http2) =>
-    set((s) => ({ profile: { ...s.profile, masque_http2 } })),
+  setMasqueHttp2: (masque_http2) => {
+    set((s) => ({ profile: { ...s.profile, masque_http2 } }));
+    schedulePersist();
+  },
 
-  setMasqueNoize: (masque_noize) =>
-    set((s) => ({ profile: { ...s.profile, masque_noize } })),
+  setMasqueNoize: (masque_noize) => {
+    set((s) => ({ profile: { ...s.profile, masque_noize } }));
+    schedulePersist();
+  },
 
-  setWgNoize: (wg_noize) =>
-    set((s) => ({ profile: { ...s.profile, wg_noize } })),
+  setWgNoize: (wg_noize) => {
+    set((s) => ({ profile: { ...s.profile, wg_noize } }));
+    schedulePersist();
+  },
 
-  setBindAddress: (bind_address) =>
-    set((s) => ({ profile: { ...s.profile, bind_address } })),
+  setBindAddress: (bind_address) => {
+    set((s) => ({ profile: { ...s.profile, bind_address } }));
+    schedulePersist();
+  },
 
-  setHttpProxyAddress: (http_proxy_address) =>
-    set((s) => ({ profile: { ...s.profile, http_proxy_address } })),
+  setHttpProxyAddress: (http_proxy_address) => {
+    set((s) => ({ profile: { ...s.profile, http_proxy_address } }));
+    schedulePersist();
+  },
 
-  setUpstreamProxy: (upstream_proxy) =>
-    set((s) => ({ profile: { ...s.profile, upstream_proxy } })),
+  setUpstreamProxy: (upstream_proxy) => {
+    set((s) => ({ profile: { ...s.profile, upstream_proxy } }));
+    schedulePersist();
+  },
 
-  setWiwPeers: (wiw_peers) =>
-    set((s) => ({ profile: { ...s.profile, wiw_peers } })),
+  setWiwPeers: (wiw_peers) => {
+    set((s) => ({ profile: { ...s.profile, wiw_peers } }));
+    schedulePersist();
+  },
 
-  setLogLevel: (log_level) =>
-    set((s) => ({ profile: { ...s.profile, log_level } })),
+  setLogLevel: (log_level) => {
+    set((s) => ({ profile: { ...s.profile, log_level } }));
+    schedulePersist();
+  },
 
-  setPerf: (perf) =>
-    set((s) => ({ profile: { ...s.profile, perf } })),
+  setPerf: (perf) => {
+    set((s) => ({ profile: { ...s.profile, perf } }));
+    schedulePersist();
+  },
 
-  setCaptureMode: (capture_mode) =>
-    set((s) => ({ profile: { ...s.profile, capture_mode } })),
+  setCaptureMode: (capture_mode) => {
+    set((s) => ({ profile: { ...s.profile, capture_mode } }));
+    schedulePersist();
+  },
 
-  setDnsMode: (dns_mode) =>
-    set((s) => ({ profile: { ...s.profile, dns_mode } })),
+  setDnsMode: (dns_mode) => {
+    set((s) => ({ profile: { ...s.profile, dns_mode } }));
+    schedulePersist();
+  },
 
-  setTunAddress: (tun_address) =>
-    set((s) => ({ profile: { ...s.profile, tun_address } })),
+  setTunAddress: (tun_address) => {
+    set((s) => ({ profile: { ...s.profile, tun_address } }));
+    schedulePersist();
+  },
 
-  setTunDns: (tun_dns) =>
-    set((s) => ({ profile: { ...s.profile, tun_dns } })),
+  setTunDns: (tun_dns) => {
+    set((s) => ({ profile: { ...s.profile, tun_dns } }));
+    schedulePersist();
+  },
 
-  setDnsServers: (dns_servers) =>
-    set((s) => ({ profile: { ...s.profile, dns_servers } })),
+  setDnsServers: (dns_servers) => {
+    set((s) => ({ profile: { ...s.profile, dns_servers } }));
+    schedulePersist();
+  },
 
-  setRouteBlock: (route_block) =>
-    set((s) => ({ profile: { ...s.profile, route_block } })),
+  setRouteBlock: (route_block) => {
+    set((s) => ({ profile: { ...s.profile, route_block } }));
+    schedulePersist();
+  },
 
-  setRouteDirect: (route_direct) =>
-    set((s) => ({ profile: { ...s.profile, route_direct } })),
+  setRouteDirect: (route_direct) => {
+    set((s) => ({ profile: { ...s.profile, route_direct } }));
+    schedulePersist();
+  },
 
-  setRouteSniff: (route_sniff) =>
-    set((s) => ({ profile: { ...s.profile, route_sniff } })),
+  setRouteSniff: (route_sniff) => {
+    set((s) => ({ profile: { ...s.profile, route_sniff } }));
+    schedulePersist();
+  },
 
-  setRouteSniffMs: (route_sniff_ms) =>
-    set((s) => ({ profile: { ...s.profile, route_sniff_ms } })),
+  setRouteSniffMs: (route_sniff_ms) => {
+    set((s) => ({ profile: { ...s.profile, route_sniff_ms } }));
+    schedulePersist();
+  },
 
-  setAutoReprovision: (auto_reprovision) =>
-    set((s) => ({ profile: { ...s.profile, auto_reprovision } })),
+  setAutoReprovision: (auto_reprovision) => {
+    set((s) => ({ profile: { ...s.profile, auto_reprovision } }));
+    schedulePersist();
+  },
 
-  setZtTeam: (zt_team) =>
-    set((s) => ({ profile: { ...s.profile, zt_team } })),
+  setZtTeam: (zt_team) => {
+    set((s) => ({ profile: { ...s.profile, zt_team } }));
+    schedulePersist();
+  },
 
-  setZtAccessEmail: (zt_access_email) =>
-    set((s) => ({ profile: { ...s.profile, zt_access_email } })),
+  setZtAccessEmail: (zt_access_email) => {
+    set((s) => ({ profile: { ...s.profile, zt_access_email } }));
+    schedulePersist();
+  },
 
-  setZtAccessId: (zt_access_id) =>
-    set((s) => ({ profile: { ...s.profile, zt_access_id } })),
+  setZtAccessId: (zt_access_id) => {
+    set((s) => ({ profile: { ...s.profile, zt_access_id } }));
+    schedulePersist();
+  },
 
-  setZtAccessSecret: (zt_access_secret) =>
-    set((s) => ({ profile: { ...s.profile, zt_access_secret } })),
+  setZtAccessSecret: (zt_access_secret) => {
+    set((s) => ({ profile: { ...s.profile, zt_access_secret } }));
+    schedulePersist();
+  },
 
-  setZtAccessToken: (zt_access_token) =>
-    set((s) => ({ profile: { ...s.profile, zt_access_token } })),
+  setZtAccessToken: (zt_access_token) => {
+    set((s) => ({ profile: { ...s.profile, zt_access_token } }));
+    schedulePersist();
+  },
 
-  setZtGateway: (zt_gateway) =>
-    set((s) => ({ profile: { ...s.profile, zt_gateway } })),
+  setZtGateway: (zt_gateway) => {
+    set((s) => ({ profile: { ...s.profile, zt_gateway } }));
+    schedulePersist();
+  },
 
   // Clears the fallback screen so the user can attempt Connect again (e.g.
   // after fixing a broken install) — the next connect() call will re-set
@@ -273,6 +348,7 @@ export const useConnectionStore = create<ConnectionState>((set, get) => ({
   runPublicIpCheck: async () => {
     const connected = get().status.state === "Connected";
     set({ publicIpLoading: true });
+    const t0 = performance.now();
     const [tunnel, direct] = await Promise.all([
       invoke<PublicInfo | null>("get_public_ip", {
         throughTunnel: connected,
@@ -281,21 +357,25 @@ export const useConnectionStore = create<ConnectionState>((set, get) => ({
         throughTunnel: false,
       }).catch(() => null),
     ]);
+    const latencyMs = Math.round(performance.now() - t0);
 
     let leakStatus: "none" | "leak" | "unavailable" = "unavailable";
     if (connected && tunnel) {
       if (direct) {
-        // If a remote host sees the same address with and without the proxy,
-        // the tunnel isn't masking this traffic.
         leakStatus = tunnel.ip === direct.ip ? "leak" : "none";
       } else {
-        // Exit resolved but the direct baseline failed — can't compare, but
-        // the tunnel is demonstrably working so don't alarm the user.
         leakStatus = "none";
       }
     }
 
-    set({ publicIp: tunnel, directIp: direct, publicIpLoading: false, leakStatus });
+    set((s) => ({
+      publicIp: tunnel,
+      directIp: direct,
+      publicIpLoading: false,
+      publicIpLatencyMs: latencyMs,
+      publicIpHistory: [...s.publicIpHistory, latencyMs].slice(-20),
+      leakStatus,
+    }));
   },
 
   reloadProfile: async () => {

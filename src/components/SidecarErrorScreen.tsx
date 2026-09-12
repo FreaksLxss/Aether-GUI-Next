@@ -35,7 +35,7 @@ export function SidecarErrorScreen({ message, onRetry }: Props) {
 
   return (
     <div className="flex h-full flex-col items-center justify-center gap-3 p-6 text-center">
-      <div className="glass-float flex flex-col items-center gap-3 rounded-2xl px-10 py-8 shadow-glass ring-1 ring-inset ring-white/10">
+      <div className="flex flex-col items-center gap-3 rounded-2xl bg-surface-2 px-10 py-8 ring-1 ring-border">
         <AlertTriangle size={36} className="text-status-error" />
         <h1 className="text-sm font-medium text-foreground">
           Aether engine failed to start

@@ -1,9 +1,20 @@
-import { useEffect, useRef, useState, type ReactNode } from "react";
-import { ExternalLink, Info, Settings2 } from "lucide-react";
+import { useDeferredValue, useEffect, useMemo, useRef, useState } from "react";
+import {
+  ExternalLink,
+  Info,
+  Layers,
+  Network,
+  Route,
+  ShieldCheck,
+  SlidersHorizontal,
+  Terminal,
+} from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { GlassAccordion } from "@/components/GlassAccordion";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { Switch } from "@/components/ui/switch";
+import { FieldRow, Section } from "@/components/ui/panel-section";
+import { VirtualLogList } from "@/components/VirtualLogList";
+import { InlineErrorBanner } from "@/components/ui/inline-alert";
 import { ProtocolSelect } from "@/components/ProtocolSelect";
 import { ScanModeToggle } from "@/components/ScanModeToggle";
 import { IpVersionToggle } from "@/components/IpVersionToggle";
@@ -23,109 +34,71 @@ import { LogSearch } from "@/components/LogSearch";
 import { useConnectionStore } from "@/state/connectionStore";
 import { openLogWindow } from "@/lib/log-window";
 import { cn } from "@/lib/utils";
+import {
+  validateBindAddress,
+  validateUpstream,
+  validateWiwPeers,
+  validateDnsServers,
+  validateRouteRules,
+  validateZtTeam,
+  validateRouteSniffMs,
+  httpProxyAddressSchema,
+} from "@/lib/validators";
 
-function FieldRow({
-  label,
-  tooltip,
-  htmlFor,
-  children,
-}: {
-  label: string;
-  tooltip?: string;
-  htmlFor?: string;
-  children: ReactNode;
-}) {
-  const labelNode = (
-    <>
-      {label}
-      {tooltip && (
-        <Tooltip>
-          <TooltipTrigger aria-label={`About ${label}`}>
-            <Info size={12} />
-          </TooltipTrigger>
-          <TooltipContent>{tooltip}</TooltipContent>
-        </Tooltip>
-      )}
-    </>
-  );
-  return (
-    <div className="flex flex-col gap-1.5">
-      {htmlFor ? (
-        <label
-          htmlFor={htmlFor}
-          className="flex w-fit items-center gap-1 text-xs text-muted-foreground"
-        >
-          {labelNode}
-        </label>
-      ) : (
-        <div className="flex w-fit items-center gap-1 text-xs text-muted-foreground">
-          {labelNode}
-        </div>
-      )}
-      {children}
-    </div>
-  );
-}
-
-export function AdvancedPanel({
-  open,
-  onToggle,
+export function AdvancedPanelContent({
   highlightScanMode = false,
 }: {
-  open: boolean;
-  onToggle: () => void;
   highlightScanMode?: boolean;
 }) {
   const logs = useConnectionStore((s) => s.logs);
   const status = useConnectionStore((s) => s.status);
-  const quickReconnect = useConnectionStore((s) => s.profile.quick_reconnect);
+  const profile = useConnectionStore((s) => s.profile);
+  const quickReconnect = profile.quick_reconnect;
   const setQuickReconnect = useConnectionStore((s) => s.setQuickReconnect);
-  const protocol = useConnectionStore((s) => s.profile.protocol);
-  const routeSniff = useConnectionStore((s) => s.profile.route_sniff);
+  const protocol = profile.protocol;
+  const routeSniff = profile.route_sniff;
   const setRouteSniff = useConnectionStore((s) => s.setRouteSniff);
-  const autoReprovision = useConnectionStore((s) => s.profile.auto_reprovision);
+  const autoReprovision = profile.auto_reprovision;
   const setAutoReprovision = useConnectionStore((s) => s.setAutoReprovision);
   const locked = status.state !== "Idle" && status.state !== "Error";
   const [autoScroll, setAutoScroll] = useState(true);
   const [logFilter, setLogFilter] = useState("");
-  const viewportRef = useRef<HTMLDivElement>(null);
+  const deferredFilter = useDeferredValue(logFilter);
   const scanModeRef = useRef<HTMLDivElement>(null);
 
+  const hasValidationError = useMemo(() => {
+    const httpProxyErr = !httpProxyAddressSchema.safeParse(profile.http_proxy_address).success;
+    return Boolean(
+      validateBindAddress(profile.bind_address) ||
+        httpProxyErr ||
+        validateUpstream(profile.upstream_proxy) ||
+        validateWiwPeers(profile.wiw_peers) ||
+        validateDnsServers(profile.dns_servers) ||
+        validateRouteRules(profile.route_block) ||
+        validateRouteRules(profile.route_direct) ||
+        validateZtTeam(profile.zt_team) ||
+        validateRouteSniffMs(profile.route_sniff_ms),
+    );
+  }, [profile]);
+
   useEffect(() => {
-    if (highlightScanMode && open && scanModeRef.current) {
+    if (highlightScanMode && scanModeRef.current) {
       scanModeRef.current.scrollIntoView({ behavior: "smooth", block: "center" });
     }
-  }, [highlightScanMode, open]);
+  }, [highlightScanMode]);
 
-  const filteredLogs = logFilter
-    ? logs.filter((l) =>
-        l.line.toLowerCase().includes(logFilter.toLowerCase()),
-      )
-    : logs;
-
-  useEffect(() => {
-    if (autoScroll && viewportRef.current) {
-      viewportRef.current.scrollTo({
-        top: viewportRef.current.scrollHeight,
-        behavior: "smooth",
-      });
-    }
-  }, [logs, autoScroll]);
+  const filteredLogs = useMemo(() => {
+    const q = deferredFilter.trim().toLowerCase();
+    if (!q) return logs;
+    return logs.filter((l) => l.line.toLowerCase().includes(q));
+  }, [logs, deferredFilter]);
 
   return (
-    <div className="w-full">
-      <GlassAccordion
-        icon={Settings2}
-        label="Advanced"
-        open={open}
-        onToggle={onToggle}
-      >
-        <div className="flex flex-col gap-3">
-          {/* Protocol section */}
-          <div className="flex flex-col gap-2.5">
-            <span className="text-[10px] font-medium tracking-wide text-muted-foreground uppercase">
-              Protocol
-            </span>
+        <div className="flex flex-col gap-4">
+          {hasValidationError && (
+            <InlineErrorBanner message="Some fields have errors — fix them before connecting" />
+          )}
+          <Section title="Protocol" icon={Layers}>
             <FieldRow
               label="Protocol"
               htmlFor="aether-field-protocol"
@@ -136,8 +109,10 @@ export function AdvancedPanel({
             <div
               ref={scanModeRef}
               className={cn(
-                "rounded-lg transition-all duration-800 p-1",
-                highlightScanMode && "bg-primary/10 ring-1 ring-primary/30",
+                "rounded-xl p-1.5 transition-all duration-500",
+                highlightScanMode
+                  ? "bg-primary/[0.08] ring-1 ring-primary/25"
+                  : "bg-black/10 ring-1 ring-white/[0.04] light:bg-black/[0.03] light:ring-black/[0.04]",
               )}
             >
               <FieldRow label="Scan Mode">
@@ -171,13 +146,9 @@ export function AdvancedPanel({
                 <WiwPeersField id="aether-field-wiw-peers" />
               </FieldRow>
             )}
-          </div>
+          </Section>
 
-          {/* Proxy section */}
-          <div className="flex flex-col gap-2.5">
-            <span className="text-[10px] font-medium tracking-wide text-muted-foreground uppercase">
-              Proxy
-            </span>
+          <Section title="Proxy" icon={Network}>
             <FieldRow
               label="SOCKS5 Proxy"
               htmlFor="aether-field-socks-port"
@@ -206,13 +177,9 @@ export function AdvancedPanel({
             >
               <TunnelDnsField id="aether-field-dns" />
             </FieldRow>
-          </div>
+          </Section>
 
-          {/* Routing section (Aether ≥1.5.0) */}
-          <div className="flex flex-col gap-2.5">
-            <span className="text-[10px] font-medium tracking-wide text-muted-foreground uppercase">
-              Routing
-            </span>
+          <Section title="Routing" icon={Route}>
             <FieldRow
               label="Blocked"
               htmlFor="aether-field-route-block"
@@ -227,14 +194,17 @@ export function AdvancedPanel({
             >
               <RouteRulesField id="aether-field-route-direct" kind="direct" />
             </FieldRow>
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-1 text-xs text-muted-foreground">
+            <div className="flex items-center justify-between rounded-lg bg-black/15 px-3 py-2.5 ring-1 ring-white/[0.04] light:bg-black/[0.03] light:ring-black/[0.05]">
+              <div className="flex items-center gap-1.5 text-[11px] font-medium text-foreground/80">
                 Domain sniffing
                 <Tooltip>
-                  <TooltipTrigger aria-label="About Domain sniffing">
+                  <TooltipTrigger
+                    aria-label="About Domain sniffing"
+                    className="rounded-full p-0.5 text-muted-foreground/60 hover:bg-white/5 hover:text-muted-foreground"
+                  >
                     <Info size={12} />
                   </TooltipTrigger>
-                  <TooltipContent>
+                  <TooltipContent className="max-w-[260px] leading-relaxed">
                     Behind a TUN front end, domain-based block/direct rules never used to match —
                     the name was resolved before reaching Aether. The core now reads it from the
                     TLS SNI or HTTP Host header (Aether ≥1.7.0). Turn off only if this causes
@@ -258,40 +228,39 @@ export function AdvancedPanel({
                 <RouteSniffMsField id="aether-field-sniff-ms" />
               </FieldRow>
             )}
-            <p className="text-[10px] text-muted-foreground/70">
-              Entries: <code>example.com</code> (and subdomains), <code>full:example.com</code>,{" "}
-              <code>keyword:ad</code>, <code>regexp:^ad[0-9]+</code>, <code>10.0.0.0/8</code>,{" "}
-              <code>port:25</code>, <code>private</code>.
+            <p className="rounded-md bg-amber-500/[0.06] px-2.5 py-2 text-[11px] leading-relaxed text-muted-foreground/70 ring-1 ring-amber-500/10">
+              <span className="font-medium text-amber-500/80">Syntax —</span>{" "}
+              <code className="text-foreground/60">example.com</code> (and subdomains),{" "}
+              <code className="text-foreground/60">full:example.com</code>,{" "}
+              <code className="text-foreground/60">keyword:ad</code>,{" "}
+              <code className="text-foreground/60">regexp:^ad[0-9]+</code>,{" "}
+              <code className="text-foreground/60">10.0.0.0/8</code>,{" "}
+              <code className="text-foreground/60">port:25</code>,{" "}
+              <code className="text-foreground/60">private</code>.
             </p>
-          </div>
+          </Section>
 
-          {/* Zero Trust section (Aether ≥1.5.0) */}
-          <div className="flex flex-col gap-2.5">
-            <span className="text-[10px] font-medium tracking-wide text-muted-foreground uppercase">
-              Zero Trust
-            </span>
+          <Section title="Zero Trust" icon={ShieldCheck}>
             <FieldRow
               label="Enrolment"
               tooltip="Enrol into a Cloudflare Zero Trust organization so this device connects as a managed device. Fill the team and one sign-in method."
             >
               <ZeroTrustPanel />
             </FieldRow>
-          </div>
+          </Section>
 
-          {/* Behavior section */}
-          <div className="flex flex-col gap-2.5">
-            <span className="text-[10px] font-medium tracking-wide text-muted-foreground uppercase">
-              Behavior
-            </span>
-
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-1 text-xs text-muted-foreground">
+          <Section title="Behavior" icon={SlidersHorizontal}>
+            <div className="flex items-center justify-between rounded-lg bg-black/15 px-3 py-2.5 ring-1 ring-white/[0.04] light:bg-black/[0.03] light:ring-black/[0.05]">
+              <div className="flex items-center gap-1.5 text-[11px] font-medium text-foreground/80">
                 Quick reconnect
                 <Tooltip>
-                  <TooltipTrigger aria-label="About Quick reconnect">
+                  <TooltipTrigger
+                    aria-label="About Quick reconnect"
+                    className="rounded-full p-0.5 text-muted-foreground/60 hover:bg-white/5 hover:text-muted-foreground"
+                  >
                     <Info size={12} />
                   </TooltipTrigger>
-                  <TooltipContent>
+                  <TooltipContent className="max-w-[260px] leading-relaxed">
                     Remembers the last gateway that worked and re-tests it first on the next
                     connect, skipping the full scan when it still works. Turn off to always scan
                     fresh.
@@ -305,14 +274,17 @@ export function AdvancedPanel({
                 aria-label="Quick reconnect"
               />
             </div>
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-1 text-xs text-muted-foreground">
+            <div className="flex items-center justify-between rounded-lg bg-black/15 px-3 py-2.5 ring-1 ring-white/[0.04] light:bg-black/[0.03] light:ring-black/[0.05]">
+              <div className="flex items-center gap-1.5 text-[11px] font-medium text-foreground/80">
                 Auto re-provision
                 <Tooltip>
-                  <TooltipTrigger aria-label="About Auto re-provision">
+                  <TooltipTrigger
+                    aria-label="About Auto re-provision"
+                    className="rounded-full p-0.5 text-muted-foreground/60 hover:bg-white/5 hover:text-muted-foreground"
+                  >
                     <Info size={12} />
                   </TooltipTrigger>
-                  <TooltipContent>
+                  <TooltipContent className="max-w-[260px] leading-relaxed">
                     If Cloudflare stops accepting this device's saved identity, Aether registers a
                     fresh device automatically (Aether ≥1.7.0). Turn off to only report it and keep
                     the old identity.
@@ -340,18 +312,9 @@ export function AdvancedPanel({
             >
               <PerfSelect id="aether-field-perf" />
             </FieldRow>
-          </div>
+          </Section>
 
-          {/* Logs section */}
-          <div className="flex flex-col gap-2">
-            <div className="flex items-center gap-2">
-              <div className="h-px flex-1 bg-border" />
-              <span className="text-[10px] tracking-wide text-muted-foreground uppercase">
-                Logs
-              </span>
-              <div className="h-px flex-1 bg-border" />
-            </div>
-
+          <Section title="Logs" icon={Terminal}>
             <div className="flex items-center gap-1.5">
               <div className="flex-1">
                 <LogSearch value={logFilter} onChange={setLogFilter} />
@@ -362,7 +325,7 @@ export function AdvancedPanel({
                     variant="outline"
                     size="sm"
                     onClick={() => openLogWindow()}
-                    className="h-7 gap-1 px-2 text-[10px] text-muted-foreground"
+                    className="h-7 gap-1 bg-white/[0.04] px-2 text-[11px] text-muted-foreground hover:bg-white/[0.08] hover:text-foreground"
                     aria-label="Open full log in separate window"
                   >
                     <ExternalLink size={11} />
@@ -375,51 +338,27 @@ export function AdvancedPanel({
               </Tooltip>
             </div>
 
-            <div className="glass-strong max-h-64 overflow-y-auto rounded-lg ring-1 ring-inset ring-white/5 shadow-glass">
-              <div
-                ref={viewportRef}
-                onScroll={(e) => {
-                  const el = e.currentTarget;
-                  setAutoScroll(el.scrollHeight - el.scrollTop - el.clientHeight < 24);
-                }}
-                role="log"
-                aria-label="Aether connection logs"
-                className="p-2 font-mono text-[10px] text-muted-foreground"
-              >
-                {filteredLogs.length === 0 ? (
-                  logFilter ? (
-                    <p className="text-muted-foreground">No matching lines.</p>
-                  ) : (
-                    <div className="flex flex-col gap-1.5">
-                      <div className="h-3 w-3/4 animate-pulse rounded bg-white/5" />
-                      <div className="h-3 w-1/2 animate-pulse rounded bg-white/5" />
-                      <div className="h-3 w-2/3 animate-pulse rounded bg-white/5" />
-                    </div>
-                  )
-                ) : (
-                  (() => {
-                    const baseTs = filteredLogs[0]?.timestamp ?? 0;
-                    return filteredLogs.map((l, i) => {
-                      const relMs = l.timestamp - baseTs;
-                      const s = (relMs / 1000).toFixed(1);
-                      const line = l.line.toLowerCase();
-                      const isError = line.includes("error") || line.includes("fatal");
-                      const isWarn = line.includes("warn");
-                      const isInfo = line.includes("[+]") || line.includes("info");
-                      return (
-                        <p key={i} className={isError ? "text-red-400" : isWarn ? "text-amber-400" : isInfo ? "text-emerald-400/70" : ""}>
-                          <span className="text-muted-foreground/70">+{s}s </span>
-                          {l.line}
-                        </p>
-                      );
-                    });
-                  })()
-                )}
+            <div className="overflow-hidden rounded-xl bg-[#0a0a0c] ring-1 ring-white/[0.06] light:bg-[#f6f6f5] light:ring-black/10">
+              <div className="flex items-center gap-1.5 border-b border-white/[0.06] bg-white/[0.03] px-2.5 py-1.5 light:border-black/5 light:bg-black/[0.02]">
+                <span className="size-2.5 rounded-full bg-red-500/70 ring-1 ring-red-500/20" aria-hidden />
+                <span className="size-2.5 rounded-full bg-amber-400/70 ring-1 ring-amber-400/20" aria-hidden />
+                <span className="size-2.5 rounded-full bg-emerald-500/70 ring-1 ring-emerald-500/20" aria-hidden />
+                <span className="ml-2 font-mono text-[11px] tracking-wide text-muted-foreground/50">aether.log</span>
+                <span className="ml-auto text-[11px] text-muted-foreground/40">{filteredLogs.length} lines</span>
               </div>
+              <VirtualLogList
+                logs={filteredLogs}
+                filter={deferredFilter}
+                autoScroll={autoScroll}
+                onAutoScrollChange={setAutoScroll}
+              />
             </div>
-          </div>
+          </Section>
         </div>
-      </GlassAccordion>
-    </div>
   );
+}
+
+// Back-compat: old accordion wrapper (unused — kept for reference)
+export function AdvancedPanel(props: { open: boolean; onToggle: () => void; highlightScanMode?: boolean }) {
+  return <AdvancedPanelContent highlightScanMode={props.highlightScanMode} />;
 }

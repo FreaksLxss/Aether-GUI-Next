@@ -20,28 +20,26 @@ export function ProxyEndpointSettings() {
     : `${lanEnabled ? "0.0.0.0" : "127.0.0.1"}:${socksAddr.port}`;
 
   return (
-    <div className="flex flex-col gap-1.5">
-      <div className="flex w-full items-center justify-between gap-2 rounded-md px-1.5 py-1">
-        <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
-          <Network size={12} />
+    <div className="flex flex-col gap-2">
+      <div className="flex w-full items-center justify-between gap-2 rounded-xl border border-white/[0.06] bg-black/20 px-3 py-2.5 ring-1 ring-white/[0.04] light:border-black/5 light:bg-black/[0.04] light:ring-black/[0.03]">
+        <div className="flex items-center gap-1.5 text-[11px] font-medium text-foreground/80">
+          <Network size={13} className="text-muted-foreground" />
           SOCKS proxy
         </div>
-        <div className="flex items-center gap-2">
-          <code className="rounded bg-muted px-1.5 py-0.5 font-mono text-[10px] text-foreground">
-            {display}
-          </code>
-        </div>
+        <code className="rounded-lg bg-black/30 px-2 py-1 font-mono text-[11px] text-foreground ring-1 ring-white/[0.06] light:bg-black/5 light:ring-black/5">
+          {display}
+        </code>
       </div>
 
       <div
         className={cn(
-          "flex w-full items-center justify-between rounded-md px-1.5 py-1 transition-colors duration-150",
+          "flex w-full items-center justify-between rounded-lg bg-black/15 px-3 py-2.5 ring-1 ring-white/[0.04] transition-colors light:bg-black/[0.03] light:ring-black/[0.05]",
           running && "opacity-60",
         )}
         title={running ? "Applies on next start" : undefined}
       >
-        <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
-          <Network size={12} />
+        <div className="flex items-center gap-1.5 text-[11px] font-medium text-foreground/80">
+          <Network size={13} className="text-muted-foreground" />
           Allow LAN access
         </div>
         <Switch
@@ -71,16 +69,16 @@ export function IpProxyToggle() {
   };
 
   return (
-    <div className="flex flex-col gap-0.5">
+    <div className="flex flex-col gap-1.5">
       <div
         className={cn(
-          "flex w-full items-center justify-between rounded-md px-1.5 py-1 transition-colors duration-150",
+          "flex w-full items-center justify-between rounded-lg bg-black/15 px-3 py-2.5 ring-1 ring-white/[0.04] transition-colors light:bg-black/[0.03] light:ring-black/[0.05]",
           !running && "opacity-60",
         )}
         title={running ? undefined : "Start Tor to enable the system proxy"}
       >
-        <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
-          <Network size={12} />
+        <div className="flex items-center gap-1.5 text-[11px] font-medium text-foreground/80">
+          <Network size={13} className="text-muted-foreground" />
           Set system proxy
         </div>
         <Switch
@@ -91,7 +89,7 @@ export function IpProxyToggle() {
         />
       </div>
       {warning && (
-        <p className="pl-1.5 text-[10px] leading-tight text-status-error">{warning}</p>
+        <p className="rounded-lg bg-red-500/10 px-2.5 py-2 text-[11px] leading-relaxed text-red-400 ring-1 ring-red-500/15">{warning}</p>
       )}
     </div>
   );

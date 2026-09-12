@@ -39,7 +39,7 @@ export function CaptureModeSelect() {
         if (v) setCaptureMode(v as CaptureMode);
       }}
       disabled={locked}
-      className="w-full gap-0.5 rounded-lg bg-surface-3 p-0.5 ring-1 ring-inset ring-white/5"
+      className="w-full gap-0.5 rounded-xl bg-black/25 p-1 ring-1 ring-inset ring-white/[0.06] light:bg-black/[0.04] light:ring-black/[0.06]"
     >
       {(Object.keys(LABELS) as CaptureMode[]).map((mode) => {
         const disabled = DISABLED_MODES.includes(mode);
@@ -52,7 +52,7 @@ export function CaptureModeSelect() {
                   size="sm"
                   aria-label={LABELS[mode]}
                   disabled={disabled}
-                  className="relative w-full rounded-md text-[10px] text-muted-foreground transition-colors duration-150 hover:text-foreground data-[state=on]:text-primary-foreground disabled:cursor-not-allowed disabled:opacity-40 disabled:hover:text-muted-foreground"
+                  className="relative w-full rounded-lg py-1.5 text-[10px] font-medium tracking-wide text-muted-foreground transition-colors duration-150 hover:text-foreground data-[state=on]:font-semibold data-[state=on]:text-primary-foreground disabled:cursor-not-allowed disabled:opacity-40 disabled:hover:text-muted-foreground"
                 >
                   <SegIndicator active={mode === captureMode} groupId="capture-mode" />
                   <span className="relative z-10">{LABELS[mode]}</span>

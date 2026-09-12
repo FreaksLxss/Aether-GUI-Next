@@ -1,5 +1,6 @@
 import { invoke } from "@tauri-apps/api/core";
 import { getCurrentWindow } from "@tauri-apps/api/window";
+import type { Window as TauriWindow } from "@tauri-apps/api/window";
 
 export const CLOSE_DIALOG_REQUEST_EVENT = "aether:request-close-dialog";
 
@@ -7,7 +8,14 @@ export const CLOSE_CHOICE_KEY = "aether-close-choice";
 
 export type CloseChoice = "close" | "tray" | null;
 
-const appWindow = getCurrentWindow();
+export function tauriWindow(): TauriWindow | null {
+  try {
+    return getCurrentWindow();
+  } catch {
+    return null;
+  }
+}
+const appWindow = tauriWindow();
 
 function getSavedChoice(): CloseChoice {
   const v = localStorage.getItem(CLOSE_CHOICE_KEY);
@@ -22,9 +30,9 @@ function getSavedChoice(): CloseChoice {
 export function handleClose() {
   const choice = getSavedChoice();
   if (choice === "tray") {
-    void appWindow.hide();
+    void appWindow?.hide();
   } else if (choice === "close") {
-    void appWindow.close();
+    void appWindow?.close();
   } else {
     window.dispatchEvent(new Event(CLOSE_DIALOG_REQUEST_EVENT));
   }

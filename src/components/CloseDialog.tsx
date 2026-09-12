@@ -1,5 +1,4 @@
 import { useEffect, useState } from "react";
-import { getCurrentWindow } from "@tauri-apps/api/window";
 import { Minus, Power } from "lucide-react";
 import {
   Dialog,
@@ -14,10 +13,9 @@ import {
   CLOSE_DIALOG_REQUEST_EVENT,
   CLOSE_CHOICE_KEY,
   setCloseToTray,
+  tauriWindow,
   type CloseChoice,
 } from "@/lib/close";
-
-const appWindow = getCurrentWindow();
 
 export function CloseDialog() {
   const [show, setShow] = useState(false);
@@ -33,10 +31,10 @@ export function CloseDialog() {
     setShow(false);
     if (choice === "tray") {
       await setCloseToTray(true).catch(() => {});
-      void appWindow.hide();
+      void tauriWindow()?.hide();
     } else {
       await setCloseToTray(false).catch(() => {});
-      void appWindow.close();
+      void tauriWindow()?.close();
     }
   };
 

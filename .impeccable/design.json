@@ -1,0 +1,403 @@
+{
+  "schemaVersion": 2,
+  "generatedAt": "2026-09-12T11:46:29.225Z",
+  "title": "Design System: Aether-GUI",
+  "extensions": {
+    "colorMeta": {
+      "ember": {
+        "role": "primary",
+        "displayName": "Live Ember",
+        "canonical": "#f2711c",
+        "tonalRamp": [
+          "oklch(0.28 0.09 55)",
+          "oklch(0.36 0.12 55)",
+          "oklch(0.44 0.15 55)",
+          "oklch(0.52 0.17 55)",
+          "oklch(0.60 0.18 55)",
+          "oklch(0.68 0.17 55)",
+          "oklch(0.78 0.12 55)",
+          "oklch(0.90 0.06 55)"
+        ]
+      },
+      "ember-deep": {
+        "role": "primary",
+        "displayName": "Deep Ember",
+        "canonical": "#ea580c",
+        "tonalRamp": [
+          "oklch(0.26 0.08 55)",
+          "oklch(0.34 0.11 55)",
+          "oklch(0.42 0.14 55)",
+          "oklch(0.50 0.16 55)",
+          "oklch(0.58 0.17 55)",
+          "oklch(0.66 0.15 55)",
+          "oklch(0.76 0.11 55)",
+          "oklch(0.88 0.05 55)"
+        ]
+      },
+      "ember-ink": {
+        "role": "primary",
+        "displayName": "Ember Ink",
+        "canonical": "#0d0d0f",
+        "tonalRamp": [
+          "oklch(0.15 0 0)",
+          "oklch(0.22 0 0)",
+          "oklch(0.30 0 0)",
+          "oklch(0.38 0 0)",
+          "oklch(0.46 0 0)",
+          "oklch(0.56 0 0)",
+          "oklch(0.70 0 0)",
+          "oklch(0.86 0 0)"
+        ]
+      },
+      "void": {
+        "role": "neutral",
+        "displayName": "Void",
+        "canonical": "#09090b",
+        "tonalRamp": [
+          "oklch(0.12 0 0)",
+          "oklch(0.18 0 0)",
+          "oklch(0.25 0 0)",
+          "oklch(0.33 0 0)",
+          "oklch(0.42 0 0)",
+          "oklch(0.55 0 0)",
+          "oklch(0.70 0 0)",
+          "oklch(0.88 0 0)"
+        ]
+      },
+      "paper": {
+        "role": "neutral",
+        "displayName": "Paper",
+        "canonical": "#fafafa",
+        "tonalRamp": [
+          "oklch(0.30 0 0)",
+          "oklch(0.42 0 0)",
+          "oklch(0.54 0 0)",
+          "oklch(0.66 0 0)",
+          "oklch(0.76 0 0)",
+          "oklch(0.84 0 0)",
+          "oklch(0.91 0 0)",
+          "oklch(0.98 0 0)"
+        ]
+      },
+      "graphite": {
+        "role": "neutral",
+        "displayName": "Graphite",
+        "canonical": "#18181b",
+        "tonalRamp": [
+          "oklch(0.14 0 0)",
+          "oklch(0.18 0 0)",
+          "oklch(0.22 0 0)",
+          "oklch(0.26 0 0)",
+          "oklch(0.32 0 0)",
+          "oklch(0.42 0 0)",
+          "oklch(0.55 0 0)",
+          "oklch(0.72 0 0)"
+        ]
+      },
+      "graphite-raised": {
+        "role": "neutral",
+        "displayName": "Graphite Raised",
+        "canonical": "#27272a",
+        "tonalRamp": [
+          "oklch(0.15 0 0)",
+          "oklch(0.19 0 0)",
+          "oklch(0.23 0 0)",
+          "oklch(0.27 0 0)",
+          "oklch(0.33 0 0)",
+          "oklch(0.43 0 0)",
+          "oklch(0.56 0 0)",
+          "oklch(0.73 0 0)"
+        ]
+      },
+      "ash": {
+        "role": "neutral",
+        "displayName": "Ash",
+        "canonical": "#a1a1aa",
+        "tonalRamp": [
+          "oklch(0.25 0 0)",
+          "oklch(0.33 0 0)",
+          "oklch(0.41 0 0)",
+          "oklch(0.49 0 0)",
+          "oklch(0.57 0 0)",
+          "oklch(0.66 0 0)",
+          "oklch(0.76 0 0)",
+          "oklch(0.88 0 0)"
+        ]
+      },
+      "line": {
+        "role": "neutral",
+        "displayName": "Line",
+        "canonical": "rgba(255, 255, 255, 0.08)",
+        "tonalRamp": [
+          "rgba(255,255,255,0.02)",
+          "rgba(255,255,255,0.04)",
+          "rgba(255,255,255,0.06)",
+          "rgba(255,255,255,0.08)",
+          "rgba(255,255,255,0.12)",
+          "rgba(255,255,255,0.18)",
+          "rgba(255,255,255,0.28)",
+          "rgba(255,255,255,0.45)"
+        ]
+      },
+      "surface-1": {
+        "role": "neutral",
+        "displayName": "Surface 1",
+        "canonical": "#1a1a1a",
+        "tonalRamp": [
+          "#111113",
+          "#151517",
+          "#19191c",
+          "#1a1a1a",
+          "#1e1e1e",
+          "#242424",
+          "#2a2a2a",
+          "#3a3a3a"
+        ]
+      },
+      "surface-2": {
+        "role": "neutral",
+        "displayName": "Surface 2",
+        "canonical": "#1e1e1e",
+        "tonalRamp": [
+          "#121214",
+          "#161619",
+          "#1a1a1c",
+          "#1c1c1f",
+          "#1e1e1e",
+          "#262626",
+          "#303030",
+          "#3f3f3f"
+        ]
+      },
+      "surface-3": {
+        "role": "neutral",
+        "displayName": "Surface 3",
+        "canonical": "#242424",
+        "tonalRamp": [
+          "#171719",
+          "#1b1b1e",
+          "#1f1f22",
+          "#222225",
+          "#242424",
+          "#2d2d2d",
+          "#383838",
+          "#474747"
+        ]
+      },
+      "surface-4": {
+        "role": "neutral",
+        "displayName": "Surface 4",
+        "canonical": "#2a2a2a",
+        "tonalRamp": [
+          "#1b1b1d",
+          "#202023",
+          "#252528",
+          "#28282b",
+          "#2a2a2a",
+          "#333333",
+          "#3e3e3e",
+          "#4d4d4d"
+        ]
+      },
+      "connected": {
+        "role": "status",
+        "displayName": "Tunnel Teal",
+        "canonical": "#2dd4bf",
+        "tonalRamp": [
+          "oklch(0.30 0.09 170)",
+          "oklch(0.38 0.12 170)",
+          "oklch(0.46 0.15 170)",
+          "oklch(0.54 0.17 170)",
+          "oklch(0.62 0.18 170)",
+          "oklch(0.70 0.16 170)",
+          "oklch(0.80 0.12 170)",
+          "oklch(0.90 0.06 170)"
+        ]
+      },
+      "error": {
+        "role": "status",
+        "displayName": "Fault Red",
+        "canonical": "#ef4444",
+        "tonalRamp": [
+          "oklch(0.30 0.11 25)",
+          "oklch(0.38 0.145 25)",
+          "oklch(0.46 0.17 25)",
+          "oklch(0.54 0.19 25)",
+          "oklch(0.62 0.20 25)",
+          "oklch(0.70 0.17 25)",
+          "oklch(0.80 0.12 25)",
+          "oklch(0.90 0.06 25)"
+        ]
+      },
+      "idle": {
+        "role": "status",
+        "displayName": "Idle Gray",
+        "canonical": "#6b7280",
+        "tonalRamp": [
+          "oklch(0.30 0.02 255)",
+          "oklch(0.38 0.025 255)",
+          "oklch(0.46 0.03 255)",
+          "oklch(0.54 0.03 255)",
+          "oklch(0.61 0.03 255)",
+          "oklch(0.70 0.02 255)",
+          "oklch(0.80 0.015 255)",
+          "oklch(0.90 0.008 255)"
+        ]
+      }
+    },
+    "typographyMeta": {
+      "body": {
+        "displayName": "Body",
+        "purpose": "Default for controls, input values, panel rows; buttons at weight 500."
+      },
+      "label": {
+        "displayName": "Label",
+        "purpose": "Section intros (uppercase, wide-tracked), accordion triggers, counts."
+      },
+      "mono": {
+        "displayName": "Telemetry Mono",
+        "purpose": "Machine-true values only: addresses, ports, duration, counts, rules."
+      }
+    },
+    "shadows": [
+      {
+        "name": "glass-cast",
+        "value": "0 12px 40px -12px rgba(0,0,0,0.55), inset 0 1px 0 0 rgba(255,255,255,0.05)",
+        "purpose": "The only shadow in the system: soft cast under glass planes plus inset top sheen. Light theme: 0 12px 40px -14px rgba(0,0,0,0.18) + inset sheen 0.8."
+      }
+    ],
+    "motion": [
+      {
+        "name": "ease-spring",
+        "value": "cubic-bezier(0.16, 1, 0.3, 1)",
+        "purpose": "One-shot springs: reveals, chevron, hover/press scales."
+      },
+      {
+        "name": "ease-standard",
+        "value": "cubic-bezier(0.4, 0, 0.2, 1)",
+        "purpose": "Standard state transitions (200ms); fast variant 100ms."
+      },
+      {
+        "name": "loop-rule",
+        "value": "transform/opacity only, CSS or WebGL, paused when unfocused",
+        "purpose": "All looping animation must be compositor-promoted and honor prefers-reduced-motion (decorative) while status feedback may keep pulsing."
+      }
+    ]
+  },
+  "components": [
+    {
+      "name": "Connect Disc (hero)",
+      "kind": "custom",
+      "refersTo": "hero-disc",
+      "description": "The single ignition point: 160px frosted-glass circle with the status icon; amber rings flare around it while connecting.",
+      "html": "<button class=\"ds-hero\" aria-label=\"Connect\"><svg class=\"ds-hero-icon\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M12 2v10\"/><path d=\"M18.4 6.6a9 9 0 1 1-12.77.04\"/></svg></button>",
+      "css": ".ds-hero { position: relative; width: 160px; height: 160px; border-radius: 50%; border: none; cursor: pointer; background: color-mix(in srgb, #1e1e1e 58%, transparent); backdrop-filter: blur(26px) saturate(1.6); -webkit-backdrop-filter: blur(26px) saturate(1.6); box-shadow: 0 12px 40px -12px rgba(0,0,0,0.55), inset 0 1px 0 0 rgba(255,255,255,0.05); display: flex; align-items: center; justify-content: center; transition: transform 0.2s cubic-bezier(0.16,1,0.3,1); outline: none; } .ds-hero::after { content: ''; position: absolute; inset: -4px; border-radius: 50%; border: 2px solid rgba(242,113,28,0.4); opacity: 0; transition: opacity 0.3s; } .ds-hero-icon { width: 48px; height: 48px; color: #6b7280; } .ds-hero:hover { transform: scale(1.02); } .ds-hero:hover .ds-hero-icon { color: #f2711c; } .ds-hero:active { transform: scale(0.95); } .ds-hero:focus-visible::after { opacity: 1; }"
+    },
+    {
+      "name": "Primary Button",
+      "kind": "button",
+      "refersTo": "button-primary",
+      "description": "Filled ember control; hover dims to 80% opacity instead of darkening or shadowing.",
+      "html": "<button class=\"ds-btn-primary\">Connect</button>",
+      "css": ".ds-btn-primary { height: 32px; padding: 0 12px; border-radius: 10px; border: 1px solid transparent; background: #f2711c; color: #0d0d0f; font-family: 'Geist Variable', sans-serif; font-size: 14px; font-weight: 500; line-height: 1.5; cursor: pointer; display: inline-flex; align-items: center; justify-content: center; gap: 6px; outline: none; transition: background-color 0.2s, transform 0.1s cubic-bezier(0.16,1,0.3,1), opacity 0.2s; } .ds-btn-primary:hover { opacity: 0.8; } .ds-btn-primary:active { transform: translateY(1px) scale(0.97); } .ds-btn-primary:focus-visible { box-shadow: 0 0 0 3px rgba(242,113,28,0.5); } .ds-btn-primary:disabled { opacity: 0.5; pointer-events: none; }"
+    },
+    {
+      "name": "Outline Button",
+      "kind": "button",
+      "refersTo": "button-outline",
+      "description": "Void-filled with a hairline border; used for secondary switches and toggles.",
+      "html": "<button class=\"ds-btn-outline\">Scan Mode</button>",
+      "css": ".ds-btn-outline { height: 32px; padding: 0 12px; border-radius: 10px; border: 1px solid rgba(255,255,255,0.08); background: #09090b; color: #fafafa; font-family: 'Geist Variable', sans-serif; font-size: 14px; font-weight: 500; line-height: 1.5; cursor: pointer; display: inline-flex; align-items: center; justify-content: center; outline: none; transition: background-color 0.2s, transform 0.1s cubic-bezier(0.16,1,0.3,1); } .ds-btn-outline:hover { background: #27272a; } .ds-btn-outline:active { transform: translateY(1px) scale(0.97); } .ds-btn-outline:focus-visible { box-shadow: 0 0 0 3px rgba(242,113,28,0.5); }"
+    },
+    {
+      "name": "Ghost Icon Button",
+      "kind": "button",
+      "refersTo": "button-ghost",
+      "description": "Icon-only, transparent; hover lifts to muted. Used in the title bar and on pills.",
+      "html": "<button class=\"ds-btn-icon\" aria-label=\"Settings\"><svg viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z\"/><circle cx=\"12\" cy=\"12\" r=\"3\"/></svg></button>",
+      "css": ".ds-btn-icon { width: 32px; height: 32px; border-radius: 10px; border: none; background: transparent; color: #a1a1aa; cursor: pointer; display: inline-flex; align-items: center; justify-content: center; outline: none; transition: background-color 0.2s, color 0.2s, transform 0.1s cubic-bezier(0.16,1,0.3,1); } .ds-btn-icon svg { width: 15px; height: 15px; } .ds-btn-icon:hover { background: #27272a; color: #fafafa; } .ds-btn-icon:active { transform: scale(0.97); } .ds-btn-icon:focus-visible { box-shadow: 0 0 0 3px rgba(242,113,28,0.5); }"
+    },
+    {
+      "name": "Text Input",
+      "kind": "input",
+      "refersTo": "input",
+      "description": "Hairline-stroked field; focus swaps the stroke for a 3px ember halo.",
+      "html": "<input class=\"ds-input\" placeholder=\"address:port\" value=\"127.0.0.1:1819\" />",
+      "css": ".ds-input { height: 32px; padding: 0 10px; border-radius: 8px; border: 1px solid rgba(255,255,255,0.08); background: transparent; color: #fafafa; font-family: 'JetBrains Mono Variable', monospace; font-size: 12px; outline: none; transition: border-color 0.2s, box-shadow 0.2s; } .ds-input::placeholder { color: #a1a1aa; } .ds-input:focus { border-color: #f2711c; box-shadow: 0 0 0 3px rgba(242,113,28,0.25); } .ds-input:disabled { opacity: 0.5; }"
+    },
+    {
+      "name": "Glass Accordion Panel",
+      "kind": "card",
+      "refersTo": "glass-panel",
+      "description": "Frosted drawer: hairline ring that stiffens when open, spring chevron, separator, slide-in body.",
+      "html": "<div class=\"ds-panel\"><button class=\"ds-panel-trigger\" aria-expanded=\"true\"><svg viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M12 2v10\"/><path d=\"M18.4 6.6a9 9 0 1 1-12.77.04\"/></svg><span>Advanced</span><svg class=\"ds-panel-chevron\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"m15 18-6-6 6-6\"/></svg></button><div class=\"ds-panel-divider\"></div><div class=\"ds-panel-body\">Control what the tunnel negotiates.</div></div>",
+      "css": ".ds-panel { border-radius: 14px; background: color-mix(in srgb, #1e1e1e 58%, transparent); backdrop-filter: blur(26px) saturate(1.6); -webkit-backdrop-filter: blur(26px) saturate(1.6); box-shadow: 0 12px 40px -12px rgba(0,0,0,0.55), inset 0 1px 0 0 rgba(255,255,255,0.05); box-shadow: 0 0 0 1px rgba(255,255,255,0.1); outline: none; } .ds-panel-trigger { width: 100%; display: flex; align-items: center; gap: 8px; padding: 10px 12px; border: none; background: transparent; color: #fafafa; font-family: 'Geist Variable', sans-serif; font-size: 12px; font-weight: 500; cursor: pointer; outline: none; } .ds-panel-trigger svg:first-child { width: 13px; height: 13px; color: #f2711c; } .ds-panel-chevron { width: 13px; height: 13px; margin-left: auto; color: rgba(161,161,170,0.7); transform: rotate(180deg); transition: transform 0.2s cubic-bezier(0.16,1,0.3,1); } .ds-panel-trigger:focus-visible { box-shadow: inset 0 0 0 2px rgba(242,113,28,0.6); } .ds-panel-divider { height: 1px; background: rgba(255,255,255,0.05); } .ds-panel-body { padding: 10px 12px; color: #a1a1aa; font-size: 12px; line-height: 1.5; }"
+    },
+    {
+      "name": "Count Chip",
+      "kind": "chip",
+      "refersTo": "chip",
+      "description": "Translucent pill for history/preset counts; mono, tabular, never colored.",
+      "html": "<span class=\"ds-chip\">3</span>",
+      "css": ".ds-chip { display: inline-flex; align-items: center; height: 16px; padding: 0 6px; border-radius: 10px; background: rgba(255,255,255,0.1); color: #a1a1aa; font-family: 'JetBrains Mono Variable', monospace; font-size: 9px; line-height: 1; font-variant-numeric: tabular-nums; }"
+    },
+    {
+      "name": "Status Pill",
+      "kind": "chip",
+      "refersTo": "chip",
+      "description": "Live egress/status row: 6px state dot plus mono telemetry; teal = tunnel live.",
+      "html": "<div class=\"ds-pill\"><span class=\"ds-pill-dot\"></span><span>Frankfurt, DE · 89.16.4.19</span></div>",
+      "css": ".ds-pill { display: inline-flex; align-items: center; gap: 6px; height: 22px; padding: 0 8px; border-radius: 999px; background: color-mix(in srgb, #1e1e1e 80%, transparent); color: #a1a1aa; font-family: 'JetBrains Mono Variable', monospace; font-size: 11px; font-variant-numeric: tabular-nums; } .ds-pill-dot { width: 6px; height: 6px; border-radius: 50%; background: #2dd4bf; box-shadow: 0 0 8px rgba(45,212,191,0.6); }"
+    }
+  ],
+  "narrative": {
+    "northStar": "The Ember Console",
+    "overview": "Aether-GUI is a dark glass command console in which exactly one element is alive: the ember. The whole lower third of the interface is a frosted-glass instrument panel — hairline rings, mono telemetry, accordion drawers — all quiet, all at rest. The hero connect disc is the sole ignition point: a circular glass lens that, when pressed, flares into amber radar rings (a WebGL shader sweeps three concentric lines outward) while the tunnel is found, then settles into a calm teal glow with a soft check when the way out is open. The palette is warm near-black with one amber accent; the metaphor is a single ember in a dark room, never a floodlight.\n\nThe voice is quiet precision for a non-technical user in a hostile network: nothing decorative that isn't functional, nothing that shouts. Every surface is translucent glass (blur + saturation), every panel is hairline-framed, every motion is either a 100-300ms spring or a pure compositor loop. The app must read as an instrument you trust, not a game you play — calm, engineered, and honest about what it is doing at every moment (real elapsed time, real scan percentage, real leak checks).\n\nDensity is deliberate: controls are small (32px targets), type is 10-14px, and the status line is the only prose on the idle screen. Because the primary user may be anxious about being watched, the system favors certainty: state changes are announced with color + icon + motion together, never color alone.",
+    "keyCharacteristics": [
+      "One ember: the amber accent is the single ignition/attention color; statuses speak teal/red/gray.",
+      "Frosted glass everywhere: blur 22-26px + saturate 1.4-1.6, translucent planes, inset top sheen.",
+      "Hairline framing: 1px rgba-white 8-10% borders and rings; radii 6-14px on controls.",
+      "Telemetry type: JetBrains Mono with tabular numerals for addresses, counts, and timing.",
+      "Compositor-only loops: ambient orbs and radar pulses are transform/opacity CSS or WebGL, paused when the window is unfocused.",
+      "Flat by default: depth comes from tonal lightening (surface-1..4) and glass blur, not drop shadows."
+    ],
+    "rules": [
+      {
+        "name": "The One Ember Rule",
+        "body": "The amber accent never floods a surface — it appears as a dot, a ring, an icon, or a 32px filled control, on well under 10% of any screen. Its rarity is the point: when ember shows, the user reads \"here is the one thing that matters.\"",
+        "section": "colors"
+      },
+      {
+        "name": "The Status Trio Rule",
+        "body": "Connecting is amber, connected is teal, error is red, idle is gray. No other hue ever carries state; the accent color picker may change the ember's hue, but connecting/connected/error/idle always stay amber/teal/red/gray.",
+        "section": "colors"
+      },
+      {
+        "name": "The Tabular Telemetry Rule",
+        "body": "Every numeral that reports truth — addresses, durations, attempt counts, percentages — uses tabular-nums in JetBrains Mono. Timers and counts never jitter while they tick.",
+        "section": "typography"
+      },
+      {
+        "name": "The Flat-By-Default Rule",
+        "body": "Surfaces are flat at rest. Hover lifts exactly 1px (translateY(-1px)), presses scale to 0.98, and the glass cast appears only on glass planes. If a surface needs to read higher, lighten the surface token — never add a second shadow.",
+        "section": "elevation"
+      }
+    ],
+    "dos": [
+      "Do keep the ember rare: one dot, ring, icon, or 32px control at a time; never fill panels with the accent.",
+      "Do state transitions with color + icon + motion together — a state change announced by color alone is untrusted.",
+      "Do keep every machine-true value in JetBrains Mono with tabular-nums.",
+      "Do use tonal lightening (surface-1..4) before reaching for shadows; the only shadow is the glass cast.",
+      "Do keep all looping animation compositor-only (transform/opacity CSS or WebGL) and paused while the window is unfocused.",
+      "Do frame panels with 1px hairline rings at 5-10% white; radiate warmth through hairlines, not borders."
+    ],
+    "donts": [
+      "Don't introduce a second accent hue for status — connecting/connected/error/idle is amber/teal/red/gray, always.",
+      "Don't color area fills with the accent, add blue-tinted surfaces, or paint borders stronger than 12% white.",
+      "Don't add system drop shadows to dark surfaces; depth is tonal and glass, flat by default.",
+      "Don't invent large display type; the system's biggest text is 14px, and the hero communicates through motion and light, not words.",
+      "Don't drop the window shell's asymmetric base (18px top / 30px bottom) or its inset top highlight.",
+      "Don't run loops that don't honor prefers-reduced-motion — decorative breathing must stop; only active status feedback (spinner, rings while connecting) may keep pulsing."
+    ]
+  }
+}

@@ -33,7 +33,7 @@ function useElapsed(sinceMs: number | null): { formatted: string; totalSeconds: 
 function ScanProgressBar({ percent }: { percent: number | null }) {
   const focused = useWindowFocused();
   return (
-    <div className="relative h-1 w-40 overflow-hidden rounded-full bg-surface-2">
+    <div className="relative h-1 w-44 overflow-hidden rounded-full bg-surface-3 ring-1 ring-border">
       {percent == null ? (
         <div
           className="anim-scan-sweep absolute inset-y-0 left-0 w-1/3 rounded-full bg-status-connecting"
@@ -119,7 +119,7 @@ export function ConnectionStatusLine({ onTryStealth }: { onTryStealth?: () => vo
           key={status.state}
           aria-live="polite"
           aria-atomic="true"
-          className="block text-base font-semibold tracking-tight-display text-foreground"
+          className="block text-[15px] font-semibold leading-none tracking-tight-display text-foreground"
           {...TEXT_TRANSITION}
         >
           {primary}
@@ -130,8 +130,8 @@ export function ConnectionStatusLine({ onTryStealth }: { onTryStealth?: () => vo
           key={status.state}
           className={
             status.state === "Error"
-              ? "block max-w-sm whitespace-pre-wrap font-mono text-xs leading-relaxed text-status-error"
-              : "block min-h-5 max-w-xs truncate font-mono text-xs text-muted-foreground"
+              ? "block max-w-sm whitespace-pre-wrap font-mono text-[11px] leading-relaxed text-status-error"
+              : "block min-h-5 max-w-xs truncate font-mono text-[11px] tabular-nums text-muted-foreground"
           }
           {...TEXT_TRANSITION}
         >
@@ -139,13 +139,13 @@ export function ConnectionStatusLine({ onTryStealth }: { onTryStealth?: () => vo
         </motion.span>
       </AnimatePresence>
       {status.state === "Error" && (
-        <div className="flex flex-col items-center gap-1.5">
-          <p className="max-w-xs text-[12px] text-muted-foreground">
+        <div className="flex flex-col items-center gap-2">
+          <p className="max-w-xs text-[11px] leading-relaxed text-muted-foreground">
             If the tunnel can&apos;t get through, Stealth mode probes more
             cautiously and is harder for a censor to detect.
           </p>
           <div className="flex items-center gap-1.5">
-            <Button size="sm" variant="outline" onClick={onTryStealth} className="h-7 gap-1.5 text-[12px]">
+            <Button size="sm" variant="outline" onClick={onTryStealth} className="h-7 gap-1.5 text-[11px]">
               <EyeOff size={11} />
               Try Stealth mode
             </Button>
@@ -153,7 +153,7 @@ export function ConnectionStatusLine({ onTryStealth }: { onTryStealth?: () => vo
               size="sm"
               variant="ghost"
               onClick={() => void openLogWindow()}
-              className="h-7 gap-1.5 text-[12px] text-muted-foreground hover:text-foreground"
+              className="h-7 gap-1.5 text-[11px] text-muted-foreground hover:text-foreground"
             >
               <Terminal size={11} />
               View log

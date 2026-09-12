@@ -1,12 +1,9 @@
 import { useEffect, useState } from "react";
-import { getCurrentWindow } from "@tauri-apps/api/window";
 import { Maximize2, Minus, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { ProxyIndicator } from "@/components/ProxyIndicator";
-import { handleClose } from "@/lib/close";
+import { handleClose, tauriWindow } from "@/lib/close";
 import { useConnectionStore } from "@/state/connectionStore";
-
-const appWindow = getCurrentWindow();
 
 function useElapsed(sinceMs: number | null): string {
   const [now, setNow] = useState(() => Date.now());
@@ -31,44 +28,44 @@ export function TitleBar() {
   return (
     <header
       data-tauri-drag-region
-      className="relative z-10 shrink-0 select-none px-2 pt-2"
+      className="relative z-10 shrink-0 select-none px-2.5 pt-2.5"
     >
       <div data-tauri-drag-region className="flex items-center justify-between gap-2">
-        <div data-tauri-drag-region className="flex items-center gap-2 pl-3">
+        <div data-tauri-drag-region className="flex items-center gap-2 pl-1">
           <ProxyIndicator />
           {uptime && (
-            <span data-tauri-drag-region className="font-mono text-[10px] text-primary/70">
+            <span data-tauri-drag-region className="font-mono text-[11px] tabular-nums tracking-wide text-primary/75">
               {uptime}
             </span>
           )}
         </div>
-        <div className="glass flex h-9 items-center rounded-lg border border-white/10 px-1 shadow-[var(--shadow-glass)]">
+        <div className="glass flex h-8 items-center gap-0.5 rounded-[14px] px-1 ring-1 ring-border">
           <Button
             variant="ghost"
             size="icon"
-            className="size-8 rounded-full text-muted-foreground hover:bg-white/10 hover:text-foreground active:scale-95 transition"
+            className="size-7 rounded-full text-muted-foreground hover:bg-foreground/[0.06] hover:text-foreground active:scale-95 transition"
             aria-label="Minimize"
-            onClick={() => void appWindow.minimize()}
+            onClick={() => void tauriWindow()?.minimize()}
           >
-            <Minus className="size-4" />
+            <Minus className="size-3.5" />
           </Button>
           <Button
             variant="ghost"
             size="icon"
-            className="size-8 rounded-full text-muted-foreground hover:bg-white/10 hover:text-foreground active:scale-95 transition"
+            className="size-7 rounded-full text-muted-foreground hover:bg-foreground/[0.06] hover:text-foreground active:scale-95 transition"
             aria-label="Maximize"
-            onClick={() => void appWindow.toggleMaximize()}
+            onClick={() => void tauriWindow()?.toggleMaximize()}
           >
-            <Maximize2 className="size-3.5" />
+            <Maximize2 className="size-3" />
           </Button>
           <Button
             variant="ghost"
             size="icon"
-            className="size-8 rounded-full text-muted-foreground hover:bg-destructive hover:text-white active:scale-95 transition"
+            className="size-7 rounded-full text-muted-foreground hover:bg-destructive/10 hover:text-destructive active:scale-95 transition"
             aria-label="Close"
             onClick={handleClose}
           >
-            <X className="size-4" />
+            <X className="size-3.5" />
           </Button>
         </div>
       </div>

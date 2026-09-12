@@ -26,16 +26,16 @@ export function AutoRotateSettings() {
     void setAutoRotate(enabled, Math.round(mins * 60));
 
   return (
-    <div className="flex flex-col gap-1.5">
+    <div className="flex flex-col gap-2">
       <div
         className={cn(
-          "flex w-full items-center justify-between rounded-md px-1.5 py-1 transition-colors duration-150",
+          "flex w-full items-center justify-between rounded-lg bg-black/15 px-3 py-2.5 ring-1 ring-white/[0.04] transition-colors light:bg-black/[0.03] light:ring-black/[0.05]",
           !running && "opacity-60",
         )}
         title={running ? undefined : "Start Tor to enable auto-rotation"}
       >
-        <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
-          <RefreshCcw size={12} />
+        <div className="flex items-center gap-1.5 text-[11px] font-medium text-foreground/80">
+          <RefreshCcw size={13} className="text-muted-foreground" />
           Auto-rotate
         </div>
         <Switch
@@ -47,10 +47,10 @@ export function AutoRotateSettings() {
       </div>
 
       {enabled && running && (
-        <div className="flex items-center justify-between gap-2 pl-1.5 pr-1">
-          <span className="text-[10px] text-muted-foreground/80">every</span>
+        <div className="flex items-center justify-between gap-2 rounded-xl bg-black/20 px-3 py-2 ring-1 ring-white/[0.06] light:bg-black/[0.03] light:ring-black/5">
+          <span className="text-[11px] font-medium text-muted-foreground">every</span>
           <Select value={String(minuteValue)} onValueChange={(v) => setMinutes(Number(v))}>
-            <SelectTrigger size="sm" className="h-7 text-[12px]" aria-label="Rotation interval">
+            <SelectTrigger size="sm" className="h-7 rounded-lg bg-black/20 text-xs ring-white/[0.07] light:bg-white light:ring-black/10" aria-label="Rotation interval">
               <SelectValue />
             </SelectTrigger>
             <SelectContent>

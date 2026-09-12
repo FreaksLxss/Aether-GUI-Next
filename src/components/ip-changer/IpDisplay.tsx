@@ -32,7 +32,7 @@ export function IpDisplay() {
     : null;
 
   return (
-    <div className="flex flex-col gap-1 rounded-xl border border-white/5 bg-white/[0.02] px-3 py-2">
+    <div className="flex min-w-0 max-w-full flex-col gap-1.5 overflow-hidden rounded-xl border border-white/[0.06] bg-black/20 px-3 py-3 ring-1 ring-white/[0.04] light:border-black/5 light:bg-black/[0.02] light:ring-black/[0.03]">
       <div className="flex items-center gap-2">
         <AnimatePresence mode="popLayout" initial={false}>
           <motion.span
@@ -41,9 +41,9 @@ export function IpDisplay() {
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: -4 }}
             transition={SPRING}
-            className="font-mono text-[16px] font-semibold tracking-tight text-foreground tabular-nums"
+            className="min-w-0 truncate font-mono text-[16px] font-semibold tracking-tight text-foreground tabular-nums"
           >
-            {currentIp?.ip ?? "–" }
+            {currentIp?.ip ?? "–"}
           </motion.span>
         </AnimatePresence>
         {ipChecking && (
@@ -52,7 +52,7 @@ export function IpDisplay() {
       </div>
 
       {bootstrapping ? (
-        <div className="flex flex-col gap-1">
+        <div className="flex flex-col gap-1.5">
           <div className="flex items-center justify-between text-[10px] text-muted-foreground/80">
             <span className="flex items-center gap-1.5">
               <LoaderCircle size={11} className="anim-spin" />
@@ -76,23 +76,23 @@ export function IpDisplay() {
           </span>
         </div>
       ) : (
-        <div className="flex items-center gap-1 text-[12px] text-muted-foreground">
+        <div className="flex max-w-full items-center gap-1 overflow-hidden text-[12px] text-muted-foreground">
           {waiting ? (
-            <span className="text-muted-foreground/70">looking up exit IP…</span>
+            <span className="truncate text-muted-foreground/70">looking up exit IP…</span>
           ) : place ? (
             <>
-              <span>{flagEmoji(currentIp!.country_code)}</span>
-              <span>{place}</span>
+              <span className="shrink-0">{flagEmoji(currentIp!.country_code)}</span>
+              <span className="min-w-0 truncate">{place}</span>
               {currentIp?.org && (
                 <>
-                  <span className="text-muted-foreground/40">·</span>
-                  <span className="truncate">{currentIp.org}</span>
+                  <span className="shrink-0 text-muted-foreground/40">·</span>
+                  <span className="min-w-0 truncate">{currentIp.org}</span>
                 </>
               )}
             </>
           ) : (
-            <span className="flex items-center gap-1 text-muted-foreground/50">
-              <MapPin size={11} /> not connected
+            <span className="flex items-center gap-1 truncate text-muted-foreground/50">
+              <MapPin size={11} className="shrink-0" /> not connected
             </span>
           )}
         </div>

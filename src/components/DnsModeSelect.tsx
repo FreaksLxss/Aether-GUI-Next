@@ -33,7 +33,7 @@ export function DnsModeSelect() {
         if (v) setDnsMode(v as DnsMode);
       }}
       disabled={locked}
-      className="w-full gap-0.5 rounded-lg bg-surface-3 p-0.5 ring-1 ring-inset ring-white/5"
+      className="w-full gap-0.5 rounded-xl bg-black/25 p-1 ring-1 ring-inset ring-white/[0.06] light:bg-black/[0.04] light:ring-black/[0.06]"
     >
       {(Object.keys(LABELS) as DnsMode[]).map((mode) => (
         <Tooltip key={mode}>
@@ -43,7 +43,7 @@ export function DnsModeSelect() {
                 value={mode}
                 size="sm"
                 aria-label={LABELS[mode]}
-                className="relative w-full rounded-md text-[10px] text-muted-foreground transition-colors duration-150 hover:text-foreground data-[state=on]:text-primary-foreground"
+                className="relative w-full rounded-lg py-1.5 text-[10px] font-medium tracking-wide text-muted-foreground transition-colors duration-150 hover:text-foreground data-[state=on]:font-semibold data-[state=on]:text-primary-foreground"
               >
                 <SegIndicator active={mode === dnsMode} groupId="dns-mode" />
                 <span className="relative z-10">{LABELS[mode]}</span>

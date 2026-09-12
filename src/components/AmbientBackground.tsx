@@ -17,32 +17,34 @@ export function AmbientBackground() {
 
   return (
     <div aria-hidden="true" className="pointer-events-none absolute inset-0 z-0 overflow-hidden">
-      {/* Base radial wash — gives the frosted-glass layers something to
-          refract behind them; compositor-only and static. */}
+      {/* Single composed light source — top-center wash that the glass
+          actually refracts. Secondary orb is faint and low so it reads
+          as bounced light, not a second equal lamp. */}
       <div
         className="absolute inset-0"
         style={{
           background:
-            "radial-gradient(120% 90% at 50% 0%, color-mix(in srgb, var(--color-primary) 10%, transparent) 0%, transparent 70%)",
+            "radial-gradient(110% 72% at 50% -8%, color-mix(in srgb, var(--color-primary) 9%, transparent) 0%, transparent 62%)",
         }}
       />
       <div
-        className="anim-orb-a absolute size-65 rounded-full"
+        className="anim-orb-a absolute size-72 rounded-full"
         style={{
-          top: -60,
-          right: -60,
-          opacity: 0.14,
-          background: "radial-gradient(circle, var(--color-primary) 0%, transparent 70%)",
+          top: -70,
+          left: "50%",
+          opacity: 0.11,
+          transform: "translateX(-50%)",
+          background: "radial-gradient(circle, var(--color-primary) 0%, transparent 68%)",
           willChange: "transform, opacity",
           ...playState,
         }}
       />
       <div
-        className="anim-orb-b absolute size-55 rounded-full"
+        className="anim-orb-b absolute size-48 rounded-full"
         style={{
-          bottom: -40,
-          left: -80,
-          opacity: 0.1,
+          bottom: -36,
+          left: -56,
+          opacity: 0.06,
           background:
             "radial-gradient(circle, var(--color-primary) 0%, transparent 70%)",
           willChange: "transform, opacity",

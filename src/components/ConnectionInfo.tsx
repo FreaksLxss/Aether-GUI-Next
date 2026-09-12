@@ -49,35 +49,35 @@ export function ConnectionInfo() {
       initial={{ opacity: 0, y: 6 }}
       animate={{ opacity: 1, y: 0 }}
       transition={SPRING}
-      className="flex w-[260px] flex-col gap-1.5 rounded-xl glass-float px-3 py-2 text-[10px] font-mono text-muted-foreground shadow-glass ring-1 ring-inset ring-primary/30"
+      className="flex w-full max-w-[320px] flex-col gap-1.5 rounded-xl bg-surface-2 px-3 py-2.5 text-[11px] font-mono tabular-nums text-muted-foreground ring-1 ring-border"
     >
-      <div className="flex items-center gap-2">
-        <Badge variant="outline" className="gap-1 border-primary/30 px-1.5 py-0 text-[10px] font-normal text-primary">
+      <div className="flex flex-wrap items-center gap-1.5">
+        <Badge variant="outline" className="gap-1 border-primary/25 px-1.5 py-0 text-[11px] font-normal tabular-nums text-primary">
           <Activity size={10} />
           {addr}
         </Badge>
         <span className="text-muted-foreground/60">·</span>
-        <Badge variant="secondary" className="px-1.5 py-0 text-[10px] font-medium">
+        <Badge variant="secondary" className="px-1.5 py-0 text-[11px] font-medium tabular-nums">
           {protocol}
         </Badge>
         {showTun && (
-          <Badge variant="outline" className="gap-1 border-primary/30 px-1.5 py-0 text-[10px] font-normal text-primary">
+          <Badge variant="outline" className="gap-1 border-primary/25 px-1.5 py-0 text-[11px] font-normal tabular-nums text-primary">
             <Network size={10} />
             TUN
           </Badge>
         )}
       </div>
-      <Separator className="bg-white/5" />
-      <div className="flex items-center justify-center gap-2 text-muted-foreground/70">
-        <Badge variant="outline" className="px-1.5 py-0 text-[10px] font-normal">
+      <Separator className="bg-border" />
+      <div className="flex items-center justify-center gap-2 text-muted-foreground/80">
+        <Badge variant="outline" className="px-1.5 py-0 text-[11px] font-normal tabular-nums">
           {scanMode}
         </Badge>
         <span className="text-muted-foreground/50">·</span>
-        <Badge variant="outline" className="px-1.5 py-0 text-[10px] font-normal">
+        <Badge variant="outline" className="px-1.5 py-0 text-[11px] font-normal tabular-nums">
           {obfuscation}
         </Badge>
         <span className="text-muted-foreground/50">·</span>
-        <Badge variant="outline" className="px-1.5 py-0 text-[10px] font-normal">
+        <Badge variant="outline" className="px-1.5 py-0 text-[11px] font-normal tabular-nums">
           {ipVersion}
         </Badge>
       </div>

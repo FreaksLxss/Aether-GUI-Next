@@ -1,0 +1,179 @@
+{
+  "title": "Choose the visual world",
+  "question": "The roll assigned The Honest Dashboard. Keep it, take an alternate, or re-roll. (Elbow console, sneaker stacks, and datamatics wait in the re-roll pool.)",
+  "options": [
+    {
+      "id": "assigned",
+      "label": "The Honest Dashboard",
+      "kicker": "THE ROLL",
+      "lineage": "automotive instrument clusters and dive computers",
+      "thesis": "The tunnel as an honest machine: one ignition control, live gauges with real numbers, warning lamps that mean it.",
+      "palette": [
+        "#0c0d0f",
+        "#141519",
+        "#f2f2f0",
+        "#f2711c",
+        "#2dd4bf"
+      ],
+      "materials": [
+        "solid opaque planes",
+        "hairline rules",
+        "tabular mono numerals",
+        "warning-lamp dots"
+      ],
+      "viewport": "A dark cockpit: ignition disc up top, status sentence, one gauge row (elapsed, scan %, egress), mode chips, and a five-tab bottom rail.",
+      "risk": "Dashboard language can drift into clip-art gauges if the needles fake data; every meter must read a real value or stay absent.",
+      "raised": [
+        {
+          "from": "challenger-ruled-module-wall",
+          "raise": "Options surfaces group into hairline-ruled module grids, one small header tab per group — density without boxes-on-boxes."
+        },
+        {
+          "from": "challenger-printed-transcript",
+          "raise": "System states print themselves as events in the log surface — state is content, not chrome."
+        }
+      ],
+      "wireframe": {
+        "cols": 12,
+        "rows": 10,
+        "regions": [
+          { "label": "title strip — proxy chip · uptime · window controls", "x": 0, "y": 0, "w": 12, "h": 1 },
+          { "label": "ignition disc — THE control", "x": 3, "y": 1.2, "w": 6, "h": 3.4, "accent": true },
+          { "label": "status sentence", "x": 2, "y": 4.8, "w": 8, "h": 0.8 },
+          { "label": "gauge row — elapsed · scan % · egress", "x": 1, "y": 5.8, "w": 10, "h": 1.2 },
+          { "label": "mode chips — protocol · scan profile", "x": 2, "y": 7.2, "w": 8, "h": 0.9 },
+          { "label": "five-tab rail — Tunnel · Advanced · IP · History · Settings", "x": 0, "y": 8.4, "w": 12, "h": 1.6, "accent": true }
+        ]
+      }
+    },
+    {
+      "id": "model-pick",
+      "label": "The Shortwave Dial",
+      "kicker": "IMPECCABLE’S PICK",
+      "lineage": "shortwave receivers, the BBC Persian era",
+      "thesis": "Scan the spectrum until a route locks: the needle, the signal bars, a dial you learn to trust.",
+      "palette": [
+        "#0d0e10",
+        "#16181c",
+        "#f2ede3",
+        "#4ade80",
+        "#f2711c"
+      ],
+      "materials": [
+        "anodized dial scale",
+        "swept needle",
+        "signal-strength bars",
+        "solid matte faces"
+      ],
+      "viewport": "A cream-faced tuning dial on dark metal: the disc becomes a dial with a frequency scale of routes, a needle that sweeps while scanning and locks when connected.",
+      "risk": "Also the direction most signal-flavored redesigns reach for — familiar to the audience's grandparents, and where most maker hands stop.",
+      "wireframe": {
+        "cols": 12,
+        "rows": 10,
+        "regions": [
+          { "label": "title strip", "x": 0, "y": 0, "w": 12, "h": 1 },
+          { "label": "tuning dial — routes as frequencies", "x": 1, "y": 1.2, "w": 10, "h": 3.6, "accent": true },
+          { "label": "lock status — needle state", "x": 2, "y": 5, "w": 8, "h": 0.8 },
+          { "label": "signal bars — scan progress", "x": 2, "y": 6, "w": 8, "h": 1 },
+          { "label": "station presets — profiles", "x": 2, "y": 7.2, "w": 8, "h": 0.9 },
+          { "label": "five-tab rail", "x": 0, "y": 8.4, "w": 12, "h": 1.6, "accent": true }
+        ]
+      }
+    },
+    {
+      "id": "challenger-mesophotic-descent",
+      "label": "The Descent Gauge",
+      "verdict": "competitive",
+      "lineage": "dive computers, mesophotic walls",
+      "thesis": "Connect as a descent: budget burned, stages crossed, daylight far above.",
+      "palette": [
+        "#0b1420",
+        "#12233a",
+        "#7dd3fc",
+        "#f8fafc"
+      ],
+      "materials": [
+        "depth axis",
+        "marine snow",
+        "gas-check digits"
+      ],
+      "viewport": "One vertical depth axis rules the window: Idle at the surface, Connecting crossing the thermocline, Connected cruising at depth with the scan budget as remaining gas.",
+      "case": "Maps scan budget to gas budget almost perfectly; the audience never dives, so identification rests on the metaphor alone.",
+      "risk": "Beautiful for the log surface; cold and foreign for a frightened first-time user.",
+      "hero": "https://impeccable.style/worlds/cards/rivers-tides-ocean-depths-mesophotic-deep-dive-hero.webp",
+      "board": "https://impeccable.style/worlds/cards/rivers-tides-ocean-depths-mesophotic-deep-dive.webp"
+    },
+    {
+      "id": "challenger-ruled-module-wall",
+      "label": "The Ruled Module Wall",
+      "verdict": "declined",
+      "lineage": "Japanese high-density retail sites",
+      "thesis": "Every option as a boxed module under hairlines, packed edge to edge.",
+      "palette": [
+        "#ffffff",
+        "#111111",
+        "#d92c2c",
+        "#e5e7eb"
+      ],
+      "materials": [
+        "hairline module rules",
+        "header tabs",
+        "tiny gothic type"
+      ],
+      "viewport": "A mosaic of ruled modules with small red header tabs, dense as a Tokyo retail page.",
+      "case": "Fuses well as an options-surface grammar, but tiny-type density fights the glance-over-shoulder user and the 14px readability floor.",
+      "kept": "Hairline-ruled module discipline for the Advanced surface — already raised into the assigned card.",
+      "risk": "Reads as a foreign site convention; density reads as stress.",
+      "hero": "https://impeccable.style/worlds/cards/japanese-high-density-web-hero.webp",
+      "board": "https://impeccable.style/worlds/cards/japanese-high-density-web.webp"
+    },
+    {
+      "id": "challenger-printed-transcript",
+      "label": "The Printed Transcript",
+      "verdict": "declined",
+      "lineage": "phosphor terminals, midnight machine rooms",
+      "thesis": "The whole app as one scrolling transcript; states print themselves.",
+      "palette": [
+        "#050805",
+        "#33ff66"
+      ],
+      "materials": [
+        "phosphor bloom",
+        "fixed 80-column field",
+        "afterimage trails"
+      ],
+      "viewport": "One continuous scrolling log; controls are typed dialogue, not chrome.",
+      "case": "Strong for the log surface, but the product's whole positioning is 'not the terminal' — this hands the frightened user a terminal back.",
+      "kept": "States print themselves as events in the log — already raised into the assigned card.",
+      "risk": "The one world this product was built to spare its users from.",
+      "hero": "https://impeccable.style/worlds/cards/signals-instruments-phosphor-terminal-midnight-hero.webp",
+      "board": "https://impeccable.style/worlds/cards/signals-instruments-phosphor-terminal-midnight.webp"
+    }
+  ],
+  "reroll": {
+    "registers": [
+      "safer",
+      "bolder"
+    ]
+  },
+  "buildPath": {
+    "value": "code"
+  },
+  "canon": true,
+  "canonCard": {
+    "label": "The category standard",
+    "thesis": "What every VPN app ships, executed impeccably.",
+    "palette": [
+      "#ffffff",
+      "#111827",
+      "#2563eb"
+    ],
+    "materials": [
+      "clean grid",
+      "sidebar + list"
+    ],
+    "viewport": "Centered power button, a country list, a settings drawer — the arrangement a visitor expects.",
+    "risk": "Indistinguishable from every commercial VPN by design."
+  },
+  "steer": true
+}

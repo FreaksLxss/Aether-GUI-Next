@@ -1,4 +1,4 @@
-import { useEffect } from "react";
+import { useEffect, useRef } from "react";
 import type { ComponentProps } from "react";
 import { motion } from "motion/react";
 import { MapPin, RefreshCw, ShieldAlert, ShieldCheck, ShieldOff } from "lucide-react";
@@ -13,12 +13,21 @@ export function PublicLocation() {
   const publicIp = useConnectionStore((s) => s.publicIp);
   const leakStatus = useConnectionStore((s) => s.leakStatus);
   const loading = useConnectionStore((s) => s.publicIpLoading);
+  const latencyMs = useConnectionStore((s) => s.publicIpLatencyMs);
+  const history = useConnectionStore((s) => s.publicIpHistory);
   const runPublicIpCheck = useConnectionStore((s) => s.runPublicIpCheck);
+  const prevStateRef = useRef<string | null>(null);
 
-  // Refresh whenever the connection state changes: on connect it shows the
-  // tunnel exit IP, and on disconnect it flips back to the real user IP.
   useEffect(() => {
-    void runPublicIpCheck();
+    const prev = prevStateRef.current;
+    prevStateRef.current = status.state;
+    if (prev === null) {
+      void runPublicIpCheck();
+      return;
+    }
+    if (prev !== status.state && (status.state === "Connected" || status.state === "Idle")) {
+      void runPublicIpCheck();
+    }
   }, [status.state, runPublicIpCheck]);
 
   const connected = status.state === "Connected";
@@ -55,27 +64,50 @@ export function PublicLocation() {
       animate={{ opacity: 1, x: 0 }}
       transition={SPRING}
       title={`${ownIp ? "Your" : "Exit"} IP: ${publicIp?.ip ?? "unknown"} · ${leakMeta.label}`}
-      className="flex h-6 w-[260px] items-center gap-1.5 rounded-lg glass-float px-2 text-[10px] font-mono text-muted-foreground shadow-glass ring-1 ring-inset ring-primary/20"
+      className="flex h-7 w-full max-w-[320px] items-center gap-1.5 rounded-full bg-surface-2 px-2.5 text-[11px] font-mono tabular-nums text-muted-foreground ring-1 ring-border"
     >
       <span className="flex min-w-0 items-center gap-1">
-        {publicIp ? <span>{flagEmoji(publicIp.country_code)}</span> : <MapPin size={10} className="text-primary" />}
+        {publicIp ? <span className="text-[11px] leading-none">{flagEmoji(publicIp.country_code)}</span> : <MapPin size={11} className="text-primary" />}
         <span className="truncate font-medium text-foreground/90">{place}</span>
       </span>
       {ip && <span className="text-muted-foreground/50">·</span>}
-      {ip && <span className="truncate">{ip}</span>}
+      {ip && <span className="truncate tabular-nums">{ip}</span>}
+      {latencyMs != null && !loading && (
+        <>
+          <span className="text-muted-foreground/50">·</span>
+          <span className="shrink-0 tabular-nums text-muted-foreground/60">{latencyMs} ms</span>
+          {history.length >= 2 && (() => {
+            const min = Math.min(...history);
+            const max = Math.max(...history);
+            const range = max - min || 1;
+            const points = history
+              .map((v, i) => {
+                const x = (i / (history.length - 1)) * 32;
+                const y = 12 - ((v - min) / range) * 10 - 1;
+                return `${x.toFixed(1)},${y.toFixed(1)}`;
+              })
+              .join(" ");
+            return (
+              <svg width="32" height="12" viewBox="0 0 32 12" className="shrink-0" aria-hidden>
+                <polyline fill="none" stroke="var(--primary)" strokeWidth="1" opacity="0.7" points={points} />
+              </svg>
+            );
+          })()}
+        </>
+      )}
       <span className="flex shrink-0 items-center pl-0.5" title={leakMeta.label}>
         <LeakIcon {...iconProps} className={leakMeta.cls} />
       </span>
       <Button
         variant="ghost"
-        size="sm"
+        size="icon-xs"
         onClick={() => void runPublicIpCheck()}
         disabled={loading}
-        className="ml-auto h-4 w-4 shrink-0 p-0 text-muted-foreground hover:text-foreground"
+        className="ml-auto shrink-0 text-muted-foreground hover:text-foreground"
         aria-label="Re-check IP"
         title="Re-check IP"
       >
-        <RefreshCw size={10} className={loading ? "anim-spin" : ""} />
+        <RefreshCw size={11} className={loading ? "anim-spin" : ""} />
       </Button>
     </motion.div>
   );

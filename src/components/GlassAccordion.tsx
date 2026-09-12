@@ -41,15 +41,15 @@ export function GlassAccordion({
     <Collapsible open={open} onOpenChange={onToggle}>
       <div
         className={cn(
-          "glass rounded-[0.7rem] shadow-glass transition-shadow duration-200",
+          "rounded-xl transition-colors duration-200",
           open
-            ? "ring-1 ring-white/10"
-            : "ring-1 ring-white/5 hover:ring-white/10",
+            ? "bg-surface-2 ring-1 ring-border"
+            : "bg-surface-2/80 ring-1 ring-border hover:bg-surface-2 hover:ring-foreground/10",
         )}
       >
         <CollapsibleTrigger
           className={cn(
-            "group flex w-full cursor-pointer items-center gap-2 px-3 py-2.5 text-xs outline-none transition-colors duration-150 focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-inset",
+            "group flex w-full cursor-pointer items-center gap-2 rounded-xl px-3 py-2.5 text-[11px] font-medium tracking-[0.08em] uppercase outline-none transition-colors duration-150 focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-inset",
             open ? "text-foreground" : "text-muted-foreground hover:text-foreground",
           )}
         >
@@ -60,14 +60,14 @@ export function GlassAccordion({
               open ? "text-primary" : "text-muted-foreground group-hover:text-foreground",
             )}
           />
-          {label}
+          <span className="tracking-[0.08em]">{label}</span>
           {count != null && count > 0 && (
             <motion.span
               key={count}
               initial={{ scale: 0.8 }}
               animate={{ scale: 1 }}
               transition={{ type: "spring", bounce: 0.4, duration: 0.4 }}
-              className="rounded-lg bg-white/10 px-1.5 py-0.5 text-[10px] leading-none text-muted-foreground tabular-nums"
+              className="rounded-md bg-foreground/[0.06] px-1.5 py-0.5 text-[10px] leading-none font-normal tracking-normal normal-case text-muted-foreground tabular-nums ring-1 ring-border"
             >
               {count}
             </motion.span>
@@ -78,16 +78,16 @@ export function GlassAccordion({
             animate={{ rotate: open ? 180 : 0 }}
             transition={SPRING_FAST}
           >
-            <ChevronDown size={13} className="text-muted-foreground/70" />
+            <ChevronDown size={13} className="text-muted-foreground/60" />
           </motion.span>
         </CollapsibleTrigger>
         <CollapsibleContent className="data-[state=open]:animate-in data-[state=open]:fade-in-0 data-[state=open]:slide-in-from-top-1 data-[state=open]:duration-200 data-[state=open]:[animation-timing-function:cubic-bezier(0.16,1,0.3,1)] data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=closed]:slide-out-to-top-1 data-[state=closed]:duration-150">
-          <Separator className="bg-white/5" />
+          <Separator className="bg-border" />
           <motion.div
             initial={{ opacity: 0, y: -4 }}
             animate={{ opacity: 1, y: 0 }}
             transition={SPRING_FAST}
-            className="px-3 py-2.5"
+            className="px-3 py-3"
           >
             {children}
           </motion.div>

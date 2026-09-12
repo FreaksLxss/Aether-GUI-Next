@@ -32,17 +32,17 @@ export function LogLevelSelect({ id }: { id?: string }) {
     >
       <SelectTrigger
         id={id}
-        className="w-full justify-start gap-2 rounded-lg bg-surface-3 px-3 text-xs text-foreground ring-1 ring-inset ring-white/5 transition-all duration-150 hover:bg-surface-4 hover:ring-white/10 focus-visible:ring-primary disabled:opacity-50 [&>span]:flex-1 [&>span]:text-left [&>svg]:ml-auto"
+        className="w-full justify-start gap-2 rounded-xl bg-black/20 px-3 py-5 text-xs font-medium text-foreground ring-1 ring-white/[0.07] transition-all duration-150 hover:bg-black/30 hover:ring-white/10 focus-visible:ring-primary disabled:opacity-50 [&>span]:flex-1 [&>span]:text-left [&>svg]:ml-auto"
         aria-label="Log Level"
       >
         <SelectValue />
       </SelectTrigger>
-      <SelectContent className="rounded-lg bg-surface-2 p-1 ring-1 ring-white/10">
+      <SelectContent className="rounded-xl bg-surface-2 p-1 ring-1 ring-white/10">
         {OPTIONS.map((opt) => (
           <SelectItem
             key={opt.value}
             value={opt.value}
-            className="cursor-pointer rounded-md px-2.5 py-2 text-xs outline-none transition-colors focus:bg-primary/15 focus:text-foreground data-[highlighted]:bg-primary/15"
+            className="cursor-pointer rounded-lg px-2.5 py-2 text-xs outline-none transition-colors focus:bg-primary/15 focus:text-foreground data-[highlighted]:bg-primary/15"
           >
             <div className="flex flex-col gap-0.5">
               <span className="font-medium">{opt.label}</span>

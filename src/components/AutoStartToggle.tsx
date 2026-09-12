@@ -33,9 +33,9 @@ export function AutoStartToggle() {
   };
 
   return (
-    <div className="flex w-full items-center justify-between rounded-md px-1.5 py-1 transition-colors duration-150 hover:bg-white/[0.03]">
-      <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
-        <Rocket size={12} />
+    <div className="flex w-full items-center justify-between rounded-lg bg-black/15 px-3 py-2.5 ring-1 ring-white/[0.04] light:bg-black/[0.03] light:ring-black/[0.05]">
+      <div className="flex items-center gap-1.5 text-[11px] font-medium text-foreground/80">
+        <Rocket size={13} className="text-muted-foreground" />
         Launch at startup
       </div>
       <Switch

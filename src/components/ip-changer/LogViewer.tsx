@@ -25,11 +25,9 @@ export function LogViewer() {
   }, [logs]);
 
   return (
-    <div className="flex flex-col gap-1.5">
+    <div className="flex flex-col gap-2">
       <div className="flex items-center justify-between">
-        <span className="text-[10px] font-medium tracking-wide text-muted-foreground uppercase">
-          Live log
-        </span>
+        <span className="text-[11px] font-medium tracking-wide text-muted-foreground">Live log</span>
         <Button
           variant="ghost"
           size="icon-xs"
@@ -37,6 +35,7 @@ export function LogViewer() {
           disabled={logs.length === 0}
           aria-label="Clear Tor logs"
           title="Clear logs"
+          className="rounded-lg"
         >
           <Trash2 size={12} />
         </Button>
@@ -48,7 +47,7 @@ export function LogViewer() {
           stickToBottom.current =
             el.scrollHeight - el.scrollTop - el.clientHeight < 24;
         }}
-        className="h-28 overflow-y-auto rounded-lg bg-surface-3/70 px-2.5 py-1.5 font-mono text-[10px] leading-[1.45] text-muted-foreground ring-1 ring-inset ring-white/5"
+        className="h-28 overflow-y-auto rounded-xl bg-[#0a0a0c] px-3 py-2.5 font-mono text-[11px] leading-[1.45] text-muted-foreground ring-1 ring-white/[0.06] light:bg-[#f6f6f5] light:ring-black/10"
       >
         {logs.length === 0 ? (
           <span className="text-muted-foreground/40 italic">

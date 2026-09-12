@@ -1,6 +1,4 @@
-import { Settings } from "lucide-react";
-import { Separator } from "@/components/ui/separator";
-import { GlassAccordion } from "@/components/GlassAccordion";
+import { Info, Monitor, Network, Palette } from "lucide-react";
 import { SystemProxyToggle } from "@/components/SystemProxyToggle";
 import { CaptureModeSelect } from "@/components/CaptureModeSelect";
 import { DnsModeSelect } from "@/components/DnsModeSelect";
@@ -14,82 +12,53 @@ import { SettingsIO } from "@/components/SettingsIO";
 import { AboutDialog } from "@/components/AboutDialog";
 import { UpdateChecker } from "@/components/UpdateChecker";
 import { useConnectionStore } from "@/state/connectionStore";
+import { Section } from "@/components/ui/panel-section";
 
-export function SettingsPanel({
-  open,
-  onToggle,
-}: {
-  open: boolean;
-  onToggle: () => void;
-}) {
+export function SettingsContent() {
   const captureMode = useConnectionStore((s) => s.profile.capture_mode);
   const showSystemProxy = captureMode === "proxy" || captureMode === "both";
   return (
-    <div className="w-full">
-      <GlassAccordion
-        icon={Settings}
-        label="Settings"
-        open={open}
-        onToggle={onToggle}
-      >
-        <div className="flex flex-col gap-2.5">
-          {/* System toggles */}
+    <div className="flex flex-col gap-4">
+      <Section title="System" icon={Monitor}>
+        <AlwaysOnTopToggle />
+        <AutoStartToggle />
+        <MinimizeOnStartupToggle />
+        <CloseToTrayToggle />
+      </Section>
+
+      <Section title="Network" icon={Network}>
+        <CaptureModeSelect />
+        {showSystemProxy && <SystemProxyToggle />}
+        {captureMode !== "proxy" && (
           <div className="flex flex-col gap-1.5">
-            <span className="text-[10px] font-medium tracking-wide text-muted-foreground uppercase">
-              System
-            </span>
-            <AlwaysOnTopToggle />
-            <AutoStartToggle />
-            <MinimizeOnStartupToggle />
-            <CloseToTrayToggle key={open ? "open" : "closed"} />
+            <span className="text-[11px] font-medium tracking-wide text-muted-foreground">DNS resolution</span>
+            <DnsModeSelect />
           </div>
+        )}
+      </Section>
 
-          {/* Network */}
-          <Separator className="bg-border" />
-          <div className="flex flex-col gap-1.5">
-            <span className="text-[10px] font-medium tracking-wide text-muted-foreground uppercase">
-              Network
-            </span>
-            <CaptureModeSelect />
-            {showSystemProxy && <SystemProxyToggle />}
-            {captureMode !== "proxy" && (
-              <div className="flex flex-col gap-1.5">
-                <span className="text-[10px] text-muted-foreground">DNS resolution</span>
-                <DnsModeSelect />
-              </div>
-            )}
+      <Section title="Appearance" icon={Palette}>
+        <div className="flex items-center justify-between gap-3">
+          <div className="flex items-center gap-3">
+            <ThemeToggle />
+            <ColorTheme />
           </div>
-
-          {/* Appearance */}
-          <Separator className="bg-border" />
-          <div className="flex flex-col gap-2">
-            <span className="text-[10px] font-medium tracking-wide text-muted-foreground uppercase">
-              Appearance
-            </span>
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-3">
-                <ThemeToggle />
-                <ColorTheme />
-              </div>
-              <SettingsIO />
-            </div>
-          </div>
-
-          {/* About & Updates */}
-          <Separator className="bg-border" />
-          <div className="flex flex-col gap-2">
-            <span className="text-[10px] font-medium tracking-wide text-muted-foreground uppercase">
-              About
-            </span>
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-2">
-                <AboutDialog />
-              </div>
-              <UpdateChecker />
-            </div>
-          </div>
+          <SettingsIO />
         </div>
-      </GlassAccordion>
+      </Section>
+
+      <Section title="About" icon={Info}>
+        <div className="flex items-center justify-between gap-3">
+          <AboutDialog />
+          <UpdateChecker />
+        </div>
+      </Section>
     </div>
   );
+}
+
+// Back-compat shim
+export function SettingsPanel(props: { open: boolean; onToggle: () => void }) {
+  void props;
+  return <SettingsContent />;
 }

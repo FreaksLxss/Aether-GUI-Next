@@ -17,17 +17,17 @@ export function LeakBanner() {
   return (
     <motion.div
       role="alert"
-      initial={{ opacity: 0, y: -12, scale: 0.98 }}
+      initial={{ opacity: 0, y: -10, scale: 0.99 }}
       animate={{ opacity: 1, y: 0, scale: 1 }}
       transition={SPRING_FAST}
-      className="glass-strong flex w-full items-start gap-2.5 rounded-xl bg-status-error/10 px-3 py-2.5 shadow-glass ring-1 ring-inset ring-status-error/50"
+      className="flex w-full items-start gap-2.5 rounded-xl bg-status-error/[0.09] px-3 py-2.5 ring-1 ring-status-error/20"
     >
-      <ShieldAlert size={16} className="mt-0.5 shrink-0 text-status-error" />
+      <ShieldAlert size={15} className="mt-0.5 shrink-0 text-status-error" />
       <div className="min-w-0 flex-1">
-        <p className="text-xs font-semibold text-status-error">
+        <p className="text-[11px] font-semibold tracking-wide text-status-error">
           Leak detected — your real IP is visible
         </p>
-        <p className="mt-0.5 text-[12px] text-foreground/80">
+        <p className="mt-0.5 text-[11px] leading-relaxed text-foreground/80">
           The tunnel isn&apos;t masking your traffic. Disconnect now so nothing
           else goes out directly.
         </p>
@@ -35,9 +35,9 @@ export function LeakBanner() {
           <Button
             size="sm"
             onClick={() => void disconnect()}
-            className="h-6 gap-1.5 bg-status-error px-2.5 text-[10px] text-white hover:opacity-85"
+            className="h-7 gap-1.5 bg-status-error px-2.5 text-[11px] text-white hover:bg-status-error/90"
           >
-            <Unplug size={10} />
+            <Unplug size={11} />
             Disconnect now
           </Button>
           <Button
@@ -45,9 +45,9 @@ export function LeakBanner() {
             variant="ghost"
             onClick={() => void runPublicIpCheck()}
             disabled={loading}
-            className="h-6 gap-1 px-2 text-[10px] text-foreground/80 hover:text-foreground"
+            className="h-7 gap-1 px-2 text-[11px] text-foreground/75 hover:text-foreground"
           >
-            <RefreshCw size={10} className={loading ? "anim-spin" : ""} />
+            <RefreshCw size={11} className={loading ? "anim-spin" : ""} />
             Re-check
           </Button>
         </div>

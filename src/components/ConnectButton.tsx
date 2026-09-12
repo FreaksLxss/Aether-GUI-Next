@@ -1,12 +1,13 @@
-import { useEffect, useRef, useState } from "react";
+import { lazy, Suspense, useEffect, useRef, useState } from "react";
 import { AnimatePresence, motion, type Variants } from "motion/react";
 import { AlertTriangle, Check, Loader2, Power } from "lucide-react";
 import { useConnectionStore } from "@/state/connectionStore";
 import { useWindowFocused } from "@/state/windowFocus";
 import type { ConnectionStatus } from "@/types/connection";
-import MagicRings from "@/components/MagicRings";
 import { cn } from "@/lib/utils";
 import { SPRING_FAST } from "@/lib/motion";
+
+const MagicRings = lazy(() => import("@/components/MagicRings"));
 
 type Phase = "idle" | "connecting" | "connected" | "error";
 
@@ -80,36 +81,46 @@ export function ConnectButton() {
   const [winSize, setWinSize] = useState({ w: window.innerWidth, h: window.innerHeight });
   const [accent, setAccent] = useState({ primary: "#f2711c", secondary: "#fbbf24" });
 
+  // Center is state but updated only on mount, resize/orientation (rAF-throttled),
+  // and once when phase enters "connecting" — no per-frame rAF loop.
   useEffect(() => {
     const el = wrapRef.current;
     if (!el) return;
-    const read = () => {
+    const updateCenter = () => {
       const rect = el.getBoundingClientRect();
       setCenter({ x: rect.left + rect.width / 2, y: rect.top + rect.height / 2 });
     };
-    read();
+    updateCenter();
+    let rafId = 0;
+    let pending = false;
     const onResize = () => {
-      read();
-      setWinSize({ w: window.innerWidth, h: window.innerHeight });
+      if (pending) return;
+      pending = true;
+      rafId = requestAnimationFrame(() => {
+        pending = false;
+        updateCenter();
+        setWinSize({ w: window.innerWidth, h: window.innerHeight });
+      });
     };
     window.addEventListener("resize", onResize);
-    return () => window.removeEventListener("resize", onResize);
+    window.addEventListener("orientationchange", onResize);
+    return () => {
+      window.removeEventListener("resize", onResize);
+      window.removeEventListener("orientationchange", onResize);
+      if (rafId) cancelAnimationFrame(rafId);
+    };
   }, []);
 
+  // Accent + center snapshot once when entering connecting (not each frame).
   useEffect(() => {
     if (phase !== "connecting") return;
     const el = wrapRef.current;
-    if (!el) return;
-    const raw = getAccentColor();
-    setAccent({ primary: raw, secondary: lightenHex(raw, 0.35) });
-    let raf: number;
-    const tick = () => {
+    if (el) {
       const rect = el.getBoundingClientRect();
       setCenter({ x: rect.left + rect.width / 2, y: rect.top + rect.height / 2 });
-      raf = requestAnimationFrame(tick);
-    };
-    raf = requestAnimationFrame(tick);
-    return () => cancelAnimationFrame(raf);
+    }
+    const raw = getAccentColor();
+    setAccent({ primary: raw, secondary: lightenHex(raw, 0.35) });
   }, [phase]);
 
   const playState = { animationPlayState: focused ? ("running" as const) : ("paused" as const) };
@@ -138,24 +149,26 @@ export function ConnectButton() {
             exit={{ opacity: 0 }}
             transition={{ duration: 0.5, ease: "easeInOut" }}
           >
-            <MagicRings
-              color={accent.primary}
-              colorTwo={accent.secondary}
-              speed={1.5}
-              ringCount={3}
-              attenuation={document.documentElement.classList.contains("light") ? 14 : 8}
-              lineThickness={1}
-              baseRadius={0.10}
-              radiusStep={0.09}
-              scaleRate={0.1}
-              opacity={document.documentElement.classList.contains("light") ? 0.45 : 0.9}
-              noiseAmount={0}
-              rotation={15}
-              ringGap={1.3}
-              fadeIn={1}
-              fadeOut={0.4}
-              parallax={0.1}
-            />
+            <Suspense fallback={null}>
+              <MagicRings
+                color={accent.primary}
+                colorTwo={accent.secondary}
+                speed={1.5}
+                ringCount={3}
+                attenuation={document.documentElement.classList.contains("light") ? 14 : 8}
+                lineThickness={1}
+                baseRadius={0.10}
+                radiusStep={0.09}
+                scaleRate={0.1}
+                opacity={document.documentElement.classList.contains("light") ? 0.45 : 0.9}
+                noiseAmount={0}
+                rotation={15}
+                ringGap={1.3}
+                fadeIn={1}
+                fadeOut={0.4}
+                parallax={0.1}
+              />
+            </Suspense>
           </motion.div>
         )}
       </AnimatePresence>
@@ -173,34 +186,37 @@ export function ConnectButton() {
           variants={SHAKE_VARIANTS}
           className="group relative z-10 flex size-40 cursor-pointer items-center justify-center rounded-full outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background motion-reduce:transition-none"
         >
-          {/* Frosted glass disc */}
+          {/* Disc material — opaque tonal surface, hairline ring; glass only via subtle inner highlight */}
           <span
             aria-hidden
-            className="glass absolute inset-0 rounded-full shadow-glass"
+            className="absolute inset-0 rounded-full bg-surface-2 ring-1 ring-border"
           />
-          {/* Inner status tint */}
+          <span
+            aria-hidden
+            className="absolute inset-0 rounded-full bg-gradient-to-b from-white/[0.04] to-transparent pointer-events-none"
+          />
+          {/* Inner status tint — restrained, never full glow at idle */}
           <span
             aria-hidden
             className={cn(
               "absolute inset-0 rounded-full transition-colors duration-300",
               phase === "connected"
-                ? "bg-primary/10"
+                ? "bg-primary/[0.09]"
                 : phase === "connecting"
-                  ? "bg-status-connecting/10"
+                  ? "bg-status-connecting/[0.08]"
                   : phase === "error"
-                    ? "bg-status-error/10"
-                    : "bg-white/[0.02]",
+                    ? "bg-status-error/[0.08]"
+                    : "bg-transparent",
             )}
           />
-          {/* Status glow ring */}
+          {/* Status ring — hairline, not halo */}
           <span
             aria-hidden
             className={cn(
-              "absolute rounded-full transition-colors duration-500",
-              phase === "connected" ? "inset-0" : "-inset-1",
-              phase === "connected" && "ring-1 ring-primary/30",
-              phase === "connecting" && "ring-2 ring-status-connecting/40",
-              phase === "error" && "ring-2 ring-status-error/40",
+              "absolute inset-0 rounded-full transition-colors duration-500",
+              phase === "connected" && "ring-1 ring-primary/25",
+              phase === "connecting" && "ring-1 ring-status-connecting/30",
+              phase === "error" && "ring-1 ring-status-error/30",
             )}
           />
           <AnimatePresence mode="wait">
