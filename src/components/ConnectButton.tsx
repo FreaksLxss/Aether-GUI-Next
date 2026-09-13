@@ -184,22 +184,22 @@ export function ConnectButton() {
           transition={SPRING_FAST}
           animate={phase === "error" ? "error" : "rest"}
           variants={SHAKE_VARIANTS}
-          className="group relative z-10 flex size-40 cursor-pointer items-center justify-center rounded-full outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background motion-reduce:transition-none"
+          className="corner-round group relative z-10 flex size-40 cursor-pointer items-center justify-center rounded-full outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background motion-reduce:transition-none"
         >
           {/* Disc material — opaque tonal surface, hairline ring; glass only via subtle inner highlight */}
           <span
             aria-hidden
-            className="absolute inset-0 rounded-full bg-surface-2 ring-1 ring-border"
+            className="corner-round absolute inset-0 rounded-full bg-surface-2 ring-1 ring-border"
           />
           <span
             aria-hidden
-            className="absolute inset-0 rounded-full bg-gradient-to-b from-white/[0.04] to-transparent pointer-events-none"
+            className="corner-round absolute inset-0 rounded-full bg-gradient-to-b from-white/[0.04] to-transparent pointer-events-none"
           />
           {/* Inner status tint — restrained, never full glow at idle */}
           <span
             aria-hidden
             className={cn(
-              "absolute inset-0 rounded-full transition-colors duration-300",
+              "corner-round absolute inset-0 rounded-full transition-colors duration-300",
               phase === "connected"
                 ? "bg-primary/[0.09]"
                 : phase === "connecting"
@@ -213,7 +213,7 @@ export function ConnectButton() {
           <span
             aria-hidden
             className={cn(
-              "absolute inset-0 rounded-full transition-colors duration-500",
+              "corner-round absolute inset-0 rounded-full transition-colors duration-500",
               phase === "connected" && "ring-1 ring-primary/25",
               phase === "connecting" && "ring-1 ring-status-connecting/30",
               phase === "error" && "ring-1 ring-status-error/30",

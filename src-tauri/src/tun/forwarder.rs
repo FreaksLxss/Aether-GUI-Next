@@ -13,6 +13,7 @@ use std::time::Duration;
 use super::adapter::TunAdapter;
 use super::dns;
 use crate::aether::profiles::DnsMode;
+use crate::traffic;
 
 // ─── Flow tracking ────────────────────────────────────────────────────
 
@@ -236,6 +237,7 @@ fn handle_tcp_packet(
                 let data = tcp.payload().to_vec();
                 let _ = f.stream.write_all(&data);
                 let _ = f.stream.flush();
+                traffic::record_tx(data.len() as u64);
             }
 
             // FIN from client
@@ -428,6 +430,7 @@ fn relay_socks_to_tun(state: Arc<Mutex<ForwarderState>>, key: FlowKey, adapter: 
         };
 
         // Send data to TUN client
+        traffic::record_rx(n as u64);
         let data = &buf[..n];
         let (server_seq, client_seq) = {
             let st = state.lock();

@@ -390,3 +390,13 @@ pub async fn get_public_ip(app: AppHandle, through_tunnel: bool) -> Option<crate
     let profile = aether::profiles::load(&app);
     crate::net::fetch_public_info(through_tunnel, &profile.bind_address).await
 }
+
+#[tauri::command]
+pub fn get_traffic_stats() -> crate::traffic::TrafficStats {
+    crate::traffic::snapshot()
+}
+
+#[tauri::command]
+pub fn get_active_connections() -> Vec<crate::traffic::ActiveConn> {
+    crate::traffic::active_connections()
+}

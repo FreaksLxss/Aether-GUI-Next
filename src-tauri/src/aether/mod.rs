@@ -159,6 +159,7 @@ pub fn start_connect(
         // independent of whatever happened on a previous, unrelated attempt.
         mgr.retry_count = 0;
     }
+    crate::traffic::reset();
     let _ = app.emit(STATUS_EVENT, &ConnectionState::Launching);
 
     spawn_and_monitor(app, manager, binary, data_dir, profile)
@@ -289,6 +290,7 @@ fn handle_unexpected_failure(
         // OS proxy (if the user turned it on) would now point at a port with
         // nothing listening, breaking every browser. Drop it.
         crate::sysproxy::disable_if_main();
+        crate::traffic::reset();
         set_state_and_emit(
             &app,
             &manager,
@@ -321,6 +323,7 @@ fn handle_unexpected_failure(
                 return;
             }
         }
+        crate::traffic::reset();
         set_state_and_emit(&app, &manager, ConnectionState::Launching);
         // spawn_and_monitor already lands its own failure in Error/retry —
         // nothing further to do with its Result here.
@@ -566,6 +569,7 @@ pub fn request_disconnect(
         // Mid-backoff: the retry thread checks user_requested_stop (just set
         // above) before respawning, so setting the flag is enough — there is
         // no process to wait on, so reflect Idle immediately.
+        crate::traffic::reset();
         set_state_and_emit(app, manager, ConnectionState::Idle);
         return Ok(());
     }
@@ -594,6 +598,7 @@ pub fn request_disconnect(
                 // isn't left pointing at a dead SOCKS port when the user
                 // disconnects.
                 crate::sysproxy::disable_if_main();
+                crate::traffic::reset();
                 set_state_and_emit(&app, &manager, ConnectionState::Idle);
                 return;
             }

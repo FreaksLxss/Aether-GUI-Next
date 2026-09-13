@@ -25,6 +25,9 @@ export type CaptureMode = "proxy" | "tun" | "both";
 /** How DNS is resolved when TUN mode is active. */
 export type DnsMode = "forward" | "direct";
 
+/** Aether ≥2.0.0: built-in Tor (arti) mode — separate from IP Changer Tor (9050). */
+export type EngineTorMode = "disabled" | "tor" | "tor-reverse" | "tor-only";
+
 export interface ConnectionProfile {
   protocol: Protocol;
   scan_mode: ScanMode;
@@ -92,6 +95,31 @@ export interface ConnectionProfile {
   zt_access_token: string | null;
   /** Aether ≥1.5.0: route HTTP/HTTPS through the organization's Gateway proxy (--gateway). */
   zt_gateway: boolean;
+  /** Aether ≥2.0.0: two MASQUE hops (like gool for MASQUE). --mim */
+  mim: boolean;
+  /** Aether ≥2.0.0: --mim-peers outer:port,inner:port or auto. null = scan both. */
+  mim_peers: string | null;
+  /** Aether ≥2.0.0: QUIC v2 probe before HTTP/3. Default true (on). false = --no-quic-v2. */
+  quic_v2: boolean;
+  /** Aether ≥2.0.0: firewall mark --mark / AETHER_MARK, Linux/Android only, SO_MARK, needs CAP_NET_ADMIN. */
+  fw_mark: string | null;
+  /** Aether ≥2.0.0: built-in Tor (arti) mode — port 1820, separate from IP Changer Tor (9050). */
+  engine_tor_mode: EngineTorMode;
+  engine_tor_bind: string | null;
+  engine_tor_dir: string | null;
+  engine_tor_bridges: string[];
+  engine_tor_bridges_file: string | null;
+  engine_tor_no_bridges: boolean;
+  engine_tor_pt: string | null;
+  engine_tor_pt_dir: string | null;
+  engine_tor_country: string | null;
+  engine_tor_direct_secs: number | null;
+  engine_tor_stall_secs: number | null;
+  /** Aether ≥2.0.0: env-only proxy tuning (no flag) */
+  max_clients: number | null;
+  half_close_secs: number | null;
+  tcp_keepalive_secs: number | null;
+  tcp_connect_secs: number | null;
 }
 
 export interface LogLine {
@@ -115,4 +143,20 @@ export interface ConnectionHistoryEntry {
   timestamp: number;
   duration_secs: number;
   success: boolean;
+}
+
+export interface ActiveConn {
+  pid: number;
+  exe: string;
+  local: string;
+  remote: string;
+  state: string;
+  proto: string;
+}
+
+export interface TrafficStats {
+  tx_bytes: number;
+  rx_bytes: number;
+  tx_rate: number;
+  rx_rate: number;
 }

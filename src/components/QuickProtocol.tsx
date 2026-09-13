@@ -55,7 +55,7 @@ export function QuickProtocol() {
       <span className="px-1 text-[10px] font-medium tracking-widest text-muted-foreground/60 uppercase">
         Protocol
       </span>
-      <div className="flex gap-1 rounded-[14px] bg-surface-2 p-1.5 ring-1 ring-border">
+      <div className="flex gap-1 rounded-[35px] bg-surface-2 p-1.5 ring-1 ring-border">
         {OPTIONS.map((o) => {
           const Icon = o.icon;
           const active = protocol === o.value;
@@ -75,7 +75,7 @@ export function QuickProtocol() {
                   aria-label={tip}
                   whileTap={{ scale: 0.97 }}
                   transition={SPRING_FAST}
-                  className={`relative flex min-w-0 flex-1 items-center justify-center gap-1 overflow-hidden rounded-[10px] px-1.5 py-2 text-[10px] leading-none outline-none select-none disabled:opacity-50 disabled:pointer-events-none focus-visible:ring-1 focus-visible:ring-primary focus-visible:ring-inset ${
+                  className={`relative flex min-w-0 flex-1 items-center justify-center gap-1 overflow-hidden rounded-[35px] px-1.5 py-2 text-[10px] leading-none outline-none select-none disabled:opacity-50 disabled:pointer-events-none focus-visible:ring-1 focus-visible:ring-primary focus-visible:ring-inset ${
                     active
                       ? "font-medium text-foreground"
                       : "text-muted-foreground hover:text-foreground"
@@ -85,7 +85,7 @@ export function QuickProtocol() {
                     <motion.span
                       layoutId="quick-protocol-pill"
                       transition={PILL_SPRING}
-                      className="absolute inset-0 overflow-hidden rounded-[10px] bg-card shadow-[0_2px_10px_-6px_rgba(0,0,0,0.45),0_1px_3px_-1px_rgba(0,0,0,0.35),inset_0_1px_0_0_rgba(255,255,255,0.06)] ring-1 ring-border"
+                      className="absolute inset-0 overflow-hidden rounded-[35px] bg-card shadow-[0_2px_10px_-6px_rgba(0,0,0,0.45),0_1px_3px_-1px_rgba(0,0,0,0.35),inset_0_1px_0_0_rgba(255,255,255,0.06)] ring-1 ring-border"
                       aria-hidden
                     />
                   )}

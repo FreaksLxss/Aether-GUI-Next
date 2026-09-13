@@ -175,9 +175,13 @@ fn handle_plain_http(
         if upstream.write_all(head).is_err() {
             return;
         }
+        crate::traffic::record_tx(head.len() as u64);
         let tail = std::mem::take(&mut leftover);
-        if upstream.write_all(&tail).is_err() {
-            return;
+        if !tail.is_empty() {
+            if upstream.write_all(&tail).is_err() {
+                return;
+            }
+            crate::traffic::record_tx(tail.len() as u64);
         }
         relay(client, upstream);
         return;
@@ -200,16 +204,21 @@ fn handle_plain_http(
     if upstream.write_all(&rewritten).is_err() {
         return;
     }
+    crate::traffic::record_tx(rewritten.len() as u64);
     let tail = std::mem::take(&mut leftover);
-    if upstream.write_all(&tail).is_err() {
-        return;
+    if !tail.is_empty() {
+        if upstream.write_all(&tail).is_err() {
+            return;
+        }
+        crate::traffic::record_tx(tail.len() as u64);
     }
     relay(client, upstream);
 }
 
-/// Echo bytes in both directions until one side closes. The loop handles
-/// keep-alive naturally: whatever the client writes next still flows across,
-/// and the response of the moment still flows back.
+/// Echo bytes in both directions until one side closes. Counts every chunk
+/// immediately so `aether://traffic` ticks live instead of only at close.
+/// The loop handles keep-alive naturally: whatever the client writes next
+/// still flows across, and the response of the moment still flows back.
 fn relay(client: TcpStream, upstream: TcpStream) {
     let c1 = client.try_clone();
     let c2 = client.try_clone();
@@ -220,19 +229,37 @@ fn relay(client: TcpStream, upstream: TcpStream) {
     };
 
     let t1 = std::thread::spawn(move || {
-        let _ = pipe(c1, u1);
+        let _ = pipe_counted(c1, u1, true);
     });
     let t2 = std::thread::spawn(move || {
-        let _ = pipe(u2, c2);
+        let _ = pipe_counted(u2, c2, false);
     });
     let _ = t1.join();
     let _ = t2.join();
 }
 
-fn pipe(mut src: TcpStream, mut dst: TcpStream) -> io::Result<u64> {
-    let n = io::copy(&mut src, &mut dst)?;
+fn pipe_counted(mut src: TcpStream, mut dst: TcpStream, is_tx: bool) -> io::Result<u64> {
+    let mut buf = [0u8; 8192];
+    let mut total: u64 = 0;
+    loop {
+        let n = src.read(&mut buf)?;
+        if n == 0 {
+            break;
+        }
+        dst.write_all(&buf[..n])?;
+        total += n as u64;
+        if is_tx {
+            crate::traffic::record_tx(n as u64);
+        } else {
+            crate::traffic::record_rx(n as u64);
+        }
+    }
     let _ = dst.shutdown(std::net::Shutdown::Write);
-    Ok(n)
+    Ok(total)
+}
+
+fn pipe(mut src: TcpStream, mut dst: TcpStream) -> io::Result<u64> {
+    pipe_counted(src, dst, true)
 }
 
 // ─── Request head reading / parsing ─────────────────────────────────────

@@ -73,7 +73,7 @@ export function QuickConnect({ onMoreOptions }: { onMoreOptions: () => void }) {
       <span className="px-1 text-[10px] font-medium tracking-widest text-muted-foreground/60 uppercase">
         Tuning
       </span>
-      <div className="flex items-center gap-1 rounded-[14px] bg-surface-2 p-1.5 ring-1 ring-border">
+      <div className="flex items-center gap-1 rounded-[35px] bg-surface-2 p-1.5 ring-1 ring-border">
         <div className="flex flex-1 gap-1">
           {PRESETS.map((p) => {
             const Icon = p.icon;
@@ -94,7 +94,7 @@ export function QuickConnect({ onMoreOptions }: { onMoreOptions: () => void }) {
                     aria-label={tip}
                     whileTap={{ scale: 0.97 }}
                     transition={SPRING_FAST}
-                    className={`relative flex min-w-0 flex-1 flex-col items-center justify-center gap-1.5 overflow-hidden rounded-[10px] px-1.5 pb-3 pt-2.5 text-[10px] leading-none outline-none select-none disabled:opacity-50 disabled:pointer-events-none focus-visible:ring-1 focus-visible:ring-primary focus-visible:ring-inset ${
+                    className={`relative flex min-w-0 flex-1 flex-col items-center justify-center gap-1.5 overflow-hidden rounded-[35px] px-1.5 pb-3 pt-2.5 text-[10px] leading-none outline-none select-none disabled:opacity-50 disabled:pointer-events-none focus-visible:ring-1 focus-visible:ring-primary focus-visible:ring-inset ${
                       active
                         ? "font-semibold text-foreground"
                         : "font-medium text-muted-foreground hover:bg-foreground/[0.04] hover:text-foreground"
@@ -139,7 +139,7 @@ export function QuickConnect({ onMoreOptions }: { onMoreOptions: () => void }) {
           disabled={locked}
           title="More options"
           aria-label="More tuning options"
-          className="size-7 shrink-0 rounded-[10px] text-muted-foreground hover:bg-foreground/[0.06] hover:text-foreground active:scale-95"
+          className="size-7 shrink-0 rounded-[14px] text-muted-foreground hover:bg-foreground/[0.06] hover:text-foreground active:scale-95"
         >
           <ChevronRight size={13} />
         </Button>

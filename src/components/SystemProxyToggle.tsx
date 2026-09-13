@@ -39,7 +39,7 @@ export function SystemProxyToggle() {
 
   return (
     <div className="flex flex-col gap-0.5">
-      <div className="flex w-full items-center justify-between rounded-lg bg-black/15 px-3 py-2.5 ring-1 ring-white/[0.04] light:bg-black/[0.03] light:ring-black/[0.05]">
+      <div className="flex w-full items-center justify-between rounded-[35px] bg-black/15 px-3 py-2.5 ring-1 ring-white/[0.04] light:bg-black/[0.03] light:ring-black/[0.05]">
         <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
           <Globe size={12} />
           Set system proxy

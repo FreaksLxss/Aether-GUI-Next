@@ -1,6 +1,6 @@
 import { lazy, Suspense, useEffect, useLayoutEffect, useState } from "react";
 import { AnimatePresence, motion, MotionConfig } from "motion/react";
-import { Bookmark, Clock, Globe, Settings, Settings2 } from "lucide-react";
+import { AppWindow, Bookmark, Clock, Globe, Settings, Settings2 } from "lucide-react";
 import { ConnectButton } from "@/components/ConnectButton";
 import { ConnectionStatusLine } from "@/components/ConnectionStatusLine";
 import { ConnectionInfo } from "@/components/ConnectionInfo";
@@ -10,6 +10,8 @@ import { PacUrl } from "@/components/PacUrl";
 import { QuickConnect } from "@/components/QuickConnect";
 import { QuickProtocol } from "@/components/QuickProtocol";
 import { LeakBanner } from "@/components/LeakBanner";
+import { TrafficStats } from "@/components/TrafficStats";
+import { ActiveConnections } from "@/components/ActiveConnections";
 import { PanelDialog } from "@/components/PanelDialog";
 import { PanelSkeleton } from "@/components/ui/panel-skeleton";
 import { ErrorBoundary } from "@/components/ErrorBoundary";
@@ -41,6 +43,7 @@ import { CloseDialog } from "@/components/CloseDialog";
 import { Toaster } from "@/components/ui/sonner";
 import { OnboardingTour } from "@/components/OnboardingTour";
 import { ShortcutsDialog } from "@/components/ShortcutsDialog";
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { useSquircleClip } from "@/hooks/useSquircleMask";
 import { useWindowPersist } from "@/hooks/useWindowPersist";
 import { useKeyboardShortcuts } from "@/hooks/useKeyboardShortcuts";
@@ -53,15 +56,25 @@ export type AccordionPanel = PanelId | null;
 
 function MainScreen() {
   const isConnected = useConnectionStore((s) => s.status.state === "Connected");
+  const activeLen = useConnectionStore((s) => s.activeConns.length);
   const isLeaking = useConnectionStore(
     (s) => s.leakStatus === "leak" && s.status.state === "Connected",
   );
   const setScanMode = useConnectionStore((s) => s.setScanMode);
   const [panel, setPanel] = useState<PanelId | null>(null);
+  const [activeOpen, setActiveOpen] = useState(false);
   const [paletteOpen, setPaletteOpen] = useState(false);
   const [highlightScanMode, setHighlightScanMode] = useState(false);
 
   const paletteItems = usePaletteItems(setPanel);
+
+  useEffect(() => {
+    if (!isConnected) return;
+    const refresh = () => void useConnectionStore.getState().refreshActiveConns();
+    refresh();
+    const id = window.setInterval(refresh, 2000);
+    return () => clearInterval(id);
+  }, [isConnected]);
 
   useEffect(() => {
     const onToggle = () => setPaletteOpen((v) => !v);
@@ -106,6 +119,7 @@ function MainScreen() {
           }}
         />
         <PublicLocation key={isConnected ? "connected" : "disconnected"} />
+        <TrafficStats onOpenActive={() => setActiveOpen(true)} />
         <AnimatePresence>
           {isConnected && (
             <motion.div
@@ -142,6 +156,26 @@ function MainScreen() {
           </button>
         </p>
       </motion.div>
+
+      <Dialog open={activeOpen} onOpenChange={setActiveOpen}>
+        <DialogContent className="sm:max-w-[360px]" aria-describedby={undefined}>
+          <div className="rounded-xl bg-card px-3 py-3 ring-1 ring-border light:bg-white light:shadow-lg">
+            <DialogHeader className="mb-2 flex flex-row items-center justify-between gap-0 space-y-0 pr-6">
+              <div className="flex items-center gap-1.5">
+                <AppWindow size={11} className="shrink-0 text-muted-foreground/60" aria-hidden />
+                <DialogTitle className="text-[11px] font-medium tracking-widest uppercase text-muted-foreground/60">Active apps</DialogTitle>
+              </div>
+              {isConnected && (
+                <span className="text-[11px] tabular-nums text-muted-foreground/50">
+                  {activeLen} conns
+                </span>
+              )}
+            </DialogHeader>
+            <DialogDescription className="sr-only">Per-app connections through the tunnel.</DialogDescription>
+            <ActiveConnections compact />
+          </div>
+        </DialogContent>
+      </Dialog>
 
       <CommandPalette open={paletteOpen} onOpenChange={setPaletteOpen} items={paletteItems} />
       <OnboardingTour />

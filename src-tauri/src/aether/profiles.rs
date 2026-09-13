@@ -176,6 +176,34 @@ impl PerfLevel {
     }
 }
 
+/// Aether ≥2.0.0: built-in Tor (arti) mode. `Disabled` omits all `--tor*` flags.
+/// Engine listens on 127.0.0.1:1819 (WARP) + 127.0.0.1:1820 (Tor) when chained —
+///
+/// **Isolation invariant:** this is the engine's arti Tor (port 1820, aether://* events,
+/// profile.json) and is completely separate from `src-tauri/src/ip_changer.rs`
+/// `TorManager` (ports 9050/9051, ip-changer://* events, settings.json). Never
+/// import one into the other's module.
+#[derive(Serialize, Deserialize, Clone, Debug, PartialEq, Eq, Default)]
+#[serde(rename_all = "snake_case")]
+pub enum EngineTorMode {
+    #[default]
+    Disabled,
+    Tor,
+    TorReverse,
+    TorOnly,
+}
+
+impl EngineTorMode {
+    pub fn as_flag(&self) -> Option<&'static str> {
+        match self {
+            EngineTorMode::Disabled => None,
+            EngineTorMode::Tor => Some("--tor"),
+            EngineTorMode::TorReverse => Some("--tor-reverse"),
+            EngineTorMode::TorOnly => Some("--tor-only"),
+        }
+    }
+}
+
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, Eq)]
 pub struct ConnectionProfile {
     pub protocol: Protocol,
@@ -304,6 +332,51 @@ pub struct ConnectionProfile {
     /// proxy (`--gateway`).
     #[serde(default)]
     pub zt_gateway: bool,
+    // ── Aether ≥2.0.0 ──────────────────────────────────────────────
+    /// Two MASQUE hops (like gool for MASQUE). `--mim` flag, gated to Auto/Masque.
+    #[serde(default)]
+    pub mim: bool,
+    /// `--mim-peers outer:port,inner:port` or `auto`. One hop alone OK (scan finds other).
+    #[serde(default)]
+    pub mim_peers: Option<String>,
+    /// QUIC v2 opener probe before HTTP/3. Default on; false emits `--no-quic-v2` / AETHER_QUIC_V2=0. Ignored when MASQUE uses H2.
+    #[serde(default = "default_true")]
+    pub quic_v2: bool,
+    /// Firewall mark (`--mark`/`AETHER_MARK`) — Linux/Android only, SO_MARK, needs CAP_NET_ADMIN. Decimal or 0x hex.
+    #[serde(default)]
+    pub fw_mark: Option<String>,
+    /// Built-in Tor (arti) mode. Disabled omits all --tor* flags. See EngineTorMode doc.
+    #[serde(default)]
+    pub engine_tor_mode: EngineTorMode,
+    #[serde(default)]
+    pub engine_tor_bind: Option<String>,
+    #[serde(default)]
+    pub engine_tor_dir: Option<String>,
+    #[serde(default)]
+    pub engine_tor_bridges: Vec<String>,
+    #[serde(default)]
+    pub engine_tor_bridges_file: Option<String>,
+    #[serde(default)]
+    pub engine_tor_no_bridges: bool,
+    #[serde(default)]
+    pub engine_tor_pt: Option<String>,
+    #[serde(default)]
+    pub engine_tor_pt_dir: Option<String>,
+    #[serde(default)]
+    pub engine_tor_country: Option<String>,
+    #[serde(default)]
+    pub engine_tor_direct_secs: Option<u32>,
+    #[serde(default)]
+    pub engine_tor_stall_secs: Option<u32>,
+    // Env-only proxy tuning (no flag)
+    #[serde(default)]
+    pub max_clients: Option<u32>,
+    #[serde(default)]
+    pub half_close_secs: Option<u32>,
+    #[serde(default)]
+    pub tcp_keepalive_secs: Option<u32>,
+    #[serde(default)]
+    pub tcp_connect_secs: Option<u32>,
 }
 
 fn default_true() -> bool {
@@ -346,7 +419,7 @@ impl ConnectionProfile {
     /// "reconnect with last gateway?" question, which the GUI must never
     /// leave unanswered.
     pub fn as_args(&self) -> Vec<String> {
-        let mut args = Vec::with_capacity(10);
+        let mut args = Vec::with_capacity(24);
         match self.protocol {
             Protocol::Auto => {}
             Protocol::Masque => args.push("--masque".into()),
@@ -489,7 +562,101 @@ impl ConnectionProfile {
         if self.zt_gateway {
             args.push("--gateway".into());
         }
+        // ── Aether ≥2.0.0 ─────────────────────────────────────
+        // MASQUE-in-MASQUE: gated to Auto/Masque, like wiw_peers is gool-only.
+        if self.mim && matches!(self.protocol, Protocol::Auto | Protocol::Masque) {
+            args.push("--mim".into());
+            if let Some(ref peers) = self.mim_peers {
+                let v = peers.trim();
+                if !v.is_empty() {
+                    if v.eq_ignore_ascii_case("auto") {
+                        args.push("--mim-peers".into());
+                        args.push("auto".into());
+                    } else {
+                        let entries: Vec<&str> = v.split(',').map(str::trim).filter(|s| !s.is_empty()).collect();
+                        if !entries.is_empty() && entries.iter().all(|s| s.parse::<std::net::SocketAddr>().is_ok()) {
+                            args.push("--mim-peers".into());
+                            args.push(entries.join(","));
+                        }
+                    }
+                }
+            }
+        }
+        // QUIC v2: default on, omitted when true; false emits --no-quic-v2. Skipped when H2 (TCP) active.
+        if !self.quic_v2 && !self.masque_http2 {
+            args.push("--no-quic-v2".into());
+        }
+        // --mark: Linux/Android only.
+        #[cfg(any(target_os = "linux", target_os = "android"))]
+        {
+            if let Some(ref m) = self.fw_mark {
+                let t = m.trim();
+                if !t.is_empty() && validate_mark(t).is_ok() {
+                    args.push("--mark".into());
+                    args.push(t.into());
+                }
+            }
+        }
+        // Built-in Tor (arti) — isolated from ip_changer Tor (9050).
+        if let Some(flag) = self.engine_tor_mode.as_flag() {
+            args.push(flag.into());
+            if let Some(ref b) = self.engine_tor_bind {
+                let t = b.trim();
+                if !t.is_empty() && t.parse::<std::net::SocketAddr>().is_ok() {
+                    args.push("--tor-bind".into());
+                    args.push(t.into());
+                }
+            }
+            if let Some(ref d) = self.engine_tor_dir {
+                let t = d.trim();
+                if !t.is_empty() {
+                    args.push("--tor-dir".into());
+                    args.push(t.into());
+                }
+            }
+            for bridge in &self.engine_tor_bridges {
+                let t = bridge.trim();
+                if !t.is_empty() {
+                    args.push("--tor-bridge".into());
+                    args.push(t.into());
+                }
+            }
+            if let Some(ref f) = self.engine_tor_bridges_file {
+                let t = f.trim();
+                if !t.is_empty() {
+                    args.push("--tor-bridges".into());
+                    args.push(t.into());
+                }
+            }
+            if self.engine_tor_no_bridges {
+                args.push("--no-tor-bridges".into());
+            }
+            if let Some(ref pt) = self.engine_tor_pt {
+                let t = pt.trim();
+                if !t.is_empty() {
+                    args.push("--tor-pt".into());
+                    args.push(t.into());
+                }
+            }
+            if let Some(ref d) = self.engine_tor_pt_dir {
+                let t = d.trim();
+                if !t.is_empty() {
+                    args.push("--tor-pt-dir".into());
+                    args.push(t.into());
+                }
+            }
+        }
         args
+    }
+}
+
+fn validate_mark(s: &str) -> Result<u32, String> {
+    let t = s.trim();
+    if t.is_empty() { return Err("empty mark".into()); }
+    if let Some(hex) = t.strip_prefix("0x").or_else(|| t.strip_prefix("0X")) {
+        u32::from_str_radix(hex, 16).map_err(|_| format!("invalid fw_mark hex: {s}"))
+    } else {
+        t.parse::<u32>().map_err(|_| format!("invalid fw_mark: {s}"))
     }
 }
 
@@ -737,6 +904,112 @@ mod tests {
         p.wiw_peers = Some("162.159.192.1:2408,188.114.96.1".into());
         assert!(!p.as_args().iter().any(|a| a == "--wiw-peers"));
     }
+
+    // ── Aether ≥2.0.0 ──────────────────────────────────────────
+    #[test]
+    fn default_omits_new_flags() {
+        let args = ConnectionProfile::default().as_args();
+        for f in ["--mim", "--mim-peers", "--no-quic-v2", "--tor", "--tor-reverse", "--tor-only", "--mark"] {
+            assert!(!args.iter().any(|a| a == f), "unexpected {f} in {args:?}");
+        }
+    }
+
+    #[test]
+    fn mim_emits_and_omits_when_not_masque() {
+        let mut p = ConnectionProfile::default();
+        p.mim = true;
+        // Auto/Masque emit
+        assert!(p.as_args().iter().any(|a| a == "--mim"));
+        p.protocol = Protocol::Masque;
+        assert!(p.as_args().iter().any(|a| a == "--mim"));
+        p.protocol = Protocol::Wireguard;
+        assert!(!p.as_args().iter().any(|a| a == "--mim"), "mim leaked for wg");
+        p.protocol = Protocol::Gool;
+        assert!(!p.as_args().iter().any(|a| a == "--mim"), "mim leaked for gool");
+    }
+
+    #[test]
+    fn mim_peers_auto_and_list() {
+        let mut p = ConnectionProfile::default();
+        p.mim = true;
+        p.mim_peers = Some("auto".into());
+        let args = p.as_args();
+        let i = args.iter().position(|a| a == "--mim-peers").expect("missing --mim-peers for auto");
+        assert_eq!(args[i + 1], "auto");
+        p.mim_peers = Some(" 162.159.192.1:2408, 188.114.96.1:2408 ".into());
+        let args = p.as_args();
+        let i = args.iter().position(|a| a == "--mim-peers").unwrap();
+        assert_eq!(args[i + 1], "162.159.192.1:2408,188.114.96.1:2408");
+        p.mim_peers = Some("162.159.192.1:2408".into());
+        assert!(p.as_args().iter().any(|a| a == "--mim-peers"));
+        // without port dropped
+        p.mim_peers = Some("162.159.192.1".into());
+        assert!(!p.as_args().iter().any(|a| a == "--mim-peers"));
+    }
+
+    #[test]
+    fn quic_v2_default_omits_flag() {
+        let p = ConnectionProfile::default();
+        assert!(p.quic_v2);
+        assert!(!p.as_args().iter().any(|a| a == "--no-quic-v2"));
+    }
+
+    #[test]
+    fn quic_v2_false_emits_no_quic() {
+        let mut p = ConnectionProfile::default();
+        p.quic_v2 = false;
+        assert!(p.as_args().iter().any(|a| a == "--no-quic-v2"));
+        // when H2 active, probe is irrelevant — no flag
+        p.masque_http2 = true;
+        assert!(!p.as_args().iter().any(|a| a == "--no-quic-v2"));
+    }
+
+    #[test]
+    fn fw_mark_validate() {
+        assert!(validate_mark("100").is_ok());
+        assert!(validate_mark("0x64").is_ok());
+        assert!(validate_mark("0XFF").is_ok());
+        assert!(validate_mark("abc").is_err());
+        assert!(validate_mark("").is_err());
+    }
+
+    #[test]
+    fn engine_tor_modes_emit_correct_flag() {
+        let mut p = ConnectionProfile::default();
+        for (mode, flag) in [(EngineTorMode::Tor, "--tor"), (EngineTorMode::TorReverse, "--tor-reverse"), (EngineTorMode::TorOnly, "--tor-only")] {
+            p.engine_tor_mode = mode;
+            assert!(p.as_args().iter().any(|a| a == flag), "missing {flag}");
+        }
+        p.engine_tor_mode = EngineTorMode::Disabled;
+        assert!(!p.as_args().iter().any(|a| a == "--tor"));
+        assert!(!p.as_args().iter().any(|a| a == "--tor-reverse"));
+        assert!(!p.as_args().iter().any(|a| a == "--tor-only"));
+    }
+
+    #[test]
+    fn tor_reverse_rejects_wg() {
+        let mut p = ConnectionProfile::default();
+        p.engine_tor_mode = EngineTorMode::TorReverse;
+        p.protocol = Protocol::Wireguard;
+        assert!(validate(&p).is_err());
+        p.protocol = Protocol::Gool;
+        assert!(validate(&p).is_err());
+        p.protocol = Protocol::Masque;
+        assert!(validate(&p).is_ok());
+    }
+
+    #[test]
+    fn old_profile_json_gets_new_defaults() {
+        let json = r#"{"protocol":"auto","scan_mode":"turbo","ip_version":"v4","quick_reconnect":true,"masque_http2":false}"#;
+        let p: ConnectionProfile = serde_json::from_str(json).unwrap();
+        assert!(!p.mim);
+        assert_eq!(p.mim_peers, None);
+        assert!(p.quic_v2);
+        assert_eq!(p.fw_mark, None);
+        assert_eq!(p.engine_tor_mode, EngineTorMode::Disabled);
+        assert_eq!(p.engine_tor_bridges, Vec::<String>::new());
+        assert_eq!(p.max_clients, None);
+    }
 }
 
 impl Default for ConnectionProfile {
@@ -774,6 +1047,25 @@ impl Default for ConnectionProfile {
             zt_access_secret: None,
             zt_access_token: None,
             zt_gateway: false,
+            mim: false,
+            mim_peers: None,
+            quic_v2: true,
+            fw_mark: None,
+            engine_tor_mode: EngineTorMode::Disabled,
+            engine_tor_bind: None,
+            engine_tor_dir: None,
+            engine_tor_bridges: Vec::new(),
+            engine_tor_bridges_file: None,
+            engine_tor_no_bridges: false,
+            engine_tor_pt: None,
+            engine_tor_pt_dir: None,
+            engine_tor_country: None,
+            engine_tor_direct_secs: None,
+            engine_tor_stall_secs: None,
+            max_clients: None,
+            half_close_secs: None,
+            tcp_keepalive_secs: None,
+            tcp_connect_secs: None,
         }
     }
 }
@@ -826,6 +1118,32 @@ pub fn validate(p: &ConnectionProfile) -> Result<(), String> {
         if ms > 10_000 {
             return Err("route_sniff_ms too large (max 10000)".into());
         }
+    }
+    // mim_peers: allow "auto" alone, else comma host:port
+    if let Some(ref m) = p.mim_peers {
+        let v = m.trim();
+        if !v.is_empty() && !v.eq_ignore_ascii_case("auto") {
+            for seg in v.split(',').map(str::trim).filter(|x| !x.is_empty()) {
+                seg.parse::<SocketAddr>().map_err(|_| format!("invalid mim_peers entry: {seg}"))?;
+            }
+        }
+    }
+    if let Some(ref mark) = p.fw_mark {
+        let t = mark.trim();
+        if !t.is_empty() {
+            validate_mark(t).map_err(|e| format!("invalid fw_mark: {e}"))?;
+        }
+    }
+    if let Some(ref b) = p.engine_tor_bind {
+        let t = b.trim();
+        if !t.is_empty() {
+            t.parse::<SocketAddr>().map_err(|_| format!("invalid engine_tor_bind: {b}"))?;
+        }
+    }
+    if p.engine_tor_mode == EngineTorMode::TorReverse
+        && matches!(p.protocol, Protocol::Wireguard | Protocol::Gool)
+    {
+        return Err("tor-reverse requires MASQUE (forces HTTP/2, incompatible with WireGuard/gool)".into());
     }
     Ok(())
 }

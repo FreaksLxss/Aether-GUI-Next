@@ -43,7 +43,10 @@ pub struct AppState {
     pub manager: Arc<Mutex<AetherManager>>,
     pub tun_manager: Arc<Mutex<TunManager>>,
     /// Independent Tor client for the IP Changer panel — shares no ports with
-    /// Aether (SOCKS 9050 vs 1819) and can run alongside or without it.
+    /// Aether's engine (SOCKS 9050 vs 1819) and can run alongside or without it.
+    /// Engine Tor (arti, when `engine_tor_mode != Disabled`) is a third
+    /// isolate: it lives inside the Aether binary/profile.json on 1820 and
+    /// shares no binary/dir/port/state with this TorManager.
     pub tor_manager: Arc<Mutex<TorManager>>,
 }
 

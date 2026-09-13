@@ -42,7 +42,7 @@ export function NotificationBanner() {
           transition={SPRING_FAST}
           className="w-full overflow-hidden"
         >
-          <div className="flex items-start gap-2.5 rounded-xl bg-surface-2 px-3 py-2.5 ring-1 ring-border">
+          <div className="flex items-start gap-2.5 rounded-[35px] bg-surface-2 px-3 py-2.5 ring-1 ring-border">
             <Bell size={14} className="mt-0.5 shrink-0 text-primary" />
             <div className="flex-1 min-w-0">
               <p className="text-xs font-medium text-foreground">

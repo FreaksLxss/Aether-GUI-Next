@@ -122,6 +122,42 @@ pub fn spawn(
     if !profile.auto_reprovision {
         cmd.env("AETHER_REPROVISION", "0");
     }
+    // Aether ≥2.0.0 — QUIC v2, fw mark, proxy tuning, engine Tor country/direct/stall
+    if !profile.quic_v2 {
+        cmd.env("AETHER_QUIC_V2", "0");
+    }
+    if let Some(ref m) = profile.fw_mark {
+        let t = m.trim();
+        if !t.is_empty() {
+            cmd.env("AETHER_MARK", t);
+        }
+    }
+    if let Some(v) = profile.max_clients {
+        cmd.env("AETHER_MAX_CLIENTS", v.to_string());
+    }
+    if let Some(v) = profile.half_close_secs {
+        cmd.env("AETHER_HALF_CLOSE_SECS", v.to_string());
+    }
+    if let Some(v) = profile.tcp_keepalive_secs {
+        cmd.env("AETHER_TCP_KEEPALIVE_SECS", v.to_string());
+    }
+    if let Some(v) = profile.tcp_connect_secs {
+        cmd.env("AETHER_TCP_CONNECT_SECS", v.to_string());
+    }
+    if profile.engine_tor_mode != super::profiles::EngineTorMode::Disabled {
+        if let Some(ref cc) = profile.engine_tor_country {
+            let t = cc.trim();
+            if !t.is_empty() {
+                cmd.env("AETHER_TOR_COUNTRY", t);
+            }
+        }
+        if let Some(v) = profile.engine_tor_direct_secs {
+            cmd.env("AETHER_TOR_DIRECT_SECS", v.to_string());
+        }
+        if let Some(v) = profile.engine_tor_stall_secs {
+            cmd.env("AETHER_TOR_STALL_SECS", v.to_string());
+        }
+    }
 
     let child = pair
         .slave

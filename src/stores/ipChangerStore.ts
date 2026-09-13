@@ -1,5 +1,12 @@
 import { create } from "zustand";
 import { invoke } from "@tauri-apps/api/core";
+
+function isTauriEnvStore(): boolean {
+  try {
+    const w = window as unknown as Record<string, unknown>;
+    return !!w.__TAURI_INTERNALS__ || !!w.__TAURI__ || !!w.__TAURI_IPC__;
+  } catch { return false; }
+}
 import { listen } from "@tauri-apps/api/event";
 import type { LogLine, PublicInfo } from "@/types/connection";
 import type { AutoRotateConfig, TorSourceInfo, TorSocksAddr, TorStatus } from "@/types/ipChanger";
@@ -279,6 +286,7 @@ export const useIpChangerStore = create<IpChangerState>((set, get) => ({
 /** Subscribes to the backend's Tor status + log events for the app's whole
  * life (the events don't depend on the panel being open). */
 export async function initIpChangerListeners(): Promise<() => void> {
+  if (!isTauriEnvStore()) return () => {};
   const [unlistenStatus, unlistenLog] = await Promise.all([
     listen<TorStatus>("ip-changer://status", (e) => {
       const mapped = mapStatus(e.payload);

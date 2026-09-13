@@ -39,7 +39,7 @@ export function CaptureModeSelect() {
         if (v) setCaptureMode(v as CaptureMode);
       }}
       disabled={locked}
-      className="w-full gap-0.5 rounded-xl bg-black/25 p-1 ring-1 ring-inset ring-white/[0.06] light:bg-black/[0.04] light:ring-black/[0.06]"
+      className="w-full gap-0.5 rounded-[35px] bg-black/25 p-1 ring-1 ring-inset ring-white/[0.06] light:bg-black/[0.04] light:ring-black/[0.06]"
     >
       {(Object.keys(LABELS) as CaptureMode[]).map((mode) => {
         const disabled = DISABLED_MODES.includes(mode);

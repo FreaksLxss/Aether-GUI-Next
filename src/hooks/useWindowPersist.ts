@@ -2,8 +2,16 @@ import { useEffect } from "react";
 import { invoke } from "@tauri-apps/api/core";
 import { getCurrentWindow } from "@tauri-apps/api/window";
 
+function isTauriEnv2(): boolean {
+  try {
+    const w = window as unknown as Record<string, unknown>;
+    return !!w.__TAURI_INTERNALS__ || !!w.__TAURI__ || !!w.__TAURI_IPC__;
+  } catch { return false; }
+}
+
 export function useWindowPersist() {
   useEffect(() => {
+    if (!isTauriEnv2()) return;
     let debounced: ReturnType<typeof setTimeout> | null = null;
 
     const save = async () => {

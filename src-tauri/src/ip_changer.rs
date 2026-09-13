@@ -1,7 +1,9 @@
 //! Tor "IP Changer" — an independent, optional Tor client that rotates the
 //! user's public egress IP on demand.
 //!
-//! This is fully separate from Aether (which stays on its own SOCKS5 port).
+//! This is fully separate from Aether (SOCKS 1819) and from Aether's
+//! built-in engine Tor `arti` (SOCKS 1820, `ConnectionProfile::engine_tor_*`)
+//! — three isolates sharing no binary, dir, port, or store.
 //! Tor runs as a plain bundled subprocess on its own ports (SOCKS 9050,
 //! control 9051) and is managed through:
 //!   * command-line flags (no torrc file to ship or locate),

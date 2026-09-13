@@ -29,15 +29,22 @@ function record(next: boolean, src: string) {
   set(next);
 }
 
-try {
-  void listen<boolean>("app://focused", (e) => record(e.payload, "rust"));
-  void getCurrentWindow().onFocusChanged(({ payload }) => record(payload, "tauri"));
+function isTauriEnv(): boolean {
+  try {
+    const w = window as unknown as Record<string, unknown>;
+    return !!w.__TAURI_INTERNALS__ || !!w.__TAURI__ || !!w.__TAURI_IPC__;
+  } catch { return false; }
+}
+
+if (isTauriEnv()) {
+  listen<boolean>("app://focused", (e) => record(e.payload, "rust")).catch(() => {});
+  getCurrentWindow()
+    .onFocusChanged(({ payload }) => record(payload, "tauri"))
+    .catch(() => {});
   (window as unknown as { __focus?: object }).__focus = {
     state: () => focused,
     events: () => eventLog.slice(-10),
   };
-} catch {
-  // Not inside Tauri (plain-browser dev) — stays "focused".
 }
 
 export function useWindowFocused(): boolean {

@@ -26,7 +26,7 @@ export function IpVersionToggle() {
       }}
       disabled={locked}
       aria-label="IP version"
-      className="w-full gap-0.5 rounded-xl bg-black/25 p-1 ring-1 ring-white/[0.06]"
+      className="w-full gap-0.5 rounded-[35px] bg-black/25 p-1 ring-1 ring-white/[0.06]"
     >
       {(Object.keys(LABELS) as IpVersion[]).map((v) => (
         <ToggleGroupItem
@@ -34,7 +34,7 @@ export function IpVersionToggle() {
           value={v}
           size="sm"
           aria-label={LABELS[v]}
-          className="relative flex-1 rounded-lg py-1.5 text-[10px] font-medium text-muted-foreground/80 transition-colors duration-150 hover:text-foreground data-[state=on]:font-semibold data-[state=on]:text-primary-foreground"
+          className="relative flex-1 rounded-[35px] py-1.5 text-[10px] font-medium text-muted-foreground/80 transition-colors duration-150 hover:text-foreground data-[state=on]:font-semibold data-[state=on]:text-primary-foreground"
         >
           <SegIndicator active={v === ipVersion} groupId="ip-version" />
           <span className="relative z-10 tracking-wide">{LABELS[v]}</span>

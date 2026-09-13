@@ -4,6 +4,7 @@ mod commands;
 mod error;
 mod events;
 mod focus;
+mod traffic;
 mod history;
 mod httpproxy;
 mod ip_changer;
@@ -16,7 +17,7 @@ mod tun;
 mod updater;
 
 use state::AppState;
-use tauri::{Manager, WindowEvent};
+use tauri::{Emitter, Manager, WindowEvent};
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
@@ -59,6 +60,23 @@ pub fn run() {
             {
                 let state = app.state::<AppState>();
                 ip_changer::spawn_auto_rotate(app.handle().clone(), state.tor_manager.clone());
+            }
+            // Live traffic feed — emits aether://traffic ~1 Hz while connected.
+            {
+                let handle = app.handle().clone();
+                std::thread::spawn(move || loop {
+                    std::thread::sleep(std::time::Duration::from_millis(1000));
+                    let state = handle.state::<AppState>();
+                    let connected = matches!(
+                        state.manager.lock().unwrap().status(),
+                        crate::state::ConnectionState::Connected { .. }
+                    );
+                    if !connected {
+                        continue;
+                    }
+                    let stats = traffic::snapshot();
+                    let _ = handle.emit(events::TRAFFIC_EVENT, &stats);
+                });
             }
             // Restore the IP-changer's Tor engine choice (bundled vs system)
             // so the preference survives restarts.
@@ -179,6 +197,8 @@ pub fn run() {
             commands::is_tun_available,
             commands::get_tun_active,
             commands::get_public_ip,
+            commands::get_traffic_stats,
+            commands::get_active_connections,
             ip_changer::start_tor,
             ip_changer::stop_tor,
             ip_changer::rotate_ip,

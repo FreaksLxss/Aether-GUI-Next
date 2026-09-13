@@ -59,7 +59,7 @@ export function NoizeProfileToggle() {
         }}
         disabled={locked}
         aria-label="Obfuscation"
-        className="w-full gap-0.5 rounded-xl bg-black/25 p-1 ring-1 ring-white/[0.06]"
+        className="w-full gap-0.5 rounded-[35px] bg-black/25 p-1 ring-1 ring-white/[0.06]"
       >
         {(Object.keys(MASQUE_LABELS) as MasqueNoize[]).map((n) => (
           <Tooltip key={n}>
@@ -69,7 +69,7 @@ export function NoizeProfileToggle() {
                   value={n}
                   size="sm"
                   aria-label={MASQUE_LABELS[n]}
-                  className="relative w-full rounded-lg py-1.5 text-[10px] font-medium text-muted-foreground/80 transition-colors duration-150 hover:text-foreground data-[state=on]:font-semibold data-[state=on]:text-primary-foreground"
+                  className="relative w-full rounded-[35px] py-1.5 text-[10px] font-medium text-muted-foreground/80 transition-colors duration-150 hover:text-foreground data-[state=on]:font-semibold data-[state=on]:text-primary-foreground"
                 >
                   <SegIndicator active={n === masqueNoize} groupId="noize-masque" />
                   <span className="relative z-10 tracking-wide">{MASQUE_LABELS[n]}</span>
@@ -92,7 +92,7 @@ export function NoizeProfileToggle() {
       }}
       disabled={locked}
       aria-label="Obfuscation"
-      className="w-full gap-0.5 rounded-xl bg-black/25 p-1 ring-1 ring-white/[0.06]"
+      className="w-full gap-0.5 rounded-[35px] bg-black/25 p-1 ring-1 ring-white/[0.06]"
     >
       {(Object.keys(WG_LABELS) as WgNoize[]).map((n) => (
         <Tooltip key={n}>
@@ -102,7 +102,7 @@ export function NoizeProfileToggle() {
                 value={n}
                 size="sm"
                 aria-label={WG_LABELS[n]}
-                className="relative w-full rounded-lg py-1.5 text-[10px] font-medium text-muted-foreground/80 transition-colors duration-150 hover:text-foreground data-[state=on]:font-semibold data-[state=on]:text-primary-foreground"
+                className="relative w-full rounded-[35px] py-1.5 text-[10px] font-medium text-muted-foreground/80 transition-colors duration-150 hover:text-foreground data-[state=on]:font-semibold data-[state=on]:text-primary-foreground"
               >
                 <SegIndicator active={n === wgNoize} groupId="noize-wg" />
                 <span className="relative z-10 tracking-wide">{WG_LABELS[n]}</span>

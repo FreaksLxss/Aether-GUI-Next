@@ -41,7 +41,7 @@ export function GlassAccordion({
     <Collapsible open={open} onOpenChange={onToggle}>
       <div
         className={cn(
-          "rounded-xl transition-colors duration-200",
+          "rounded-[35px] transition-colors duration-200",
           open
             ? "bg-surface-2 ring-1 ring-border"
             : "bg-surface-2/80 ring-1 ring-border hover:bg-surface-2 hover:ring-foreground/10",
@@ -49,7 +49,7 @@ export function GlassAccordion({
       >
         <CollapsibleTrigger
           className={cn(
-            "group flex w-full cursor-pointer items-center gap-2 rounded-xl px-3 py-2.5 text-[11px] font-medium tracking-[0.08em] uppercase outline-none transition-colors duration-150 focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-inset",
+            "group flex w-full cursor-pointer items-center gap-2 rounded-[35px] px-3 py-2.5 text-[11px] font-medium tracking-[0.08em] uppercase outline-none transition-colors duration-150 focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-inset",
             open ? "text-foreground" : "text-muted-foreground hover:text-foreground",
           )}
         >

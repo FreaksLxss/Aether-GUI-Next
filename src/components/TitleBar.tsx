@@ -39,33 +39,33 @@ export function TitleBar() {
             </span>
           )}
         </div>
-        <div className="glass flex h-8 items-center gap-0.5 rounded-[14px] px-1 ring-1 ring-border">
+        <div className="glass flex h-9 items-center gap-0.5 rounded-[50px] px-1 ring-1 ring-border">
           <Button
             variant="ghost"
             size="icon"
-            className="size-7 rounded-full text-muted-foreground hover:bg-foreground/[0.06] hover:text-foreground active:scale-95 transition"
+            className="size-8 rounded-full text-muted-foreground hover:bg-foreground/[0.06] hover:text-foreground active:scale-95 transition"
             aria-label="Minimize"
             onClick={() => void tauriWindow()?.minimize()}
           >
-            <Minus className="size-3.5" />
+            <Minus className="size-4" />
           </Button>
           <Button
             variant="ghost"
             size="icon"
-            className="size-7 rounded-full text-muted-foreground hover:bg-foreground/[0.06] hover:text-foreground active:scale-95 transition"
+            className="size-8 rounded-full text-muted-foreground hover:bg-foreground/[0.06] hover:text-foreground active:scale-95 transition"
             aria-label="Maximize"
             onClick={() => void tauriWindow()?.toggleMaximize()}
           >
-            <Maximize2 className="size-3" />
+            <Maximize2 className="size-3.5" />
           </Button>
           <Button
             variant="ghost"
             size="icon"
-            className="size-7 rounded-full text-muted-foreground hover:bg-destructive/10 hover:text-destructive active:scale-95 transition"
+            className="size-8 rounded-full text-muted-foreground hover:bg-destructive/10 hover:text-destructive active:scale-95 transition"
             aria-label="Close"
             onClick={handleClose}
           >
-            <X className="size-3.5" />
+            <X className="size-4" />
           </Button>
         </div>
       </div>

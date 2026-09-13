@@ -3,6 +3,8 @@ use serde::Serialize;
 pub const STATUS_EVENT: &str = "aether://status";
 pub const LOG_EVENT: &str = "aether://log";
 
+/// Live TUN/HTTP-proxy traffic counters — `TrafficStats`.
+pub const TRAFFIC_EVENT: &str = "aether://traffic";
 /// Tor (IP Changer) status transitions — `TorStatus`, tagged `state`.
 pub const TOR_STATUS_EVENT: &str = "ip-changer://status";
 /// Tor stdout/stderr lines plus GUI-generated messages. Same `LogEvent` shape

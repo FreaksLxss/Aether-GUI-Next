@@ -20,7 +20,7 @@ export function LeakBanner() {
       initial={{ opacity: 0, y: -10, scale: 0.99 }}
       animate={{ opacity: 1, y: 0, scale: 1 }}
       transition={SPRING_FAST}
-      className="flex w-full items-start gap-2.5 rounded-xl bg-status-error/[0.09] px-3 py-2.5 ring-1 ring-status-error/20"
+      className="flex w-full items-start gap-2.5 rounded-[35px] bg-status-error/[0.09] px-3 py-2.5 ring-1 ring-status-error/20"
     >
       <ShieldAlert size={15} className="mt-0.5 shrink-0 text-status-error" />
       <div className="min-w-0 flex-1">

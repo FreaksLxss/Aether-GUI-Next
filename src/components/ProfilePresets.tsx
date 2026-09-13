@@ -34,6 +34,25 @@ export function ProfilePresetsContent() {
   const setZtAccessSecret = useConnectionStore((s) => s.setZtAccessSecret);
   const setZtAccessToken = useConnectionStore((s) => s.setZtAccessToken);
   const setZtGateway = useConnectionStore((s) => s.setZtGateway);
+  const setMim = useConnectionStore((s) => s.setMim);
+  const setMimPeers = useConnectionStore((s) => s.setMimPeers);
+  const setQuicV2 = useConnectionStore((s) => s.setQuicV2);
+  const setFwMark = useConnectionStore((s) => s.setFwMark);
+  const setEngineTorMode = useConnectionStore((s) => s.setEngineTorMode);
+  const setEngineTorBind = useConnectionStore((s) => s.setEngineTorBind);
+  const setEngineTorDir = useConnectionStore((s) => s.setEngineTorDir);
+  const setEngineTorBridges = useConnectionStore((s) => s.setEngineTorBridges);
+  const setEngineTorBridgesFile = useConnectionStore((s) => s.setEngineTorBridgesFile);
+  const setEngineTorNoBridges = useConnectionStore((s) => s.setEngineTorNoBridges);
+  const setEngineTorPt = useConnectionStore((s) => s.setEngineTorPt);
+  const setEngineTorPtDir = useConnectionStore((s) => s.setEngineTorPtDir);
+  const setEngineTorCountry = useConnectionStore((s) => s.setEngineTorCountry);
+  const setEngineTorDirectSecs = useConnectionStore((s) => s.setEngineTorDirectSecs);
+  const setEngineTorStallSecs = useConnectionStore((s) => s.setEngineTorStallSecs);
+  const setMaxClients = useConnectionStore((s) => s.setMaxClients);
+  const setHalfCloseSecs = useConnectionStore((s) => s.setHalfCloseSecs);
+  const setTcpKeepaliveSecs = useConnectionStore((s) => s.setTcpKeepaliveSecs);
+  const setTcpConnectSecs = useConnectionStore((s) => s.setTcpConnectSecs);
   const status = useConnectionStore((s) => s.status);
 
   const [presets, setPresets] = useState<ProfilePreset[]>([]);
@@ -76,6 +95,25 @@ export function ProfilePresetsContent() {
     setZtAccessSecret(p.profile.zt_access_secret ?? null);
     setZtAccessToken(p.profile.zt_access_token ?? null);
     setZtGateway(p.profile.zt_gateway ?? false);
+    setMim(p.profile.mim ?? false);
+    setMimPeers(p.profile.mim_peers ?? null);
+    setQuicV2(p.profile.quic_v2 ?? true);
+    setFwMark(p.profile.fw_mark ?? null);
+    setEngineTorMode(p.profile.engine_tor_mode ?? "disabled");
+    setEngineTorBind(p.profile.engine_tor_bind ?? null);
+    setEngineTorDir(p.profile.engine_tor_dir ?? null);
+    setEngineTorBridges(p.profile.engine_tor_bridges ?? []);
+    setEngineTorBridgesFile(p.profile.engine_tor_bridges_file ?? null);
+    setEngineTorNoBridges(p.profile.engine_tor_no_bridges ?? false);
+    setEngineTorPt(p.profile.engine_tor_pt ?? null);
+    setEngineTorPtDir(p.profile.engine_tor_pt_dir ?? null);
+    setEngineTorCountry(p.profile.engine_tor_country ?? null);
+    setEngineTorDirectSecs(p.profile.engine_tor_direct_secs ?? null);
+    setEngineTorStallSecs(p.profile.engine_tor_stall_secs ?? null);
+    setMaxClients(p.profile.max_clients ?? null);
+    setHalfCloseSecs(p.profile.half_close_secs ?? null);
+    setTcpKeepaliveSecs(p.profile.tcp_keepalive_secs ?? null);
+    setTcpConnectSecs(p.profile.tcp_connect_secs ?? null);
     toast.success(`Applied "${p.name}"`);
   };
 
@@ -128,13 +166,13 @@ export function ProfilePresetsContent() {
             onKeyDown={(e) => {
               if (e.key === "Enter") void savePreset();
             }}
-            className="h-9 flex-1 rounded-xl bg-black/20 font-mono text-[11px] ring-1 ring-inset ring-white/[0.07] placeholder:text-muted-foreground/50 focus-visible:ring-primary light:bg-black/[0.04] light:ring-black/10"
+            className="h-9 flex-1 rounded-[35px] bg-black/20 font-mono text-[11px] ring-1 ring-inset ring-white/[0.07] placeholder:text-muted-foreground/50 focus-visible:ring-primary light:bg-black/[0.04] light:ring-black/10"
           />
           <Button
             size="sm"
             onClick={() => void savePreset()}
             disabled={locked || !newName.trim()}
-            className="h-9 gap-1.5 rounded-xl px-3.5 text-xs font-medium shadow-[0_2px_10px_-4px_rgba(234,88,12,0.4)]"
+            className="h-9 gap-1.5 rounded-[35px] px-3.5 text-xs font-medium shadow-[0_2px_10px_-4px_rgba(234,88,12,0.4)]"
           >
             <Plus size={12} />
             Save
@@ -144,7 +182,7 @@ export function ProfilePresetsContent() {
 
       {/* list */}
       {presets.length === 0 ? (
-        <div className="flex flex-col items-center gap-2 rounded-2xl border-0 bg-card px-4 py-10 shadow-[0_16px_48px_-20px_rgba(0,0,0,0.75),0_8px_24px_-12px_rgba(0,0,0,0.55),inset_0_1px_0_0_rgba(255,255,255,0.06)] light:border light:border-dashed light:border-black/10 light:shadow-none text-muted-foreground">
+        <div className="flex flex-col items-center gap-2 rounded-[35px] border-0 bg-card px-4 py-10 shadow-[0_16px_48px_-20px_rgba(0,0,0,0.75),0_8px_24px_-12px_rgba(0,0,0,0.55),inset_0_1px_0_0_rgba(255,255,255,0.06)] light:border light:border-dashed light:border-black/10 light:shadow-none text-muted-foreground">
           <span className="flex size-9 items-center justify-center rounded-xl bg-white/[0.04] ring-1 ring-white/[0.05] light:bg-black/[0.04] light:ring-black/5">
             <Bookmark size={16} className="opacity-60" />
           </span>
@@ -152,13 +190,13 @@ export function ProfilePresetsContent() {
           <p className="max-w-[22ch] text-center text-[11px] leading-relaxed text-muted-foreground/60">Save a preset to snapshot the current profile and jump back to it later.</p>
         </div>
       ) : (
-        <div className="flex flex-col gap-2 rounded-2xl border-0 bg-card p-3 shadow-[0_16px_48px_-20px_rgba(0,0,0,0.75),0_8px_24px_-12px_rgba(0,0,0,0.55),inset_0_1px_0_0_rgba(255,255,255,0.06)] light:border light:border-black/[0.08] light:shadow-none">
+        <div className="flex flex-col gap-2 rounded-[35px] border-0 bg-card p-3 shadow-[0_16px_48px_-20px_rgba(0,0,0,0.75),0_8px_24px_-12px_rgba(0,0,0,0.55),inset_0_1px_0_0_rgba(255,255,255,0.06)] light:border light:border-black/[0.08] light:shadow-none">
           <span className="px-1 text-[11px] font-semibold tracking-[0.14em] text-muted-foreground/60 uppercase">Saved · {presets.length}</span>
           <div className="flex flex-col gap-1.5">
             {presets.map((p) => (
               <div
                 key={p.name}
-                className="group flex items-center justify-between gap-2 rounded-xl border border-white/[0.04] bg-black/15 px-3 py-2.5 ring-1 ring-white/[0.03] transition-colors hover:border-white/[0.07] hover:bg-black/20 light:border-black/[0.04] light:bg-black/[0.02] light:ring-black/[0.04] light:hover:bg-black/[0.04]"
+                className="group flex items-center justify-between gap-2 rounded-[35px] border border-white/[0.04] bg-black/15 px-3 py-2.5 ring-1 ring-white/[0.03] transition-colors hover:border-white/[0.07] hover:bg-black/20 light:border-black/[0.04] light:bg-black/[0.02] light:ring-black/[0.04] light:hover:bg-black/[0.04]"
               >
                 <button
                   onClick={() => applyPreset(p)}

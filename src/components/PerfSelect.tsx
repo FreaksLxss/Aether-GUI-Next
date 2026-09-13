@@ -30,12 +30,12 @@ export function PerfSelect({ id }: { id?: string }) {
     >
       <SelectTrigger
         id={id}
-        className="w-full justify-start gap-2 rounded-xl bg-black/20 px-3 py-5 text-xs font-medium text-foreground ring-1 ring-white/[0.07] transition-all duration-150 hover:bg-black/30 hover:ring-white/10 focus-visible:ring-primary disabled:opacity-50 [&>span]:flex-1 [&>span]:text-left [&>svg]:ml-auto"
+        className="w-full justify-start gap-2 rounded-[35px] bg-black/20 px-3 py-5 text-xs font-medium text-foreground ring-1 ring-white/[0.07] transition-all duration-150 hover:bg-black/30 hover:ring-white/10 focus-visible:ring-primary disabled:opacity-50 [&>span]:flex-1 [&>span]:text-left [&>svg]:ml-auto"
         aria-label="Performance"
       >
         <SelectValue />
       </SelectTrigger>
-      <SelectContent className="rounded-xl bg-surface-2 p-1 ring-1 ring-white/10">
+      <SelectContent className="rounded-[35px] bg-surface-2 p-1 ring-1 ring-white/10">
         {OPTIONS.map((opt) => (
           <SelectItem
             key={opt.value}

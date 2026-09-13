@@ -215,7 +215,7 @@ export function SettingsIO() {
             <DialogTitle className="text-sm">Import preview</DialogTitle>
             <DialogDescription className="text-xs">Review what will change before applying.</DialogDescription>
           </DialogHeader>
-          <div className="max-h-64 overflow-y-auto rounded-xl border border-border p-2">
+          <div className="max-h-64 overflow-y-auto rounded-[35px] border border-border p-2">
             {diffRows.length === 0 ? (
               <p className="py-4 text-center text-xs text-muted-foreground">No changes detected.</p>
             ) : (

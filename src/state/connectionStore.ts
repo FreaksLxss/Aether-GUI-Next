@@ -1,5 +1,12 @@
 import { create } from "zustand";
 import { invoke } from "@tauri-apps/api/core";
+
+function isTauriEnvStore(): boolean {
+  try {
+    const w = window as unknown as Record<string, unknown>;
+    return !!w.__TAURI_INTERNALS__ || !!w.__TAURI__ || !!w.__TAURI_IPC__;
+  } catch { return false; }
+}
 import { listen } from "@tauri-apps/api/event";
 import type {
   ConnectionProfile,
@@ -13,6 +20,9 @@ import type {
   CaptureMode,
   DnsMode,
   PublicInfo,
+  TrafficStats,
+  ActiveConn,
+  EngineTorMode,
 } from "@/types/connection";
 
 const MAX_LOG_LINES = 500;
@@ -75,6 +85,9 @@ interface ConnectionState {
    * "none" (tunnel is masking), "leak" (exit IP == direct IP), or
    * "unavailable" when no comparison was possible. */
   leakStatus: "none" | "leak" | "unavailable";
+  /** In-memory traffic totals + live rates; never persisted. Null until first snapshot. */
+  traffic: TrafficStats | null;
+  activeConns: ActiveConn[];
   connect: () => Promise<void>;
   disconnect: () => Promise<void>;
   setProtocol: (protocol: ConnectionProfile["protocol"]) => void;
@@ -106,6 +119,25 @@ interface ConnectionState {
   setZtAccessSecret: (zt_access_secret: string | null) => void;
   setZtAccessToken: (zt_access_token: string | null) => void;
   setZtGateway: (zt_gateway: boolean) => void;
+  setMim: (mim: boolean) => void;
+  setMimPeers: (mim_peers: string | null) => void;
+  setQuicV2: (quic_v2: boolean) => void;
+  setFwMark: (fw_mark: string | null) => void;
+  setEngineTorMode: (engine_tor_mode: EngineTorMode) => void;
+  setEngineTorBind: (engine_tor_bind: string | null) => void;
+  setEngineTorDir: (engine_tor_dir: string | null) => void;
+  setEngineTorBridges: (engine_tor_bridges: string[]) => void;
+  setEngineTorBridgesFile: (engine_tor_bridges_file: string | null) => void;
+  setEngineTorNoBridges: (engine_tor_no_bridges: boolean) => void;
+  setEngineTorPt: (engine_tor_pt: string | null) => void;
+  setEngineTorPtDir: (engine_tor_pt_dir: string | null) => void;
+  setEngineTorCountry: (engine_tor_country: string | null) => void;
+  setEngineTorDirectSecs: (engine_tor_direct_secs: number | null) => void;
+  setEngineTorStallSecs: (engine_tor_stall_secs: number | null) => void;
+  setMaxClients: (max_clients: number | null) => void;
+  setHalfCloseSecs: (half_close_secs: number | null) => void;
+  setTcpKeepaliveSecs: (tcp_keepalive_secs: number | null) => void;
+  setTcpConnectSecs: (tcp_connect_secs: number | null) => void;
   retryAfterSidecarError: () => void;
   loadHistory: () => Promise<void>;
   clearHistory: () => Promise<void>;
@@ -113,6 +145,7 @@ interface ConnectionState {
    * out the leak status. Safe to call any time; leak comparison only applies
    * while connected. */
   runPublicIpCheck: () => Promise<void>;
+  refreshActiveConns: () => Promise<void>;
   /** Re-read the persisted default profile into the store (e.g. after the
    * user imports settings from a file that changed the saved profile). */
   reloadProfile: () => Promise<void>;
@@ -156,6 +189,25 @@ export const useConnectionStore = create<ConnectionState>((set, get) => {
     zt_access_secret: null,
     zt_access_token: null,
     zt_gateway: false,
+    mim: false,
+    mim_peers: null,
+    quic_v2: true,
+    fw_mark: null,
+    engine_tor_mode: "disabled",
+    engine_tor_bind: null,
+    engine_tor_dir: null,
+    engine_tor_bridges: [],
+    engine_tor_bridges_file: null,
+    engine_tor_no_bridges: false,
+    engine_tor_pt: null,
+    engine_tor_pt_dir: null,
+    engine_tor_country: null,
+    engine_tor_direct_secs: null,
+    engine_tor_stall_secs: null,
+    max_clients: null,
+    half_close_secs: null,
+    tcp_keepalive_secs: null,
+    tcp_connect_secs: null,
   },
   logs: [],
   sidecarError: null,
@@ -167,6 +219,8 @@ export const useConnectionStore = create<ConnectionState>((set, get) => {
   publicIpLatencyMs: null,
   publicIpHistory: [],
   leakStatus: "unavailable",
+  traffic: null,
+  activeConns: [],
 
   connect: async () => {
     try {
@@ -293,6 +347,26 @@ export const useConnectionStore = create<ConnectionState>((set, get) => {
 
   setZtGateway: createPersistSetter("zt_gateway"),
 
+  setMim: createPersistSetter("mim"),
+  setMimPeers: (mim_peers) => { set((s) => ({ profile: { ...s.profile, mim_peers } })); schedulePersist(); },
+  setQuicV2: createPersistSetter("quic_v2"),
+  setFwMark: (fw_mark) => { set((s) => ({ profile: { ...s.profile, fw_mark } })); schedulePersist(); },
+  setEngineTorMode: createPersistSetter("engine_tor_mode"),
+  setEngineTorBind: (engine_tor_bind) => { set((s) => ({ profile: { ...s.profile, engine_tor_bind } })); schedulePersist(); },
+  setEngineTorDir: (engine_tor_dir) => { set((s) => ({ profile: { ...s.profile, engine_tor_dir } })); schedulePersist(); },
+  setEngineTorBridges: (engine_tor_bridges) => { set((s) => ({ profile: { ...s.profile, engine_tor_bridges } })); schedulePersist(); },
+  setEngineTorBridgesFile: (engine_tor_bridges_file) => { set((s) => ({ profile: { ...s.profile, engine_tor_bridges_file } })); schedulePersist(); },
+  setEngineTorNoBridges: createPersistSetter("engine_tor_no_bridges"),
+  setEngineTorPt: (engine_tor_pt) => { set((s) => ({ profile: { ...s.profile, engine_tor_pt } })); schedulePersist(); },
+  setEngineTorPtDir: (engine_tor_pt_dir) => { set((s) => ({ profile: { ...s.profile, engine_tor_pt_dir } })); schedulePersist(); },
+  setEngineTorCountry: (engine_tor_country) => { set((s) => ({ profile: { ...s.profile, engine_tor_country } })); schedulePersist(); },
+  setEngineTorDirectSecs: (engine_tor_direct_secs) => { set((s) => ({ profile: { ...s.profile, engine_tor_direct_secs } })); schedulePersist(); },
+  setEngineTorStallSecs: (engine_tor_stall_secs) => { set((s) => ({ profile: { ...s.profile, engine_tor_stall_secs } })); schedulePersist(); },
+  setMaxClients: (max_clients) => { set((s) => ({ profile: { ...s.profile, max_clients } })); schedulePersist(); },
+  setHalfCloseSecs: (half_close_secs) => { set((s) => ({ profile: { ...s.profile, half_close_secs } })); schedulePersist(); },
+  setTcpKeepaliveSecs: (tcp_keepalive_secs) => { set((s) => ({ profile: { ...s.profile, tcp_keepalive_secs } })); schedulePersist(); },
+  setTcpConnectSecs: (tcp_connect_secs) => { set((s) => ({ profile: { ...s.profile, tcp_connect_secs } })); schedulePersist(); },
+
   // Clears the fallback screen so the user can attempt Connect again (e.g.
   // after fixing a broken install) — the next connect() call will re-set
   // sidecarError if the binary is still missing.
@@ -345,6 +419,13 @@ export const useConnectionStore = create<ConnectionState>((set, get) => {
     return p;
   },
 
+  refreshActiveConns: async () => {
+    try {
+      const conns = await invoke<ActiveConn[]>("get_active_connections");
+      set({ activeConns: conns });
+    } catch {}
+  },
+
   reloadProfile: async () => {
     try {
       const profile = await invoke<ConnectionProfile>("get_default_profile");
@@ -369,6 +450,7 @@ const BUDGET_RE = /budget=(\d+)s/;
 
 /** Call once from App's top-level effect; returns a cleanup function. */
 export async function initConnectionListeners(): Promise<() => void> {
+  if (!isTauriEnvStore()) return () => {};
   // Log lines arrive fast during route scanning; flushing to the store per
   // line would mean an O(logs) array copy + a re-render each. Coalesce into
   // one store write per ~100ms instead.
@@ -393,13 +475,14 @@ export async function initConnectionListeners(): Promise<() => void> {
   // emit (Idle) on startup doesn't fire a spurious notification.
   let lastNotifiedState: string | null = useConnectionStore.getState().status.state;
 
-  const [unlistenStatus, unlistenLog] = await Promise.all([
+  const [unlistenStatus, unlistenLog, unlistenTraffic] = await Promise.all([
     listen<ConnectionStatus>("aether://status", (e) => {
       const newState = e.payload.state;
       useConnectionStore.setState({
         status: e.payload,
         // Fresh attempt — last attempt's budget no longer applies.
-        ...(e.payload.state === "Launching" ? { scanBudgetSecs: null } : {}),
+        ...(e.payload.state === "Launching" ? { scanBudgetSecs: null, traffic: null, activeConns: [] } : {}),
+        ...(e.payload.state === "Idle" || e.payload.state === "Error" ? { traffic: null, activeConns: [] } : {}),
       });
 
       // Send notifications on significant state changes (frontend-only)
@@ -421,6 +504,9 @@ export async function initConnectionListeners(): Promise<() => void> {
       pendingLogs.push(e.payload);
       flushTimer ??= setTimeout(flushLogs, 100);
     }),
+    listen<TrafficStats>("aether://traffic", (e) => {
+      useConnectionStore.setState({ traffic: e.payload });
+    }),
   ]);
 
   // Reconcile state in case the window reopened mid-session, and load the
@@ -428,11 +514,12 @@ export async function initConnectionListeners(): Promise<() => void> {
   // command touches the Aether binary, so a failure here is an IPC-layer
   // bug, not a sidecar problem — logged rather than shown as sidecarError.
   try {
-    const [status, profile] = await Promise.all([
+    const [status, profile, traffic] = await Promise.all([
       invoke<ConnectionStatus>("get_status"),
       invoke<ConnectionProfile>("get_default_profile"),
+      invoke<TrafficStats>("get_traffic_stats").catch(() => null as TrafficStats | null),
     ]);
-    useConnectionStore.setState({ status, profile });
+    useConnectionStore.setState({ status, profile, ...(traffic ? { traffic } : {}) });
   } catch (e) {
     console.error("Failed to load initial connection state:", e);
   }
@@ -440,6 +527,7 @@ export async function initConnectionListeners(): Promise<() => void> {
   return () => {
     unlistenStatus();
     unlistenLog();
+    unlistenTraffic();
     if (flushTimer !== null) clearTimeout(flushTimer);
   };
 }

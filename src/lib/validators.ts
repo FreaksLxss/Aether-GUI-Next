@@ -147,6 +147,76 @@ export const ztTeamSchema = z
     { message: "Team name must not contain spaces" },
   );
 
+// ── Aether ≥2.0.0 ─────────────────────────────────────────────
+export const mimPeersSchema = z
+  .string()
+  .nullable()
+  .refine(
+    (v) => {
+      if (v == null || v === "") return true;
+      const t = v.trim();
+      if (t.toLowerCase() === "auto") return true;
+      const entries = t.split(",").map((s) => s.trim()).filter(Boolean);
+      if (entries.length === 0) return true;
+      for (const e of entries) {
+        if (hostHasSpaces(e)) return false;
+        if (e.toLowerCase() === "auto") return false;
+        const colon = e.lastIndexOf(":");
+        if (colon === -1) return false;
+        const host = e.slice(0, colon);
+        const port = e.slice(colon + 1);
+        if (!host) return false;
+        if (!isValidPort(port)) return false;
+      }
+      return true;
+    },
+    { message: "Each MiM peer must be host:port or 'auto'" },
+  );
+
+export const fwMarkSchema = z
+  .string()
+  .nullable()
+  .refine(
+    (v) => {
+      if (v == null || v === "") return true;
+      const t = v.trim();
+      if (/^0x[0-9a-fA-F]+$/.test(t)) {
+        try { const n = parseInt(t.slice(2), 16); return n >= 0 && n <= 0xffffffff; } catch { return false; }
+      }
+      if (!/^\d+$/.test(t)) return false;
+      const n = Number(t);
+      return Number.isInteger(n) && n >= 0 && n <= 4294967295;
+    },
+    { message: "Mark must be 0..4294967295 or 0x hex" },
+  );
+
+export const engineTorBindSchema = z
+  .string()
+  .nullable()
+  .refine(
+    (v) => {
+      if (v == null || v === "") return true;
+      if (hostHasSpaces(v)) return false;
+      const colon = v.trim().lastIndexOf(":");
+      if (colon === -1) return false;
+      const host = v.trim().slice(0, colon);
+      const port = v.trim().slice(colon + 1);
+      return host.length > 0 && isValidPort(port);
+    },
+    { message: "Must be host:port" },
+  );
+
+export const countrySchema = z
+  .string()
+  .nullable()
+  .refine(
+    (v) => {
+      if (v == null || v === "") return true;
+      return /^[A-Za-z]{2}$/.test(v.trim());
+    },
+    { message: "Country must be 2-letter code" },
+  );
+
 // ── imperative validators (return error string or null) ─────────────
 
 export function validateBindAddress(v: string): string | null {
@@ -195,6 +265,27 @@ export function validateRouteSniffMs(v: number | null): string | null {
   return null;
 }
 
+export function validateMimPeers(v: string | null): string | null {
+  const res = mimPeersSchema.safeParse(v);
+  if (res.success) return null;
+  return res.error.issues[0]?.message ?? "Invalid MiM peers";
+}
+export function validateFwMark(v: string | null): string | null {
+  const res = fwMarkSchema.safeParse(v);
+  if (res.success) return null;
+  return res.error.issues[0]?.message ?? "Invalid mark";
+}
+export function validateEngineTorBind(v: string | null): string | null {
+  const res = engineTorBindSchema.safeParse(v);
+  if (res.success) return null;
+  return res.error.issues[0]?.message ?? "Invalid Tor bind address";
+}
+export function validateCountry(v: string | null): string | null {
+  const res = countrySchema.safeParse(v);
+  if (res.success) return null;
+  return res.error.issues[0]?.message ?? "Invalid country";
+}
+
 // ── connectionProfileSchema for SettingsIO import ──────────────────
 
 export const connectionProfileSchema = z
@@ -228,6 +319,25 @@ export const connectionProfileSchema = z
     zt_access_secret: z.string().nullable(),
     zt_access_token: z.string().nullable(),
     zt_gateway: z.boolean(),
+    mim: z.boolean(),
+    mim_peers: z.string().nullable(),
+    quic_v2: z.boolean(),
+    fw_mark: z.string().nullable(),
+    engine_tor_mode: z.enum(["disabled", "tor", "tor-reverse", "tor-only"]),
+    engine_tor_bind: z.string().nullable(),
+    engine_tor_dir: z.string().nullable(),
+    engine_tor_bridges: z.array(z.string()),
+    engine_tor_bridges_file: z.string().nullable(),
+    engine_tor_no_bridges: z.boolean(),
+    engine_tor_pt: z.string().nullable(),
+    engine_tor_pt_dir: z.string().nullable(),
+    engine_tor_country: z.string().nullable(),
+    engine_tor_direct_secs: z.number().nullable(),
+    engine_tor_stall_secs: z.number().nullable(),
+    max_clients: z.number().nullable(),
+    half_close_secs: z.number().nullable(),
+    tcp_keepalive_secs: z.number().nullable(),
+    tcp_connect_secs: z.number().nullable(),
   })
   .passthrough();
 
