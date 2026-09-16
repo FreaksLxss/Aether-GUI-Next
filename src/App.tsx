@@ -3,7 +3,6 @@ import { AnimatePresence, motion, MotionConfig } from "motion/react";
 import { AppWindow, Bookmark, Clock, Globe, Settings, Settings2 } from "lucide-react";
 import { ConnectButton } from "@/components/ConnectButton";
 import { ConnectionStatusLine } from "@/components/ConnectionStatusLine";
-import { ConnectionInfo } from "@/components/ConnectionInfo";
 import { PublicLocation } from "@/components/PublicLocation";
 import { CopyProxyButton } from "@/components/CopyProxyButton";
 import { PacUrl } from "@/components/PacUrl";
@@ -130,10 +129,11 @@ function MainScreen() {
               transition={SPRING}
               className="flex flex-col items-center gap-3"
             >
-              <ConnectionInfo />
-              <div className="flex gap-1.5">
-                <CopyProxyButton />
-                <PacUrl />
+              <div className="flex flex-col gap-1.5 rounded-[35px] bg-surface-2 px-3 py-2.5 ring-1 ring-border">
+                <div className="flex flex-wrap items-center gap-1.5">
+                  <CopyProxyButton />
+                  <PacUrl />
+                </div>
               </div>
             </motion.div>
           )}

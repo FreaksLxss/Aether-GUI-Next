@@ -1,5 +1,5 @@
 import { useEffect, useRef } from "react";
-import { Terminal, Trash2 } from "lucide-react";
+import { Terminal, Trash2, Copy } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useIpChangerStore } from "@/stores/ipChangerStore";
 
@@ -28,17 +28,30 @@ export function LogViewer() {
     <div className="flex flex-col gap-2">
       <div className="flex items-center justify-between">
         <span className="text-[11px] font-medium tracking-wide text-muted-foreground">Live log</span>
-        <Button
-          variant="ghost"
-          size="icon-xs"
-          onClick={clearLogs}
-          disabled={logs.length === 0}
-          aria-label="Clear Tor logs"
-          title="Clear logs"
-          className="rounded-lg"
-        >
-          <Trash2 size={12} />
-        </Button>
+        <div className="flex items-center gap-1">
+          <Button
+            variant="ghost"
+            size="icon-xs"
+            onClick={() => navigator.clipboard?.writeText(logs.map(l => `${TIME_FMT.format(l.timestamp)} ${l.line}`).join("\n"))}
+            disabled={logs.length === 0}
+            aria-label="Copy all logs"
+            title="Copy all logs"
+            className="rounded-lg"
+          >
+            <Copy size={12} />
+          </Button>
+          <Button
+            variant="ghost"
+            size="icon-xs"
+            onClick={clearLogs}
+            disabled={logs.length === 0}
+            aria-label="Clear Tor logs"
+            title="Clear logs"
+            className="rounded-lg"
+          >
+            <Trash2 size={12} />
+          </Button>
+        </div>
       </div>
       <div
         ref={scrollRef}
@@ -47,7 +60,7 @@ export function LogViewer() {
           stickToBottom.current =
             el.scrollHeight - el.scrollTop - el.clientHeight < 24;
         }}
-        className="h-28 overflow-y-auto rounded-xl bg-[#0a0a0c] px-3 py-2.5 font-mono text-[11px] leading-[1.45] text-muted-foreground ring-1 ring-white/[0.06] light:bg-[#f6f6f5] light:ring-black/10"
+        className="h-36 overflow-y-auto rounded-xl bg-[#0a0a0c] px-3 py-2.5 font-mono text-[11px] leading-[1.45] text-muted-foreground ring-1 ring-white/[0.06] light:bg-[#f6f6f5] light:ring-black/10"
       >
         {logs.length === 0 ? (
           <div className="flex flex-col items-center gap-2 py-8 text-center" role="status">
