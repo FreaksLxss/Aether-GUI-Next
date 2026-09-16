@@ -16,7 +16,6 @@ export function LogViewer() {
   const scrollRef = useRef<HTMLDivElement>(null);
   const stickToBottom = useRef(true);
 
-  // Auto-follow output; if the user scrolled back manually, let them stay.
   useEffect(() => {
     const el = scrollRef.current;
     if (el && stickToBottom.current) {

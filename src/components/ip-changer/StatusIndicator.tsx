@@ -1,6 +1,4 @@
-import { motion } from "motion/react";
 import { cn } from "@/lib/utils";
-import { SPRING_FAST } from "@/lib/motion";
 import { useIpChangerStore } from "@/stores/ipChangerStore";
 
 const DOT: Record<string, { label: string; cls: string; pulse?: boolean }> = {
@@ -18,13 +16,7 @@ export function StatusIndicator() {
   const meta = DOT[status] ?? DOT.stopped;
 
   return (
-    <motion.div
-      key={status}
-      initial={{ opacity: 0, y: -4 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={SPRING_FAST}
-      className="flex items-center gap-2 px-1 text-[12px] text-muted-foreground"
-    >
+    <div className="flex items-center gap-2 px-1 text-[12px] text-muted-foreground">
       <span className="relative flex size-2">
         {meta.pulse && (
           <span
@@ -34,6 +26,6 @@ export function StatusIndicator() {
         <span className={cn("relative inline-flex size-2 rounded-full", meta.cls)} />
       </span>
       <span className="font-medium text-foreground/90">{meta.label}</span>
-    </motion.div>
+    </div>
   );
 }

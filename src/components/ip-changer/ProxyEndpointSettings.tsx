@@ -53,9 +53,6 @@ export function ProxyEndpointSettings() {
   );
 }
 
-/** System-proxy switch for the IP-changer. If any other proxy is already set
- * (the main tunnel's, say) it refuses and warns instead of silently stealing
- * the shared Windows proxy key. */
 export function IpProxyToggle() {
   const running = useIpChangerStore((s) => s.status === "running");
   const ipProxyEnabled = useIpChangerStore((s) => s.ipProxyEnabled);

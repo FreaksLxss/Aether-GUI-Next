@@ -7,7 +7,6 @@ import { cn } from "@/lib/utils";
 // Shared row label + tooltip used in Advanced and other panels
 export function FieldRow({
   label,
-  tooltip,
   htmlFor,
   children,
 }: {
@@ -16,34 +15,18 @@ export function FieldRow({
   htmlFor?: string;
   children: ReactNode;
 }) {
-  const labelNode = (
-    <>
-      {label}
-      {tooltip && (
-        <Tooltip>
-          <TooltipTrigger
-            aria-label={`About ${label}`}
-            className="rounded-full p-0.5 text-muted-foreground/70 hover:bg-white/5 hover:text-muted-foreground"
-          >
-            <Info size={12} />
-          </TooltipTrigger>
-          <TooltipContent className="max-w-[260px] leading-relaxed">{tooltip}</TooltipContent>
-        </Tooltip>
-      )}
-    </>
-  );
   return (
     <div className="flex flex-col gap-1.5">
       {htmlFor ? (
         <label
           htmlFor={htmlFor}
-          className="flex w-fit items-center gap-1.5 text-[11px] font-medium tracking-wide text-muted-foreground"
+          className="flex items-center gap-1.5 text-[11px] font-medium tracking-wide text-muted-foreground"
         >
-          {labelNode}
+          {label}
         </label>
       ) : (
-        <div className="flex w-fit items-center gap-1.5 text-[11px] font-medium tracking-wide text-muted-foreground">
-          {labelNode}
+        <div className="flex items-center gap-1.5 text-[11px] font-medium tracking-wide text-muted-foreground">
+          {label}
         </div>
       )}
       {children}
@@ -64,7 +47,7 @@ export function Section({
   className?: string;
 }) {
   return (
-    <div className={cn("flex flex-col gap-3 min-w-0 overflow-hidden", className)}>
+    <div className={cn("flex flex-col gap-3 min-w-0 w-full", className)}>
       <span className="inline-flex w-fit items-center gap-1.5 rounded-full border-0 bg-card px-1.5 py-1 shadow-[0_6px_20px_-10px_rgba(0,0,0,0.7),0_1px_4px_rgba(0,0,0,0.3),inset_0_1px_0_0_rgba(255,255,255,0.06)] light:border light:border-black/10 light:bg-white light:shadow-none">
         <span className="flex size-[18px] items-center justify-center rounded-full bg-white/[0.09] ring-1 ring-white/10 light:bg-black/5 light:ring-black/5">
           <Icon size={10} className="text-muted-foreground" />
@@ -73,7 +56,7 @@ export function Section({
           {title}
         </span>
       </span>
-      <div className="flex flex-col gap-3 min-w-0 overflow-hidden rounded-2xl border-0 bg-card p-3.5 shadow-[0_16px_48px_-20px_rgba(0,0,0,0.75),0_8px_24px_-12px_rgba(0,0,0,0.55),inset_0_1px_0_0_rgba(255,255,255,0.06)] light:border light:border-black/[0.08] light:shadow-none">
+      <div className="flex flex-col gap-3 overflow-hidden rounded-2xl border-0 bg-card p-3.5 shadow-[0_16px_48px_-20px_rgba(0,0,0,0.75),0_8px_24px_-12px_rgba(0,0,0,0.55),inset_0_1px_0_0_rgba(255,255,255,0.06)] light:border light:border-black/[0.08] light:shadow-none">
         {children}
       </div>
     </div>
@@ -108,4 +91,3 @@ export function SwitchRow({
     </div>
   );
 }
-

@@ -32,7 +32,7 @@ export function IpChangerContent() {
   }, []);
 
   return (
-    <div className="flex min-w-0 max-w-full flex-col gap-4 overflow-hidden">
+    <div className="flex flex-col gap-4 overflow-hidden">
       <Section title="Status" icon={Activity}>
         <StatusIndicator />
         <IpDisplay />

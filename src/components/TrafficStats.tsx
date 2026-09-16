@@ -33,7 +33,6 @@ export function TrafficStats({ onOpenActive }: { onOpenActive?: () => void }) {
   const total = txBytes + rxBytes;
   const txRate = traffic?.tx_rate ?? 0;
   const rxRate = traffic?.rx_rate ?? 0;
-  const hasTraffic = total > 0;
 
   const addr = isConnected && "socks_addr" in status ? status.socks_addr : "127.0.0.1:1819";
   const protocol = profile.protocol === "auto" ? "MASQUE" : profile.protocol.toUpperCase();
@@ -47,7 +46,7 @@ export function TrafficStats({ onOpenActive }: { onOpenActive?: () => void }) {
     <div
       style={{ borderRadius: 35 }}
       className={cn(
-        "flex w-full max-w-[320px] flex-col gap-3 bg-surface-2 px-5 py-4 ring-1 ring-border overflow-clip",
+        "flex w-full max-w-[320px] flex-col gap-3 bg-surface-2 px-5 py-4 ring-1 ring-border overflow-hidden",
         !isConnected && "opacity-60",
       )}
       role="status"

@@ -1,7 +1,5 @@
-import { AnimatePresence, motion } from "motion/react";
-import { LoaderCircle, MapPin } from "lucide-react";
 import { useIpChangerStore } from "@/stores/ipChangerStore";
-import { SPRING } from "@/lib/motion";
+import { LoaderCircle, MapPin } from "lucide-react";
 import { countryName, flagEmoji } from "@/lib/location";
 
 function formatRotated(t: number | null): string {
@@ -32,20 +30,11 @@ export function IpDisplay() {
     : null;
 
   return (
-    <div className="flex min-w-0 max-w-full flex-col gap-1.5 overflow-hidden rounded-xl border border-white/[0.06] bg-black/20 px-3 py-3 ring-1 ring-white/[0.04] light:border-black/5 light:bg-black/[0.02] light:ring-black/[0.03]">
+    <div className="flex flex-col gap-1.5 overflow-hidden rounded-xl border border-white/[0.06] bg-black/20 px-3 py-3 ring-1 ring-white/[0.04] light:border-black/5 light:bg-black/[0.02] light:ring-black/[0.03]">
       <div className="flex items-center gap-2">
-        <AnimatePresence mode="popLayout" initial={false}>
-          <motion.span
-            key={currentIp?.ip ?? "empty"}
-            initial={{ opacity: 0, y: 4 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: -4 }}
-            transition={SPRING}
-            className="min-w-0 truncate font-mono text-[16px] font-semibold tracking-tight text-foreground tabular-nums"
-          >
-            {currentIp?.ip ?? "–"}
-          </motion.span>
-        </AnimatePresence>
+        <span className="min-w-0 truncate font-mono text-[16px] font-semibold tracking-tight text-foreground tabular-nums">
+          {currentIp?.ip ?? "–"}
+        </span>
         {ipChecking && (
           <LoaderCircle size={13} className="anim-spin text-muted-foreground/70" />
         )}
@@ -53,7 +42,7 @@ export function IpDisplay() {
 
       {bootstrapping ? (
         <div className="flex flex-col gap-1.5">
-          <div className="flex items-center justify-between text-[10px] text-muted-foreground/80">
+          <div className="flex items-center justify-between gap-2 text-[10px] text-muted-foreground/80">
             <span className="flex items-center gap-1.5">
               <LoaderCircle size={11} className="anim-spin" />
               Tor is bootstrapping…
@@ -61,11 +50,9 @@ export function IpDisplay() {
             <span className="font-mono tabular-nums">{bootstrapPercent}%</span>
           </div>
           <div className="h-1 w-full overflow-hidden rounded-full bg-white/5">
-            <motion.div
+            <div
               className="h-full origin-left bg-status-connecting"
-              initial={false}
-              animate={{ width: `${bootstrapPercent}%` }}
-              transition={{ duration: 0.4, ease: "easeOut" }}
+              style={{ width: `${bootstrapPercent}%` }}
             />
           </div>
           {bootstrapPhase && (
@@ -76,7 +63,7 @@ export function IpDisplay() {
           </span>
         </div>
       ) : (
-        <div className="flex max-w-full items-center gap-1 overflow-hidden text-[12px] text-muted-foreground">
+        <div className="flex items-center gap-1 overflow-hidden text-[12px] text-muted-foreground">
           {waiting ? (
             <span className="truncate text-muted-foreground/70">looking up exit IP…</span>
           ) : place ? (

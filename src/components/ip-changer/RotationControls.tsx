@@ -1,4 +1,3 @@
-import { AnimatePresence, motion } from "motion/react";
 import { AlertTriangle, Loader2, Power, Shuffle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useIpChangerStore } from "@/stores/ipChangerStore";
@@ -32,7 +31,7 @@ export function RotationControls() {
               <Power size={13} />
               Stop
             </Button>
-            <motion.div className="flex-1" initial={false} animate={{ opacity: 1 }}>
+            <div className="flex-1">
               <Button
                 size="default"
                 onClick={() => void rotate()}
@@ -43,7 +42,7 @@ export function RotationControls() {
                 {rotating ? <Loader2 size={13} className="anim-spin" /> : <Shuffle size={13} />}
                 {rotating ? "Rotating…" : "Rotate IP"}
               </Button>
-            </motion.div>
+            </div>
           </>
         ) : (
           <Button
@@ -59,19 +58,12 @@ export function RotationControls() {
         )}
       </div>
 
-      <AnimatePresence>
-        {error && status === "error" && (
-          <motion.p
-            initial={{ opacity: 0, height: 0 }}
-            animate={{ opacity: 1, height: "auto" }}
-            exit={{ opacity: 0, height: 0 }}
-            className="flex items-center gap-1.5 rounded-lg bg-red-500/10 px-2.5 py-2 text-[11px] leading-relaxed text-red-400 ring-1 ring-red-500/15"
-          >
-            <AlertTriangle size={11} className="shrink-0" />
-            <span className="min-w-0 break-words">{error}</span>
-          </motion.p>
-        )}
-      </AnimatePresence>
+      {error && status === "error" && (
+        <div className="flex items-center gap-1.5 rounded-lg bg-red-500/10 px-2.5 py-2 text-[11px] leading-relaxed text-red-400 ring-1 ring-red-500/15">
+          <AlertTriangle size={11} className="shrink-0" />
+          <span className="min-w-0 break-words">{error}</span>
+        </div>
+      )}
     </div>
   );
 }
