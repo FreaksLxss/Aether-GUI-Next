@@ -71,11 +71,11 @@ export function LogViewer() {
           </div>
         ) : (
           logs.map((l, i) => (
-            <div key={i} className="anim-log-in flex gap-1.5 whitespace-pre-wrap break-words">
+            <div key={i} className="anim-log-in flex gap-1.5">
               <span className="shrink-0 text-muted-foreground/40 tabular-nums">
                 {TIME_FMT.format(l.timestamp)}
               </span>
-              <span>{l.line}</span>
+              <span className="min-w-0 flex-1 whitespace-pre-wrap [overflow-wrap:anywhere]">{l.line}</span>
             </div>
           ))
         )}

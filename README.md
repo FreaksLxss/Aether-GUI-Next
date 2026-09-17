@@ -23,7 +23,7 @@ This project does not reimplement any of Aether's tunneling logic. It drives the
 
 ## Versions and engine repair
 
-**Aether-GUI 0.17.0** is the desktop app version; **Aether 2.0.0** is the separately versioned engine it requires. [`src-tauri/aether-release.json`](src-tauri/aether-release.json) pins the upstream repository, version, asset names and SHA-256 checksums for development fetches, CI and in-app engine repair. Engine repair installs that approved release, not whatever upstream labels `latest`.
+**Aether-GUI 0.17.1** is the desktop app version; **Aether 2.0.0** is the separately versioned engine it requires. [`src-tauri/aether-release.json`](src-tauri/aether-release.json) pins the upstream repository, version, asset names and SHA-256 checksums for development fetches, CI and in-app engine repair. Engine repair installs that approved release, not whatever upstream labels `latest`.
 
 If the engine is missing, incompatible or missing its `pt/lyrebird` companion, stop Aether and use the app's engine install/repair action. It installs the complete, checksum-verified payload into `<app-data>/binaries/engine-2.0.0/`. The resolver prefers a compatible versioned download over bundled or legacy copies, so a stale engine cannot shadow a repaired installation. Replacement is staged; the previous directory is preserved as a sibling backup. Legacy binaries, identity files and the independent IP Changer Tor bundle are not deleted. About reports the detected engine version separately from the GUI version.
 
