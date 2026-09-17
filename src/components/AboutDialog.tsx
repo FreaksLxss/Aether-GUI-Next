@@ -11,10 +11,21 @@ import {
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
+import type { EngineInfo } from "@/types/engine";
 
 export function AboutDialog() {
   const [open_, setOpen] = useState(false);
   const [version, setVersion] = useState("0.0.0");
+  const [engine, setEngine] = useState<EngineInfo | null>(null);
+
+  useEffect(() => {
+    if (!open_) return;
+    let active = true;
+    invoke<EngineInfo>("get_engine_info")
+      .then((info) => { if (active) setEngine(info); })
+      .catch(() => { if (active) setEngine(null); });
+    return () => { active = false; };
+  }, [open_]);
 
   useEffect(() => {
     invoke<string>("get_app_version")
@@ -50,7 +61,12 @@ export function AboutDialog() {
 
           <div className="mt-3 flex items-center justify-between rounded-lg bg-surface-3 px-3 py-1.5 font-mono text-[10px] text-muted-foreground ring-1 ring-inset ring-white/5">
             <span>Aether engine</span>
-            <span className="text-foreground">v1.9.0</span>
+            <span className="text-foreground">
+              {engine?.version ? `v${engine.version}` : "not installed"}
+              {!engine?.compatible && engine?.version
+                ? ` (needs v${engine.expected_version})`
+                : ""}
+            </span>
           </div>
 
           <Separator className="my-3 bg-white/5" />

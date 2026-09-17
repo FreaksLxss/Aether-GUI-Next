@@ -40,18 +40,11 @@ import { MimPeersField } from "@/components/MimPeersField";
 import { MarkField } from "@/components/MarkField";
 import { EngineTorPanel } from "@/components/EngineTorPanel";
 import {
-  validateBindAddress,
   validateUpstream,
-  validateWiwPeers,
   validateDnsServers,
   validateRouteRules,
   validateZtTeam,
-  validateRouteSniffMs,
-  validateMimPeers,
-  validateFwMark,
-  validateEngineTorBind,
-  validateCountry,
-  httpProxyAddressSchema,
+  validateActiveProfile,
 } from "@/lib/validators";
 
 export function AdvancedPanelContent({
@@ -83,24 +76,22 @@ export function AdvancedPanelContent({
   const deferredFilter = useDeferredValue(logFilter);
   const scanModeRef = useRef<HTMLDivElement>(null);
 
+  // Banner mirrors connect-time validation so every blocking issue surfaces here
+  // (listener collisions, bridge-policy conflicts, legacy paths, numeric bounds).
+  const profileValidationError = useMemo(
+    () => validateActiveProfile(profile),
+    [profile],
+  );
   const hasValidationError = useMemo(() => {
-    const httpProxyErr = !httpProxyAddressSchema.safeParse(profile.http_proxy_address).success;
     return Boolean(
-      validateBindAddress(profile.bind_address) ||
-        httpProxyErr ||
+      profileValidationError ||
         validateUpstream(profile.upstream_proxy) ||
-        validateWiwPeers(profile.wiw_peers) ||
         validateDnsServers(profile.dns_servers) ||
         validateRouteRules(profile.route_block) ||
         validateRouteRules(profile.route_direct) ||
-        validateZtTeam(profile.zt_team) ||
-        validateRouteSniffMs(profile.route_sniff_ms) ||
-        validateMimPeers(profile.mim_peers) ||
-        validateFwMark(profile.fw_mark) ||
-        validateEngineTorBind(profile.engine_tor_bind) ||
-        validateCountry(profile.engine_tor_country),
+        validateZtTeam(profile.zt_team),
     );
-  }, [profile]);
+  }, [profile, profileValidationError]);
 
   useEffect(() => {
     if (highlightScanMode && scanModeRef.current) {
@@ -116,8 +107,10 @@ export function AdvancedPanelContent({
 
   return (
         <div className="flex flex-col gap-4">
-          {hasValidationError && (
-            <InlineErrorBanner message="Some fields have errors — fix them before connecting" />
+          {(hasValidationError || profileValidationError) && (
+            <InlineErrorBanner
+              message={profileValidationError ?? "Some fields have errors — fix them before connecting"}
+            />
           )}
           <Section title="Protocol" icon={Layers}>
             <FieldRow
@@ -170,7 +163,7 @@ export function AdvancedPanelContent({
             {(protocol === "masque" || protocol === "auto") && (
               <SwitchRow
                 label="MASQUE-in-MASQUE (Aether ≥2.0.0)"
-                tooltip="Two MASQUE hops (like gool for MASQUE). Both use the H2 carrier; inner identity <masque-config>-secondary.toml."
+                tooltip="Two MASQUE hops (like gool for MASQUE). HTTP/3 (QUIC) is the default transport; HTTP/2 (TCP) is optional. Tor-Reverse forces HTTP/2. Inner identity: <masque-config>-secondary.toml."
                 checked={mim}
                 onCheckedChange={setMim}
                 disabled={locked}
@@ -180,7 +173,7 @@ export function AdvancedPanelContent({
               <FieldRow
                 label="MiM peers"
                 htmlFor="aether-field-mim-peers"
-                tooltip="--mim-peers outer:port,inner:port or 'auto'. One hop alone is OK (scan finds the other). Leave empty to scan both hops."
+                tooltip="--mim-peers 'outer:port,inner:port' or 'auto'. Numeric IPs only, at most two distinct endpoints. One hop alone is OK (scan finds the other). Leave empty to scan both hops."
               >
                 <MimPeersField id="aether-field-mim-peers" />
               </FieldRow>
@@ -287,13 +280,19 @@ export function AdvancedPanelContent({
             />
             <SwitchRow
               label="QUIC v2 probe (Aether ≥2.0.0)"
-              tooltip="Sends version-negotiation probe before HTTP/3 (AETHER_QUIC_V2, default on). Off emits --no-quic-v2."
+              tooltip="Sends version-negotiation probe before HTTP/3 (AETHER_QUIC_V2, default on). Off emits --no-quic-v2. Only applies to MASQUE over HTTP/3. Tor-Reverse forces HTTP/2; Tor-Only does not use MASQUE. Your choice is kept for regular connects."
               checked={quicV2}
               onCheckedChange={setQuicV2}
-              disabled={locked || masqueHttp2}
+              disabled={locked || masqueHttp2 || protocol === "wireguard" || protocol === "gool" || profile.engine_tor_mode === "tor-reverse" || profile.engine_tor_mode === "tor-only"}
             />
             {masqueHttp2 && !quicV2 && (
               <p className="text-[11px] text-muted-foreground/50">HTTP/2 uses TCP — probe not applicable.</p>
+            )}
+            {!masqueHttp2 && profile.engine_tor_mode === "tor-reverse" && (
+              <p className="text-[11px] text-muted-foreground/50">Tor-Reverse runs MASQUE over HTTP/2 — QUIC probe is bypassed for those connects.</p>
+            )}
+            {!masqueHttp2 && profile.engine_tor_mode === "tor-only" && (
+              <p className="text-[11px] text-muted-foreground/50">Tor-Only never dials Cloudflare — QUIC probe is not applicable.</p>
             )}
             <FieldRow
               label="Firewall mark (Linux/Android)"

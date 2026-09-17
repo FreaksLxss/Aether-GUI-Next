@@ -1,3 +1,4 @@
+pub mod engine;
 pub mod orphan;
 pub mod profiles;
 pub mod prompts;
@@ -10,7 +11,9 @@ pub mod pty_output;
 pub mod status;
 
 use crate::error::AetherError;
-use crate::events::{now_millis, LogEvent, LOG_EVENT, STATUS_EVENT};
+use crate::events::{
+    now_millis, EngineTorStatus, LogEvent, ENGINE_TOR_STATUS_EVENT, LOG_EVENT, STATUS_EVENT,
+};
 use crate::history::{self, ConnectionEntry};
 use crate::state::ConnectionState;
 use profiles::ConnectionProfile;
@@ -33,6 +36,7 @@ pub struct AetherManager {
     /// Timestamp (ms since epoch) when we last entered Connected, used to
     /// compute session duration for connection history.
     connected_at: Option<u64>,
+    tor_status: EngineTorStatus,
 }
 
 impl AetherManager {
@@ -43,11 +47,23 @@ impl AetherManager {
             user_requested_stop: false,
             retry_count: 0,
             connected_at: None,
+            tor_status: EngineTorStatus::default(),
         }
     }
 
     pub fn status(&self) -> ConnectionState {
         self.state.clone()
+    }
+
+    pub fn tor_status(&self) -> EngineTorStatus {
+        self.tor_status.clone()
+    }
+
+    fn update_tor_status(&mut self, app: &AppHandle, status: EngineTorStatus) {
+        if self.tor_status != status {
+            self.tor_status = status;
+            let _ = app.emit(ENGINE_TOR_STATUS_EVENT, &self.tor_status);
+        }
     }
 }
 
@@ -56,57 +72,6 @@ fn app_data_dir(app: &AppHandle) -> PathBuf {
         .app_data_dir()
         .unwrap_or_else(|_| std::env::temp_dir())
 }
-
-fn resolve_binary(app: &AppHandle) -> Result<PathBuf, AetherError> {
-    let name = if cfg!(windows) {
-        "aether.exe"
-    } else {
-        "aether"
-    };
-
-    // Android bundles one aether per ABI under `binaries/android/<arch>/`.
-    #[cfg(target_os = "android")]
-    let rel_bin_dir: &str = match std::env::consts::ARCH {
-        "aarch64" => "binaries/android",
-        "x86_64" => "binaries/android/x86_64",
-        "arm" => "binaries/android/armv7",
-        _ => {
-            return Err(AetherError::BinaryMissing(format!(
-                "no bundled aether for CPU arch {}",
-                std::env::consts::ARCH
-            )))
-        }
-    };
-    #[cfg(not(target_os = "android"))]
-    let rel_bin_dir: &str = "binaries";
-
-    // Check resource dir first (bundled binary from installer)
-    if let Ok(dir) = app.path().resource_dir() {
-        let path = dir.join(rel_bin_dir).join(name);
-        if path.exists() {
-            fix_exec_bit(&path);
-            return Ok(path);
-        }
-    }
-
-    // Fall back to app data dir (auto-downloaded binary)
-    let data_path = app_data_dir(app).join(rel_bin_dir).join(name);
-    if data_path.exists() {
-        fix_exec_bit(&data_path);
-        return Ok(data_path);
-    }
-
-    Err(AetherError::BinaryMissing(data_path.display().to_string()))
-}
-
-#[cfg(unix)]
-fn fix_exec_bit(path: &Path) {
-    use std::os::unix::fs::PermissionsExt;
-    let _ = std::fs::set_permissions(path, std::fs::Permissions::from_mode(0o755));
-}
-
-#[cfg(not(unix))]
-fn fix_exec_bit(_path: &Path) {}
 
 fn set_state_and_emit(
     app: &AppHandle,
@@ -127,13 +92,21 @@ pub fn start_connect(
     manager: Arc<Mutex<AetherManager>>,
     profile_override: Option<ConnectionProfile>,
 ) -> Result<(), AetherError> {
+    let installing = engine::INSTALLING.lock().unwrap();
+    if *installing {
+        return Err(AetherError::Internal("Engine repair is in progress".into()));
+    }
     // Resolve everything fallible that doesn't touch AetherManager's state
     // first, so that once we transition to Launching below, the only
     // remaining failure mode is pty::spawn itself — which is handled
     // explicitly inside spawn_and_monitor rather than ever leaving the
     // state machine stuck in Launching with no process behind it.
     let profile = profile_override.unwrap_or_else(|| profiles::load(&app));
-    let binary = resolve_binary(&app)?;
+    if let Err(msg) = profiles::validate(&profile) {
+        return Err(AetherError::Internal(msg));
+    }
+    // Unsupported engines fail before any state transition or retry loop.
+    let binary = engine::resolve(&app)?;
     let data_dir = app_data_dir(&app);
     std::fs::create_dir_all(&data_dir).map_err(|e| AetherError::Internal(e.to_string()))?;
 
@@ -206,6 +179,7 @@ fn spawn_and_monitor(
         let mut mgr = manager.lock().unwrap();
         mgr.session = Some(session);
         mgr.user_requested_stop = false;
+        mgr.update_tor_status(&app, status::secondary_tor_status(&profile, false));
     }
 
     // Forward every log line to the frontend's advanced/log panel as it
@@ -269,6 +243,7 @@ fn handle_unexpected_failure(
             );
         }
         mgr.session = None;
+        mgr.update_tor_status(&app, EngineTorStatus::default());
         mgr.retry_count += 1;
         mgr.retry_count
     };
@@ -338,7 +313,7 @@ fn monitor_connect(
     data_dir: PathBuf,
     profile: ConnectionProfile,
 ) {
-    let deadline = Instant::now() + status::connect_timeout(&profile.scan_mode);
+    let deadline = Instant::now() + status::startup_timeout(&profile);
     let socks = status::parse_bind_address(&profile.bind_address);
     let mut announced_connecting = false;
 
@@ -350,6 +325,32 @@ fn monitor_connect(
         }
 
         if let Some(exit) = mgr.session.as_mut().and_then(|s| s.try_wait()) {
+            // A permanent configuration failure (rejected option/value,
+            // missing transport, taken bind) must not burn the auto-retry
+            // budget: retrying a bad flag just repeats it and buries the real
+            // cause under scan-mode advice. Fail fast with the sanitized
+            // fixed message instead. Desktop only — the Android pipe session
+            // doesn't classify output.
+            #[cfg(not(target_os = "android"))]
+            if let Some(failure) = mgr
+                .session
+                .as_ref()
+                .and_then(|s| s.startup_failure_after_exit())
+            {
+                mgr.session = None;
+                mgr.update_tor_status(&app, EngineTorStatus::default());
+                mgr.state = ConnectionState::Error {
+                    message: failure.message().into(),
+                    phase: "configuration".into(),
+                };
+                let state = mgr.state.clone();
+                drop(mgr);
+                orphan::clear_pid(&data_dir);
+                crate::sysproxy::disable_if_main();
+                crate::traffic::reset();
+                let _ = app.emit(STATUS_EVENT, &state);
+                return;
+            }
             mgr.session = None;
             drop(mgr);
             handle_unexpected_failure(
@@ -364,6 +365,8 @@ fn monitor_connect(
             return;
         }
 
+        mgr.update_tor_status(&app, status::secondary_tor_status(&profile, true));
+
         if !announced_connecting {
             let done = mgr
                 .session
@@ -373,9 +376,16 @@ fn monitor_connect(
             if done {
                 mgr.state = ConnectionState::Connecting;
                 let new_state = mgr.state.clone();
+                announced_connecting = true;
                 drop(mgr);
                 let _ = app.emit(STATUS_EVENT, &new_state);
-                announced_connecting = true;
+                let _ = app.emit(
+                    LOG_EVENT,
+                    LogEvent {
+                        line: format!("[gui] {}", status::startup_stage(&profile)),
+                        timestamp: now_millis(),
+                    },
+                );
                 continue;
             }
         }
@@ -460,6 +470,7 @@ fn monitor_connected(
         if mgr.user_requested_stop {
             return;
         }
+        mgr.update_tor_status(&app, status::secondary_tor_status(&profile, true));
         if let Some(exit) = mgr.session.as_mut().and_then(|s| s.try_wait()) {
             mgr.session = None;
             drop(mgr);
@@ -592,6 +603,7 @@ pub fn request_disconnect(
                 }
                 mgr.session = None;
                 mgr.user_requested_stop = false;
+                mgr.update_tor_status(&app, EngineTorStatus::default());
                 drop(mgr);
                 orphan::clear_pid(&app_data_dir(&app));
                 // Tunnel is fully down now — turn off the system proxy so it

@@ -84,54 +84,10 @@ pub fn spawn(
     for arg in profile.as_args() {
         cmd.arg(arg);
     }
-    cmd.env(
-        "AETHER_MASQUE_HTTP2",
-        if profile.masque_http2 { "1" } else { "0" },
-    );
-    // Aether ≥1.7.0 opt-outs (see pty.rs's spawn for details).
-    if !profile.route_sniff {
-        cmd.env("AETHER_ROUTE_SNIFF", "0");
-    }
-    if let Some(ms) = profile.route_sniff_ms {
-        cmd.env("AETHER_ROUTE_SNIFF_MS", ms.to_string());
-    }
-    if !profile.auto_reprovision {
-        cmd.env("AETHER_REPROVISION", "0");
-    }
-    if !profile.quic_v2 {
-        cmd.env("AETHER_QUIC_V2", "0");
-    }
-    if let Some(ref m) = profile.fw_mark {
-        let t = m.trim();
-        if !t.is_empty() {
-            cmd.env("AETHER_MARK", t);
-        }
-    }
-    if let Some(v) = profile.max_clients {
-        cmd.env("AETHER_MAX_CLIENTS", v.to_string());
-    }
-    if let Some(v) = profile.half_close_secs {
-        cmd.env("AETHER_HALF_CLOSE_SECS", v.to_string());
-    }
-    if let Some(v) = profile.tcp_keepalive_secs {
-        cmd.env("AETHER_TCP_KEEPALIVE_SECS", v.to_string());
-    }
-    if let Some(v) = profile.tcp_connect_secs {
-        cmd.env("AETHER_TCP_CONNECT_SECS", v.to_string());
-    }
-    if profile.engine_tor_mode != super::profiles::EngineTorMode::Disabled {
-        if let Some(ref cc) = profile.engine_tor_country {
-            let t = cc.trim();
-            if !t.is_empty() {
-                cmd.env("AETHER_TOR_COUNTRY", t);
-            }
-        }
-        if let Some(v) = profile.engine_tor_direct_secs {
-            cmd.env("AETHER_TOR_DIRECT_SECS", v.to_string());
-        }
-        if let Some(v) = profile.engine_tor_stall_secs {
-            cmd.env("AETHER_TOR_STALL_SECS", v.to_string());
-        }
+    // Same shared env construction as the desktop PTY spawn — see
+    // ConnectionProfile::environment for why this must not fork per platform.
+    for (key, value) in profile.environment() {
+        cmd.env(key, value);
     }
 
     let mut child = cmd

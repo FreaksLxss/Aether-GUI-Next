@@ -20,9 +20,9 @@ function ScrollArea({
       {...props}
     >
       <ScrollAreaPrimitive.Viewport
-        ref={viewportRef as any}
+        ref={viewportRef}
         data-slot="scroll-area-viewport"
-        style={{ scrollbarGutter: "stable" } as React.CSSProperties}
+        style={{ scrollbarGutter: "stable" }}
         className="size-full min-h-0 flex-1 overscroll-contain rounded-[inherit] outline-none focus-visible:ring-[3px] focus-visible:ring-ring/50 focus-visible:outline-1 [scrollbar-width:thin] [scrollbar-gutter:stable] [&::-webkit-scrollbar]:w-1.5"
       >
         {children}

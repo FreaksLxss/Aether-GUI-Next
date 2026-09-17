@@ -15,12 +15,17 @@ use tauri::{AppHandle, Manager, State};
 static ALWAYS_ON_TOP: AtomicBool = AtomicBool::new(false);
 
 #[tauri::command]
-pub fn connect(
+pub async fn connect(
     app: AppHandle,
-    state: State<AppState>,
+    state: State<'_, AppState>,
     profile_override: Option<ConnectionProfile>,
 ) -> Result<(), AetherError> {
-    aether::start_connect(app, state.manager.clone(), profile_override)
+    let manager = state.manager.clone();
+    tauri::async_runtime::spawn_blocking(move || {
+        aether::start_connect(app, manager, profile_override)
+    })
+    .await
+    .map_err(|e| AetherError::Internal(e.to_string()))?
 }
 
 #[tauri::command]
@@ -232,11 +237,19 @@ pub fn get_diagnostics(app: AppHandle, state: State<AppState>) -> Diagnostics {
     let profile = redact_profile(aether::profiles::load(&app));
     let history = history::load(&app);
     let status = state.manager.lock().unwrap().status();
-    Diagnostics { profile, history, status }
+    Diagnostics {
+        profile,
+        history,
+        status,
+    }
 }
 
 #[tauri::command]
-pub fn get_history_paginated(app: AppHandle, offset: Option<usize>, limit: Option<usize>) -> Vec<ConnectionEntry> {
+pub fn get_history_paginated(
+    app: AppHandle,
+    offset: Option<usize>,
+    limit: Option<usize>,
+) -> Vec<ConnectionEntry> {
     let o = offset.unwrap_or(0);
     let l = limit.unwrap_or(20);
     history::load_paginated(&app, o, l)
@@ -277,31 +290,61 @@ pub fn delete_preset(app: AppHandle, name: String) {
 }
 
 #[tauri::command]
-pub fn aether_binary_exists(app: AppHandle) -> bool {
-    let bin_name = if cfg!(windows) {
-        "aether.exe"
-    } else {
-        "aether"
-    };
-    let dir = app
-        .path()
-        .resource_dir()
-        .ok()
-        .or_else(|| app.path().app_data_dir().ok());
-    dir.map(|d| d.join("binaries").join(bin_name).exists())
+pub async fn aether_binary_exists(app: AppHandle) -> bool {
+    get_engine_info(app)
+        .await
+        .map(|info| info.compatible)
         .unwrap_or(false)
 }
 
 #[tauri::command]
+pub async fn get_engine_info(app: AppHandle) -> Result<aether::engine::EngineInfo, AetherError> {
+    tauri::async_runtime::spawn_blocking(move || aether::engine::inspect(&app))
+        .await
+        .map_err(|e| AetherError::Internal(e.to_string()))
+}
+
+#[tauri::command]
+pub fn get_engine_tor_status(state: State<AppState>) -> crate::events::EngineTorStatus {
+    state.manager.lock().unwrap().tor_status()
+}
+
+#[tauri::command]
 pub async fn download_aether(app: AppHandle) -> Result<String, AetherError> {
-    let dir = app
-        .path()
-        .app_data_dir()
-        .map_err(|e| AetherError::Internal(e.to_string()))?;
-    let binaries_dir = dir.join("binaries");
+    let binaries_dir = aether::engine::install_dir(&app)?;
+    {
+        let mut installing = aether::engine::INSTALLING.lock().unwrap();
+        if *installing {
+            return Err(AetherError::Internal(
+                "Engine repair is already running".into(),
+            ));
+        }
+        let state = app.state::<AppState>();
+        if !matches!(
+            state.manager.lock().unwrap().status(),
+            ConnectionState::Idle | ConnectionState::Error { .. }
+        ) {
+            return Err(AetherError::AlreadyRunning);
+        }
+        *installing = true;
+    }
+    // Drop also clears the flag if this async operation is cancelled.
+    struct InstallationGuard;
+    impl Drop for InstallationGuard {
+        fn drop(&mut self) {
+            *aether::engine::INSTALLING.lock().unwrap() = false;
+        }
+    }
+    let _guard = InstallationGuard;
     let path = updater::download_aether_binary(&binaries_dir)
         .await
         .map_err(AetherError::Internal)?;
+    let info = get_engine_info(app).await?;
+    if !info.compatible {
+        return Err(AetherError::EngineIncompatible(
+            info.problem.unwrap_or_default(),
+        ));
+    }
     Ok(path.display().to_string())
 }
 

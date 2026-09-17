@@ -108,6 +108,9 @@ export interface ConnectionProfile {
   engine_tor_bind: string | null;
   engine_tor_dir: string | null;
   engine_tor_bridges: string[];
+  /** Force automatic bridges now (--tor-bridges, no value). */
+  engine_tor_force_bridges: boolean;
+  /** Legacy migration only: never read or pass this path to the engine. */
   engine_tor_bridges_file: string | null;
   engine_tor_no_bridges: boolean;
   engine_tor_pt: string | null;
@@ -120,6 +123,13 @@ export interface ConnectionProfile {
   half_close_secs: number | null;
   tcp_keepalive_secs: number | null;
   tcp_connect_secs: number | null;
+}
+
+/** Engine Tor chain listener readiness; not IP Changer Tor or primary status. */
+export interface EngineTorStatus {
+  enabled: boolean;
+  ready: boolean;
+  address: string | null;
 }
 
 export interface LogLine {

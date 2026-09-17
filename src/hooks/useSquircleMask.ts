@@ -68,8 +68,15 @@ function readCSSCornerRadii(el: HTMLElement): CornerRadii {
 
 export function useSquircleClip(radius?: number | CornerRadii) {
   const ref = useRef<HTMLDivElement>(null);
+  const uniformRadius = typeof radius === "number" ? radius : undefined;
+  const { tl, tr, br, bl } = typeof radius === "object" && radius !== null ? radius : {};
 
   useEffect(() => {
+    const radius = uniformRadius ?? (
+      tl !== undefined && tr !== undefined && br !== undefined && bl !== undefined
+        ? { tl, tr, br, bl }
+        : undefined
+    );
     const el = ref.current;
     if (!el) return;
 
@@ -103,7 +110,9 @@ export function useSquircleClip(radius?: number | CornerRadii) {
         el.style.clipPath = "";
         return;
       }
-    } catch {}
+    } catch {
+      // Fall back to the SVG clip path when native corner support cannot be used.
+    }
 
     const apply = () => {
       const rect = el.getBoundingClientRect();
@@ -135,7 +144,7 @@ export function useSquircleClip(radius?: number | CornerRadii) {
     const ro = new ResizeObserver(apply);
     ro.observe(el);
     return () => ro.disconnect();
-  }, [radius == null ? undefined : typeof radius === "number" ? radius : `${(radius as CornerRadii).tl},${(radius as CornerRadii).tr},${(radius as CornerRadii).br},${(radius as CornerRadii).bl}`]);
+  }, [uniformRadius, tl, tr, br, bl]);
 
   return ref;
 }

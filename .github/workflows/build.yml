@@ -42,6 +42,10 @@ jobs:
           node-version: 22
           cache: npm
 
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
       - uses: dtolnay/rust-toolchain@stable
         with:
           targets: ${{ matrix.target }}
@@ -58,21 +62,18 @@ jobs:
           AETHER_ASSET: ${{ matrix.aether_asset }}
         run: bash src-tauri/binaries/fetch-aether.sh
 
-      # fetch-aether.sh is unix-only (tar.gz assets); the Windows asset is a
-      # zip, fetched here with the same version pin and checksum verification.
+      # The same pinned manifest (src-tauri/aether-release.json) drives every
+      # platform: fetch-aether.py verifies the archive SHA-256, extracts only
+      # aether + pt/lyrebird into src-tauri/binaries/engine/, and validates
+      # both executables' architecture. The PowerShell wrapper handles the
+      # Windows zip asset; bash handles the tar.gz assets.
       - name: Fetch Aether core (Windows)
         if: runner.os == 'Windows'
         shell: pwsh
-        run: |
-          $pin = (Select-String -Path src-tauri/binaries/fetch-aether.sh -Pattern 'AETHER_VERSION="(.+)"').Matches[0].Groups[1].Value
-          $base = "https://github.com/CluvexStudio/Aether/releases/download/$pin"
-          curl.exe -sL -o aether.zip "$base/aether-windows-x86_64.zip"
-          curl.exe -sL -o SHA256SUMS.txt "$base/SHA256SUMS.txt"
-          $expected = ((Get-Content SHA256SUMS.txt | Select-String 'aether-windows-x86_64.zip') -split '\s+')[0]
-          $actual = (Get-FileHash aether.zip -Algorithm SHA256).Hash.ToLower()
-          if ($actual -ne $expected) { throw "Checksum mismatch: $actual != $expected" }
-          Expand-Archive aether.zip -DestinationPath aether-extract
-          Move-Item aether-extract/aether.exe src-tauri/binaries/aether.exe
+        run: ./src-tauri/binaries/fetch-aether.ps1
+
+      - name: Test safe engine archive installation
+        run: python -m unittest discover -s src-tauri/binaries -p "test_fetch_aether.py"
 
       # Only this platform's Tor bundle is needed at runtime (ip_changer.rs
       # resolves binaries/tor/<os>/<arch>/). Pruning the rest stops linuxdeploy

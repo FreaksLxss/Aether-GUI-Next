@@ -1,6 +1,6 @@
 use super::profiles::ConnectionProfile;
 use super::prompts::{looks_like_choice_prompt, PROMPT_TABLE};
-use super::pty_output::{drain_lines, strip_ansi};
+use super::pty_output::{drain_lines, finish_lines, strip_ansi, OutputDiagnostics, StartupFailure};
 use crate::error::AetherError;
 use crate::events::{now_millis, LogEvent};
 use portable_pty::{native_pty_system, Child, CommandBuilder, MasterPty, PtySize};
@@ -15,6 +15,7 @@ pub struct PtySession {
     child: Box<dyn Child + Send + Sync>,
     writer: Arc<Mutex<Box<dyn Write + Send>>>,
     prompts_done: Arc<AtomicBool>,
+    diagnostics: Arc<OutputDiagnostics>,
     // Keeps the pty master (and thus the slave/child's controlling tty) alive
     // for the life of the session; never read from directly after spawn.
     _master: Box<dyn MasterPty + Send>,
@@ -27,6 +28,10 @@ impl PtySession {
 
     pub fn prompts_done(&self) -> bool {
         self.prompts_done.load(Ordering::Relaxed)
+    }
+
+    pub fn startup_failure_after_exit(&self) -> Option<StartupFailure> {
+        self.diagnostics.failure_after_exit()
     }
 
     pub fn try_wait(&mut self) -> Option<i32> {
@@ -104,59 +109,11 @@ pub fn spawn(
     for arg in profile.as_args() {
         cmd.arg(arg);
     }
-    // Env var, not a flag (see ConnectionProfile::masque_http2's doc-comment):
-    // any value suppresses Aether 1.2.0's interactive "MASQUE transport"
-    // prompt, and only a truthy one selects HTTP/2.
-    cmd.env(
-        "AETHER_MASQUE_HTTP2",
-        if profile.masque_http2 { "1" } else { "0" },
-    );
-    // Aether ≥1.7.0 opt-outs — only set when the user turned the behavior
-    // off or overrode its timing; absent env means Aether's default.
-    if !profile.route_sniff {
-        cmd.env("AETHER_ROUTE_SNIFF", "0");
-    }
-    if let Some(ms) = profile.route_sniff_ms {
-        cmd.env("AETHER_ROUTE_SNIFF_MS", ms.to_string());
-    }
-    if !profile.auto_reprovision {
-        cmd.env("AETHER_REPROVISION", "0");
-    }
-    // Aether ≥2.0.0 — QUIC v2, fw mark, proxy tuning, engine Tor country/direct/stall
-    if !profile.quic_v2 {
-        cmd.env("AETHER_QUIC_V2", "0");
-    }
-    if let Some(ref m) = profile.fw_mark {
-        let t = m.trim();
-        if !t.is_empty() {
-            cmd.env("AETHER_MARK", t);
-        }
-    }
-    if let Some(v) = profile.max_clients {
-        cmd.env("AETHER_MAX_CLIENTS", v.to_string());
-    }
-    if let Some(v) = profile.half_close_secs {
-        cmd.env("AETHER_HALF_CLOSE_SECS", v.to_string());
-    }
-    if let Some(v) = profile.tcp_keepalive_secs {
-        cmd.env("AETHER_TCP_KEEPALIVE_SECS", v.to_string());
-    }
-    if let Some(v) = profile.tcp_connect_secs {
-        cmd.env("AETHER_TCP_CONNECT_SECS", v.to_string());
-    }
-    if profile.engine_tor_mode != super::profiles::EngineTorMode::Disabled {
-        if let Some(ref cc) = profile.engine_tor_country {
-            let t = cc.trim();
-            if !t.is_empty() {
-                cmd.env("AETHER_TOR_COUNTRY", t);
-            }
-        }
-        if let Some(v) = profile.engine_tor_direct_secs {
-            cmd.env("AETHER_TOR_DIRECT_SECS", v.to_string());
-        }
-        if let Some(v) = profile.engine_tor_stall_secs {
-            cmd.env("AETHER_TOR_STALL_SECS", v.to_string());
-        }
+    // One shared env-construction site (see ConnectionProfile::environment):
+    // the Android pipe spawn must produce byte-identical environment for the
+    // same profile, so this block must not grow platform-specific entries.
+    for (key, value) in profile.environment() {
+        cmd.env(key, value);
     }
 
     let child = pair
@@ -185,6 +142,8 @@ pub fn spawn(
     let prompts_done = Arc::new(AtomicBool::new(false));
     let prompts_done_for_thread = Arc::clone(&prompts_done);
 
+    let diagnostics = Arc::new(OutputDiagnostics::new(1));
+    let reader_diagnostics = Arc::clone(&diagnostics);
     std::thread::spawn(move || {
         read_loop(
             reader.as_mut(),
@@ -192,13 +151,16 @@ pub fn spawn(
             profile,
             log_tx,
             prompts_done_for_thread,
+            &reader_diagnostics,
         );
+        reader_diagnostics.reader_finished();
     });
 
     Ok(PtySession {
         child,
         writer,
         prompts_done,
+        diagnostics,
         _master: pair.master,
     })
 }
@@ -209,6 +171,7 @@ fn read_loop(
     profile: ConnectionProfile,
     log_tx: Sender<LogEvent>,
     prompts_done: Arc<AtomicBool>,
+    diagnostics: &OutputDiagnostics,
 ) {
     let mut answered: HashSet<&'static str> = HashSet::new();
     let mut current_section: Option<&'static str> = None;
@@ -240,10 +203,12 @@ fn read_loop(
                     answered.remove(rule.id);
                 }
             }
-            let _ = log_tx.send(LogEvent {
-                line,
-                timestamp: now_millis(),
-            });
+            if let Some(line) = diagnostics.log_line(line) {
+                let _ = log_tx.send(LogEvent {
+                    line,
+                    timestamp: now_millis(),
+                });
+            }
         }
 
         // Whatever remains (no newline yet) is either more output still
@@ -276,6 +241,14 @@ fn read_loop(
                     }
                 }
             }
+        }
+    }
+    for raw_line in finish_lines(&mut line_buf) {
+        if let Some(line) = diagnostics.log_line(strip_ansi(&raw_line)) {
+            let _ = log_tx.send(LogEvent {
+                line,
+                timestamp: now_millis(),
+            });
         }
     }
 }

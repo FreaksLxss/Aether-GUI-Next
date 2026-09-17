@@ -9,24 +9,6 @@ struct TunState {
     pid: u32,
 }
 
-pub fn write_tun_state(data_dir: &Path, adapter_name: &str, original_gateway: &str) {
-    let state = TunState {
-        adapter_name: adapter_name.to_string(),
-        original_gateway: original_gateway.to_string(),
-        pid: std::process::id(),
-    };
-
-    let path = data_dir.join(TUN_STATE_FILE);
-    if let Ok(json) = serde_json::to_string(&state) {
-        let _ = std::fs::write(&path, json);
-    }
-}
-
-pub fn clear_tun_state(data_dir: &Path) {
-    let path = data_dir.join(TUN_STATE_FILE);
-    let _ = std::fs::remove_file(&path);
-}
-
 pub fn reap_orphan_tun(data_dir: &Path) {
     let path = data_dir.join(TUN_STATE_FILE);
     let content = match std::fs::read_to_string(&path) {

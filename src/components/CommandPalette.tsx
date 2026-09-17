@@ -42,7 +42,7 @@ function Highlight({ text, query }: { text: string; query: string }) {
 }
 
 function isWordBoundary(c: string) {
-  return /[\s\-_\/.:]/.test(c);
+  return /[\s\-_/.:]/.test(c);
 }
 function scoreToken(hay: string, token: string): number {
   let score = 0;
@@ -93,6 +93,17 @@ export function CommandPalette({
 }) {
   const [query, setQuery] = useState("");
   const [active, setActive] = useState(0);
+  const [wasOpen, setWasOpen] = useState(open);
+
+  // Reset before rendering a newly opened palette, including externally triggered opens.
+  if (open !== wasOpen) {
+    setWasOpen(open);
+    if (open) {
+      setQuery("");
+      setActive(0);
+    }
+  }
+
   const inputRef = useRef<HTMLInputElement>(null);
   const listRef = useRef<HTMLDivElement>(null);
 
@@ -120,15 +131,9 @@ export function CommandPalette({
   }, [filtered]);
 
   useEffect(() => {
-    setActive(0);
-  }, [query]);
-
-  useEffect(() => {
-    if (open) {
-      setQuery("");
-      setActive(0);
-      requestAnimationFrame(() => inputRef.current?.focus());
-    }
+    if (!open) return;
+    const frame = requestAnimationFrame(() => inputRef.current?.focus());
+    return () => cancelAnimationFrame(frame);
   }, [open]);
 
   // keep active item visible
@@ -165,7 +170,10 @@ export function CommandPalette({
           <Input
             ref={inputRef}
             value={query}
-            onChange={(e) => setQuery(e.target.value)}
+            onChange={(e) => {
+              setQuery(e.target.value);
+              setActive(0);
+            }}
             placeholder="Search settings, presets, actions…"
             className="h-11 flex-1 border-0 bg-transparent px-0 text-sm shadow-none ring-0 focus-visible:ring-0"
             role="combobox"

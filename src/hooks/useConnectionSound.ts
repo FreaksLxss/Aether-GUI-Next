@@ -59,7 +59,12 @@ function playTone(
     osc.stop(ctx.currentTime + duration);
     // auto-disconnect after duration + small tail to avoid node leak
     setTimeout(() => {
-      try { osc.disconnect(); gain.disconnect(); } catch {}
+      try {
+        osc.disconnect();
+        gain.disconnect();
+      } catch {
+        // Audio cleanup is best-effort if the context has already closed.
+      }
     }, (duration + 0.05) * 1000);
   } catch {
     // Audio graph error — silently ignore

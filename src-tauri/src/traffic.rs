@@ -48,8 +48,8 @@ pub fn record_rx(n: u64) {
 #[cfg(windows)]
 fn os_counters() -> Option<(u64, u64)> {
     unsafe {
-        use windows_sys::Win32::NetworkManagement::IpHelper::{FreeMibTable, GetIfTable2};
         use windows_sys::Win32::NetworkManagement::IpHelper::MIB_IF_TABLE2;
+        use windows_sys::Win32::NetworkManagement::IpHelper::{FreeMibTable, GetIfTable2};
 
         let mut table: *mut MIB_IF_TABLE2 = std::ptr::null_mut();
         let ret = GetIfTable2(&mut table);
@@ -169,7 +169,6 @@ pub fn reset() {
     *PREV.lock().unwrap() = (0, 0, None);
 }
 
-
 #[derive(Serialize, Clone, Debug)]
 pub struct ActiveConn {
     pub pid: u32,
@@ -182,20 +181,28 @@ pub struct ActiveConn {
 
 #[cfg(windows)]
 fn pid_exe(pid: u32) -> String {
-    if pid == 0 { return "System Idle".into(); }
-    if pid == 4 { return "System".into(); }
+    if pid == 0 {
+        return "System Idle".into();
+    }
+    if pid == 4 {
+        return "System".into();
+    }
     unsafe {
         use windows_sys::Win32::Foundation::CloseHandle;
         use windows_sys::Win32::System::Threading::{
             OpenProcess, QueryFullProcessImageNameW, PROCESS_QUERY_LIMITED_INFORMATION,
         };
         let h = OpenProcess(PROCESS_QUERY_LIMITED_INFORMATION, 0, pid);
-        if h.is_null() { return String::new(); }
+        if h.is_null() {
+            return String::new();
+        }
         let mut buf = [0u16; 520];
         let mut size = buf.len() as u32;
         let ok = QueryFullProcessImageNameW(h, 0, buf.as_mut_ptr(), &mut size);
         CloseHandle(h);
-        if ok == 0 || size == 0 { return String::new(); }
+        if ok == 0 || size == 0 {
+            return String::new();
+        }
         let full = String::from_utf16_lossy(&buf[..size as usize]);
         // basename
         let base = full.rsplit(['\\', '/']).next().unwrap_or(&full);
@@ -206,9 +213,18 @@ fn pid_exe(pid: u32) -> String {
 #[cfg(windows)]
 fn tcp_state_label(s: u32) -> &'static str {
     match s {
-        1 => "CLOSED", 2 => "LISTEN", 3 => "SYN_SENT", 4 => "SYN_RCVD",
-        5 => "ESTABLISHED", 6 => "FIN_WAIT1", 7 => "FIN_WAIT2", 8 => "CLOSE_WAIT",
-        9 => "CLOSING", 10 => "LAST_ACK", 11 => "TIME_WAIT", 12 => "DELETE_TCB",
+        1 => "CLOSED",
+        2 => "LISTEN",
+        3 => "SYN_SENT",
+        4 => "SYN_RCVD",
+        5 => "ESTABLISHED",
+        6 => "FIN_WAIT1",
+        7 => "FIN_WAIT2",
+        8 => "CLOSE_WAIT",
+        9 => "CLOSING",
+        10 => "LAST_ACK",
+        11 => "TIME_WAIT",
+        12 => "DELETE_TCB",
         _ => "UNKNOWN",
     }
 }
@@ -221,12 +237,18 @@ fn fmt_ipv4(addr: u32, port_net: u32) -> String {
     // dwPort is in network byte order in low 16 bits shifted? MIB stores port in network byte order in dwLocalPort.
     // In MIB_TCPROW_OWNER_PID dwLocalPort is network byte order. So ntohs.
     let port = u16::from_be((port_net & 0xFFFF) as u16);
-    if port == 0 { ip.to_string() } else { format!("{ip}:{port}") }
+    if port == 0 {
+        ip.to_string()
+    } else {
+        format!("{ip}:{port}")
+    }
 }
 
 pub fn active_connections() -> Vec<ActiveConn> {
     #[cfg(not(windows))]
-    { return Vec::new(); }
+    {
+        return Vec::new();
+    }
     #[cfg(windows)]
     unsafe {
         use windows_sys::Win32::NetworkManagement::IpHelper::{
@@ -243,10 +265,14 @@ pub fn active_connections() -> Vec<ActiveConn> {
                 let ret = GetExtendedTcpTable(buf.as_mut_ptr() as *mut _, &mut size, 1, 2, 5, 0);
                 if ret == 0 {
                     let num = u32::from_ne_bytes([buf[0], buf[1], buf[2], buf[3]]) as usize;
-                    let row_size = std::mem::size_of::<windows_sys::Win32::NetworkManagement::IpHelper::MIB_TCPROW_OWNER_PID>();
+                    let row_size = std::mem::size_of::<
+                        windows_sys::Win32::NetworkManagement::IpHelper::MIB_TCPROW_OWNER_PID,
+                    >();
                     let base = buf.as_ptr().add(4);
                     for i in 0..num {
-                        if i * row_size + row_size > buf.len() { break; }
+                        if i * row_size + row_size > buf.len() {
+                            break;
+                        }
                         let row = &*(base.add(i * row_size) as *const windows_sys::Win32::NetworkManagement::IpHelper::MIB_TCPROW_OWNER_PID);
                         // skip loopback remote? keep all but could filter
                         let exe = pid_exe(row.dwOwningPid);
@@ -258,7 +284,9 @@ pub fn active_connections() -> Vec<ActiveConn> {
                             state: tcp_state_label(row.dwState).into(),
                             proto: "TCP".into(),
                         });
-                        if out.len() >= 128 { break; }
+                        if out.len() >= 128 {
+                            break;
+                        }
                     }
                 }
             }
@@ -272,10 +300,14 @@ pub fn active_connections() -> Vec<ActiveConn> {
                 let ret = GetExtendedUdpTable(buf.as_mut_ptr() as *mut _, &mut size, 1, 2, 1, 0);
                 if ret == 0 {
                     let num = u32::from_ne_bytes([buf[0], buf[1], buf[2], buf[3]]) as usize;
-                    let row_size = std::mem::size_of::<windows_sys::Win32::NetworkManagement::IpHelper::MIB_UDPROW_OWNER_PID>();
+                    let row_size = std::mem::size_of::<
+                        windows_sys::Win32::NetworkManagement::IpHelper::MIB_UDPROW_OWNER_PID,
+                    >();
                     let base = buf.as_ptr().add(4);
                     for i in 0..num {
-                        if i * row_size + row_size > buf.len() { break; }
+                        if i * row_size + row_size > buf.len() {
+                            break;
+                        }
                         let row = &*(base.add(i * row_size) as *const windows_sys::Win32::NetworkManagement::IpHelper::MIB_UDPROW_OWNER_PID);
                         let exe = pid_exe(row.dwOwningPid);
                         out.push(ActiveConn {
@@ -286,16 +318,20 @@ pub fn active_connections() -> Vec<ActiveConn> {
                             state: "".into(),
                             proto: "UDP".into(),
                         });
-                        if out.len() >= 160 { break; }
+                        if out.len() >= 160 {
+                            break;
+                        }
                     }
                 }
             }
         }
         // Sort: ESTABLISHED first, then by exe
-        out.sort_by(|a,b| {
-            let ak = if a.state=="ESTABLISHED" {0} else {1};
-            let bk = if b.state=="ESTABLISHED" {0} else {1};
-            ak.cmp(&bk).then_with(|| a.exe.cmp(&b.exe)).then_with(|| a.pid.cmp(&b.pid))
+        out.sort_by(|a, b| {
+            let ak = if a.state == "ESTABLISHED" { 0 } else { 1 };
+            let bk = if b.state == "ESTABLISHED" { 0 } else { 1 };
+            ak.cmp(&bk)
+                .then_with(|| a.exe.cmp(&b.exe))
+                .then_with(|| a.pid.cmp(&b.pid))
         });
         // dedup pid+local+remote to keep list short, cap 64 rows
         out.truncate(64);
@@ -311,7 +347,10 @@ pub fn totals() -> (u64, u64) {
     {
         if let Some((cur_tx, cur_rx)) = os_counters() {
             if let Some((base_tx, base_rx)) = *BASELINE.lock().unwrap() {
-                return (cur_tx.saturating_sub(base_tx), cur_rx.saturating_sub(base_rx));
+                return (
+                    cur_tx.saturating_sub(base_tx),
+                    cur_rx.saturating_sub(base_rx),
+                );
             }
         }
     }

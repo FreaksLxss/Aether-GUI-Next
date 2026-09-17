@@ -29,7 +29,9 @@ export function OnboardingTour() {
       }
       try {
         await useConnectionStore.getState().loadHistory();
-      } catch {}
+      } catch {
+        // History is optional; continue onboarding with the available local state.
+      }
       if (cancelled) return;
       const after = useConnectionStore.getState().history;
       if (after.length > 0) {

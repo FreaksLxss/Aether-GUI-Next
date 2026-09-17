@@ -23,7 +23,11 @@ import type {
   TrafficStats,
   ActiveConn,
   EngineTorMode,
+  EngineTorStatus,
 } from "@/types/connection";
+
+import { defaultConnectionProfile } from "@/lib/profile-defaults";
+import { connectionProfileSchema, validateActiveProfile } from "@/lib/validators";
 
 const MAX_LOG_LINES = 500;
 
@@ -34,7 +38,9 @@ function schedulePersist() {
     try {
       const profile = useConnectionStore.getState().profile;
       await invoke("set_default_profile", { profile });
-    } catch {}
+    } catch {
+      // Debounced best-effort persist; the next edit retries.
+    }
   }, 500);
 }
 
@@ -61,6 +67,7 @@ async function sendNotification(title: string, body: string) {
 
 interface ConnectionState {
   status: ConnectionStatus;
+  engineTorStatus: EngineTorStatus;
   profile: ConnectionProfile;
   logs: LogLine[];
   sidecarError: string | null;
@@ -129,6 +136,9 @@ interface ConnectionState {
   setEngineTorBridges: (engine_tor_bridges: string[]) => void;
   setEngineTorBridgesFile: (engine_tor_bridges_file: string | null) => void;
   setEngineTorNoBridges: (engine_tor_no_bridges: boolean) => void;
+  setEngineTorForceBridges: (engine_tor_force_bridges: boolean) => void;
+  /** Atomically replace all fields with a normalized, validated profile. */
+  applyProfile: (profile: unknown) => void;
   setEngineTorPt: (engine_tor_pt: string | null) => void;
   setEngineTorPtDir: (engine_tor_pt_dir: string | null) => void;
   setEngineTorCountry: (engine_tor_country: string | null) => void;
@@ -159,55 +169,14 @@ export const useConnectionStore = create<ConnectionState>((set, get) => {
     };
   return {
   status: { state: "Idle" },
-  profile: {
-    protocol: "auto",
-    scan_mode: "turbo",
-    ip_version: "v4",
-    quick_reconnect: true,
-    masque_http2: false,
-    masque_noize: "firewall",
-    wg_noize: "balanced",
-    bind_address: "127.0.0.1:1819",
-    http_proxy_address: null,
-    upstream_proxy: null,
-    wiw_peers: null,
-    log_level: null,
-    perf: null,
-    capture_mode: "proxy",
-    dns_mode: "forward",
-    tun_address: "10.0.0.2/24",
-    tun_dns: "8.8.8.8",
-    dns_servers: null,
-    route_block: [],
-    route_direct: [],
-    route_sniff: true,
-    route_sniff_ms: null,
-    auto_reprovision: true,
-    zt_team: null,
-    zt_access_email: null,
-    zt_access_id: null,
-    zt_access_secret: null,
-    zt_access_token: null,
-    zt_gateway: false,
-    mim: false,
-    mim_peers: null,
-    quic_v2: true,
-    fw_mark: null,
-    engine_tor_mode: "disabled",
-    engine_tor_bind: null,
-    engine_tor_dir: null,
-    engine_tor_bridges: [],
-    engine_tor_bridges_file: null,
-    engine_tor_no_bridges: false,
-    engine_tor_pt: null,
-    engine_tor_pt_dir: null,
-    engine_tor_country: null,
-    engine_tor_direct_secs: null,
-    engine_tor_stall_secs: null,
-    max_clients: null,
-    half_close_secs: null,
-    tcp_keepalive_secs: null,
-    tcp_connect_secs: null,
+  engineTorStatus: { enabled: false, ready: false, address: null },
+  profile: defaultConnectionProfile(),
+  applyProfile: (value) => {
+    const profile = connectionProfileSchema.parse(value);
+    const error = validateActiveProfile(profile);
+    if (error) throw new Error(error);
+    set({ profile });
+    schedulePersist();
   },
   logs: [],
   sidecarError: null,
@@ -224,7 +193,13 @@ export const useConnectionStore = create<ConnectionState>((set, get) => {
 
   connect: async () => {
     try {
-      await invoke("connect", { profileOverride: get().profile });
+      const profile = connectionProfileSchema.parse(get().profile);
+      const error = validateActiveProfile(profile);
+      if (error) {
+        set({ status: { state: "Error", message: error, phase: "validation" } });
+        return;
+      }
+      await invoke("connect", { profileOverride: profile });
     } catch (e) {
       // TODO(F2): replace String(e) with typed AppError {code,message}
       const message = String(e);
@@ -232,7 +207,7 @@ export const useConnectionStore = create<ConnectionState>((set, get) => {
       // the tunnel engine itself can't run at all — structurally different
       // from a normal connection failure, so it routes to the full-screen
       // SidecarErrorScreen instead of the button's own error state.
-      if (message.toLowerCase().includes("binary not found")) {
+      if (/binary not found|engine incompatible|engine_incompatible/i.test(message)) {
         set({ sidecarError: message });
       } else {
         set({ status: { state: "Error", message, phase: "launching" } });
@@ -357,6 +332,7 @@ export const useConnectionStore = create<ConnectionState>((set, get) => {
   setEngineTorBridges: (engine_tor_bridges) => { set((s) => ({ profile: { ...s.profile, engine_tor_bridges } })); schedulePersist(); },
   setEngineTorBridgesFile: (engine_tor_bridges_file) => { set((s) => ({ profile: { ...s.profile, engine_tor_bridges_file } })); schedulePersist(); },
   setEngineTorNoBridges: createPersistSetter("engine_tor_no_bridges"),
+  setEngineTorForceBridges: createPersistSetter("engine_tor_force_bridges"),
   setEngineTorPt: (engine_tor_pt) => { set((s) => ({ profile: { ...s.profile, engine_tor_pt } })); schedulePersist(); },
   setEngineTorPtDir: (engine_tor_pt_dir) => { set((s) => ({ profile: { ...s.profile, engine_tor_pt_dir } })); schedulePersist(); },
   setEngineTorCountry: (engine_tor_country) => { set((s) => ({ profile: { ...s.profile, engine_tor_country } })); schedulePersist(); },
@@ -423,15 +399,16 @@ export const useConnectionStore = create<ConnectionState>((set, get) => {
     try {
       const conns = await invoke<ActiveConn[]>("get_active_connections");
       set({ activeConns: conns });
-    } catch {}
+    } catch {
+      // Polling is advisory; keep the previous snapshot.
+    }
   },
 
   reloadProfile: async () => {
     try {
       const profile = await invoke<ConnectionProfile>("get_default_profile");
-      set({ profile });
+      set({ profile: connectionProfileSchema.parse(profile) });
     } catch (e) {
-      // TODO(F2): typed error handling for reloadProfile
       console.error("Failed to reload profile:", e);
     }
   },
@@ -475,7 +452,8 @@ export async function initConnectionListeners(): Promise<() => void> {
   // emit (Idle) on startup doesn't fire a spurious notification.
   let lastNotifiedState: string | null = useConnectionStore.getState().status.state;
 
-  const [unlistenStatus, unlistenLog, unlistenTraffic] = await Promise.all([
+  let torStatusReceived = false;
+  const [unlistenStatus, unlistenLog, unlistenTraffic, unlistenTorStatus] = await Promise.all([
     listen<ConnectionStatus>("aether://status", (e) => {
       const newState = e.payload.state;
       useConnectionStore.setState({
@@ -507,6 +485,10 @@ export async function initConnectionListeners(): Promise<() => void> {
     listen<TrafficStats>("aether://traffic", (e) => {
       useConnectionStore.setState({ traffic: e.payload });
     }),
+    listen<EngineTorStatus>("aether://tor-status", (e) => {
+      torStatusReceived = true;
+      useConnectionStore.setState({ engineTorStatus: e.payload });
+    }),
   ]);
 
   // Reconcile state in case the window reopened mid-session, and load the
@@ -514,12 +496,18 @@ export async function initConnectionListeners(): Promise<() => void> {
   // command touches the Aether binary, so a failure here is an IPC-layer
   // bug, not a sidecar problem — logged rather than shown as sidecarError.
   try {
-    const [status, profile, traffic] = await Promise.all([
+    const [status, profile, traffic, engineTorStatus] = await Promise.all([
       invoke<ConnectionStatus>("get_status"),
       invoke<ConnectionProfile>("get_default_profile"),
       invoke<TrafficStats>("get_traffic_stats").catch(() => null as TrafficStats | null),
+      invoke<EngineTorStatus>("get_engine_tor_status").catch(() => null),
     ]);
-    useConnectionStore.setState({ status, profile, ...(traffic ? { traffic } : {}) });
+    useConnectionStore.setState({
+      status,
+      profile: connectionProfileSchema.parse(profile),
+      ...(traffic ? { traffic } : {}),
+      ...(!torStatusReceived && engineTorStatus ? { engineTorStatus } : {}),
+    });
   } catch (e) {
     console.error("Failed to load initial connection state:", e);
   }
@@ -528,6 +516,7 @@ export async function initConnectionListeners(): Promise<() => void> {
     unlistenStatus();
     unlistenLog();
     unlistenTraffic();
+    unlistenTorStatus();
     if (flushTimer !== null) clearTimeout(flushTimer);
   };
 }

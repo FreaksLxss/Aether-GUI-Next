@@ -20,7 +20,9 @@ export function useWindowPersist() {
         const pos = await win.outerPosition();
         const size = await win.outerSize();
         await invoke("save_window_position", { x: pos.x, y: pos.y, width: size.width, height: size.height });
-      } catch {}
+      } catch {
+        // Persistence is best-effort; window operations must remain usable.
+      }
     };
 
     const schedule = () => {
@@ -41,7 +43,9 @@ export function useWindowPersist() {
             await win.setSize({ width: w, height: h } as unknown as never);
           }
         }
-      } catch {}
+      } catch {
+        // Retain the default window geometry if restoring it fails.
+      }
     })();
 
     window.addEventListener("resize", schedule);

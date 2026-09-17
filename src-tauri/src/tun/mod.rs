@@ -23,9 +23,6 @@ pub enum TunError {
     #[error("failed to create TUN adapter: {0}")]
     AdapterCreate(String),
 
-    #[error("failed to configure TUN adapter: {0}")]
-    AdapterConfig(String),
-
     #[error("failed to manipulate routes: {0}")]
     RouteError(String),
 
@@ -61,7 +58,6 @@ mod manager {
         adapter: Option<Arc<adapter::TunAdapter>>,
         route_manager: Option<route::RouteManager>,
         forwarder_handle: Option<JoinHandle<()>>,
-        socks_addr: Option<std::net::SocketAddr>,
     }
 
     impl TunManager {
@@ -70,7 +66,6 @@ mod manager {
                 adapter: None,
                 route_manager: None,
                 forwarder_handle: None,
-                socks_addr: None,
             }
         }
 
@@ -122,7 +117,6 @@ mod manager {
             self.adapter = Some(tun_adapter);
             self.route_manager = Some(route_mgr);
             self.forwarder_handle = Some(handle);
-            self.socks_addr = Some(addr);
 
             Ok(())
         }
@@ -147,16 +141,11 @@ mod manager {
 
             // Drop the adapter
             self.adapter.take();
-            self.socks_addr = None;
             Ok(())
         }
 
         pub fn is_active(&self) -> bool {
             self.adapter.is_some()
-        }
-
-        pub fn socks_addr(&self) -> Option<std::net::SocketAddr> {
-            self.socks_addr
         }
     }
 
@@ -197,10 +186,6 @@ mod manager {
 
         pub fn is_active(&self) -> bool {
             false
-        }
-
-        pub fn socks_addr(&self) -> Option<std::net::SocketAddr> {
-            None
         }
     }
 

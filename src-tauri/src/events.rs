@@ -2,6 +2,22 @@ use serde::Serialize;
 
 pub const STATUS_EVENT: &str = "aether://status";
 pub const LOG_EVENT: &str = "aether://log";
+/// Native engine chain-Tor secondary listener readiness — `EngineTorStatus`.
+/// Aether ≥2.0.0 chain mode (`--tor`) keeps the WARP listener on the primary
+/// bind while arti serves a second SOCKS5 on its own bind; the GUI shows this
+/// separately so a live WARP listener is never mistaken for a live Tor
+/// listener. Reverse/only report readiness via the primary status — only-mode
+/// serves plain Tor on the primary bind itself — and this event is unrelated
+/// to the IP Changer's `ip-changer://status` Tor. Reset to the default
+/// whenever the session stops/restarts.
+pub const ENGINE_TOR_STATUS_EVENT: &str = "aether://tor-status";
+
+#[derive(Serialize, Clone, Debug, Default, PartialEq, Eq)]
+pub struct EngineTorStatus {
+    pub enabled: bool,
+    pub ready: bool,
+    pub address: Option<String>,
+}
 
 /// Live TUN/HTTP-proxy traffic counters — `TrafficStats`.
 pub const TRAFFIC_EVENT: &str = "aether://traffic";

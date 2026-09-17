@@ -1,0 +1,5 @@
+{
+  "bundle": {
+    "resources": ["binaries/engine/aether", "binaries/engine/pt/lyrebird", "binaries/tor", "binaries/wintun.dll"]
+  }
+}

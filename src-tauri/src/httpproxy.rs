@@ -258,10 +258,6 @@ fn pipe_counted(mut src: TcpStream, mut dst: TcpStream, is_tx: bool) -> io::Resu
     Ok(total)
 }
 
-fn pipe(mut src: TcpStream, mut dst: TcpStream) -> io::Result<u64> {
-    pipe_counted(src, dst, true)
-}
-
 // ─── Request head reading / parsing ─────────────────────────────────────
 
 /// Read bytes until the blank line ending the request head. Returns

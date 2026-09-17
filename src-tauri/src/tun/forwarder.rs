@@ -39,9 +39,6 @@ struct Flow {
     // Sequence numbers from the client's perspective
     client_seq: u32, // Last seq we received from client
     server_seq: u32, // Next seq we send to client
-    // For checksum calculation
-    local_ip: [u8; 4],  // TUN adapter IP
-    remote_ip: [u8; 4], // Original destination IP
 }
 
 struct ForwarderState {
@@ -126,7 +123,7 @@ pub fn run_forwarder(adapter: Arc<TunAdapter>, socks_addr: SocketAddr, dns_mode:
 
     // Cleanup
     let st = state.lock();
-    for (_, flow) in st.flows.iter() {
+    for flow in st.flows.values() {
         let mut f = flow.lock();
         f.state = TcpState::Closed;
         let _ = f.stream.shutdown(std::net::Shutdown::Both);
@@ -222,13 +219,12 @@ fn handle_tcp_packet(
                 drop(f);
 
                 // Start relaying data from SOCKS5 → TUN
-                let state_clone = Arc::clone(&state);
+                let state_clone = Arc::clone(state);
                 let adapter_clone = Arc::clone(adapter);
                 let key2 = key.clone();
                 std::thread::spawn(move || {
                     relay_socks_to_tun(state_clone, key2, &adapter_clone);
                 });
-                return;
             }
         }
         TcpState::Established => {
@@ -342,8 +338,6 @@ fn handle_syn(
         state: TcpState::SynReceived,
         client_seq,
         server_seq: server_seq.wrapping_add(1), // Next seq after SYN-ACK
-        local_ip: tun_ip,
-        remote_ip: key.dst_ip,
     }));
 
     {
@@ -460,6 +454,8 @@ fn relay_socks_to_tun(state: Arc<Mutex<ForwarderState>>, key: FlowKey, adapter: 
 // ─── Packet construction ──────────────────────────────────────────────
 
 /// Build and inject a TCP packet into the TUN adapter.
+// Keep the wire-header fields explicit and parallel in both packet builders.
+#[allow(clippy::too_many_arguments)]
 fn send_tcp_packet(
     adapter: &Arc<TunAdapter>,
     src_ip: &[u8; 4],
@@ -519,6 +515,8 @@ fn send_tcp_packet(
 }
 
 /// Build and inject a TCP data packet (with payload) into the TUN adapter.
+// Keep the wire-header fields explicit and parallel in both packet builders.
+#[allow(clippy::too_many_arguments)]
 fn send_tcp_data(
     adapter: &Arc<TunAdapter>,
     src_ip: &[u8; 4],

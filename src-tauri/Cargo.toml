@@ -1,6 +1,6 @@
 [package]
 name = "aether-gui"
-version = "0.16.1"
+version = "0.17.0"
 description = "One-click GUI for the Aether censorship-circumvention tunnel"
 edition = "2021"
 rust-version = "1.98"
@@ -29,6 +29,7 @@ tar = "0.4"
 flate2 = "1"
 log = "0.4"
 base64 = "0.22"
+sha2 = "0.10"
 
 [target.'cfg(not(target_os = "android"))'.dependencies]
 portable-pty = "0.8"

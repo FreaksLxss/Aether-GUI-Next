@@ -1,4 +1,5 @@
-use super::profiles::ScanMode;
+use super::profiles::{ConnectionProfile, EngineTorMode, ScanMode};
+use crate::events::EngineTorStatus;
 use std::net::{IpAddr, Ipv4Addr, SocketAddr, TcpStream};
 use std::time::Duration;
 
@@ -42,6 +43,69 @@ pub fn connect_timeout(scan_mode: &ScanMode) -> Duration {
         ScanMode::Stealth => 210,
         ScanMode::Ironclad => 240,
     })
+}
+
+/// Mode-aware startup budget. Tor-only has no WARP scan but must bootstrap
+/// arti (direct attempts, then bridge fallback — potentially several
+/// minutes); reverse must bootstrap Tor before its WARP scan even starts.
+/// The monitor keeps checking cancellation every tick throughout the budget.
+pub fn startup_timeout(profile: &ConnectionProfile) -> Duration {
+    // Tor budget: direct-attempt window + bridge/stall fallback, plus a
+    // generous fixed margin; individual tuning env vars extend it 1:1.
+    let tor_budget = Duration::from_secs(
+        600 + u64::from(profile.engine_tor_direct_secs.unwrap_or(60))
+            + u64::from(profile.engine_tor_stall_secs.unwrap_or(120)),
+    );
+    match profile.engine_tor_mode {
+        EngineTorMode::TorOnly => tor_budget,
+        EngineTorMode::TorReverse => tor_budget + connect_timeout(&profile.scan_mode),
+        EngineTorMode::Disabled | EngineTorMode::Tor => connect_timeout(&profile.scan_mode),
+    }
+}
+
+/// Which bind carries the separately-reported native Tor SOCKS endpoint.
+/// Chain mode (`--tor`) only: WARP stays on the primary bind and arti gets a
+/// second listener; the GUI must never route normal traffic or OS proxy
+/// through it. Tor-only serves Tor on the primary bind (tracked by the main
+/// connected status); reverse's Tor is internal to the primary tunnel.
+/// Defaults to the engine's documented secondary port 1820.
+pub fn secondary_tor_address(profile: &ConnectionProfile) -> Option<SocketAddr> {
+    if profile.engine_tor_mode != EngineTorMode::Tor {
+        return None;
+    }
+    profile
+        .engine_tor_bind
+        .as_deref()
+        .map(str::trim)
+        .filter(|s| !s.is_empty())
+        .unwrap_or("127.0.0.1:1820")
+        .parse()
+        .ok()
+}
+
+/// Snapshot of the secondary endpoint for `aether://tor-status`. `probe`
+/// does a real TCP connect (same ground-truth rule as the primary status).
+pub fn secondary_tor_status(profile: &ConnectionProfile, probe: bool) -> EngineTorStatus {
+    match secondary_tor_address(profile) {
+        Some(address) => EngineTorStatus {
+            enabled: true,
+            ready: probe && port_is_live(&address),
+            address: Some(probe_addr(&address).to_string()),
+        },
+        None => EngineTorStatus::default(),
+    }
+}
+
+/// Current startup stage for progress feedback while the (possibly
+/// Tor-extended) budget runs. Emitted to the log, not as a status change.
+pub fn startup_stage(profile: &ConnectionProfile) -> &'static str {
+    match profile.engine_tor_mode {
+        EngineTorMode::TorOnly => "Waiting for native Tor bootstrap and the primary SOCKS listener (bridge fallback can take several minutes)",
+        EngineTorMode::TorReverse => "Waiting for native Tor bootstrap, then the reverse tunnel's primary SOCKS listener (bridge fallback can take several minutes)",
+        EngineTorMode::Tor | EngineTorMode::Disabled => {
+            "Waiting for Aether's primary SOCKS listener"
+        }
+    }
 }
 
 /// How long to wait after sending Ctrl-C before force-killing. Manually
@@ -144,5 +208,97 @@ mod tests {
         assert!(connect_timeout(&ScanMode::Thorough) > Duration::from_secs(300));
         assert!(connect_timeout(&ScanMode::Stealth) > Duration::from_secs(180));
         assert!(connect_timeout(&ScanMode::Ironclad) > Duration::from_secs(180));
+    }
+
+    fn tor_profile(mode: EngineTorMode) -> ConnectionProfile {
+        ConnectionProfile {
+            engine_tor_mode: mode,
+            ..ConnectionProfile::default()
+        }
+    }
+
+    #[test]
+    fn startup_timeout_is_mode_aware() {
+        // Base = the plain scan budget of whatever scan mode the default
+        // profile carries, so the equality holds regardless of the default.
+        let base = connect_timeout(&tor_profile(EngineTorMode::Disabled).scan_mode);
+        assert_eq!(startup_timeout(&tor_profile(EngineTorMode::Disabled)), base);
+        // Chain keeps the plain scan deadline: the secondary listener is a
+        // bonus endpoint, not a startup gate.
+        assert_eq!(startup_timeout(&tor_profile(EngineTorMode::Tor)), base);
+        assert!(startup_timeout(&tor_profile(EngineTorMode::TorOnly)) > base);
+        // Reverse pays Tor bootstrap PLUS the full scan budget.
+        assert!(
+            startup_timeout(&tor_profile(EngineTorMode::TorReverse))
+                > startup_timeout(&tor_profile(EngineTorMode::TorOnly))
+        );
+    }
+
+    #[test]
+    fn tor_tuning_extends_budget() {
+        let mut p = tor_profile(EngineTorMode::TorOnly);
+        let base = startup_timeout(&p);
+        p.engine_tor_direct_secs = Some(120);
+        p.engine_tor_stall_secs = Some(300);
+        assert!(startup_timeout(&p) > base);
+    }
+
+    #[test]
+    fn secondary_endpoint_is_chain_only() {
+        assert_eq!(
+            secondary_tor_address(&tor_profile(EngineTorMode::Disabled)),
+            None
+        );
+        assert_eq!(
+            secondary_tor_address(&tor_profile(EngineTorMode::TorReverse)),
+            None
+        );
+        assert_eq!(
+            secondary_tor_address(&tor_profile(EngineTorMode::TorOnly)),
+            None
+        );
+        let chain = secondary_tor_address(&tor_profile(EngineTorMode::Tor)).unwrap();
+        assert_eq!(chain, "127.0.0.1:1820".parse().unwrap());
+    }
+
+    #[test]
+    fn secondary_endpoint_honors_bind_and_disables() {
+        let mut p = tor_profile(EngineTorMode::Tor);
+        p.engine_tor_bind = Some("127.0.0.1:1830".into());
+        assert_eq!(
+            secondary_tor_address(&p),
+            Some("127.0.0.1:1830".parse().unwrap())
+        );
+        // Blank bind falls back to the default secondary port.
+        p.engine_tor_bind = Some("   ".into());
+        assert_eq!(
+            secondary_tor_address(&p),
+            Some("127.0.0.1:1820".parse().unwrap())
+        );
+        // Disabled mode always reports the inert default snapshot.
+        p.engine_tor_mode = EngineTorMode::Disabled;
+        assert_eq!(secondary_tor_status(&p, true), EngineTorStatus::default());
+    }
+
+    #[test]
+    fn secondary_status_reports_live_listener() {
+        let listener = std::net::TcpListener::bind("127.0.0.1:0").unwrap();
+        let port = listener.local_addr().unwrap().port();
+        let mut p = tor_profile(EngineTorMode::Tor);
+        p.engine_tor_bind = Some(format!("127.0.0.1:{port}"));
+        let status = secondary_tor_status(&p, true);
+        assert!(status.enabled);
+        assert!(status.ready, "listener is up, probe must succeed");
+        assert_eq!(
+            status.address.as_deref(),
+            Some(format!("127.0.0.1:{port}").as_str()),
+            "address must be a copyable host:port value"
+        );
+        // Unprobed snapshot: enabled with address, never claiming ready.
+        let idle = secondary_tor_status(&p, false);
+        assert!(idle.enabled && !idle.ready);
+        std::thread::spawn(move || {
+            let _ = listener.accept();
+        });
     }
 }

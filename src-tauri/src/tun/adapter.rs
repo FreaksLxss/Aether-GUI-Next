@@ -4,7 +4,8 @@ use std::sync::Arc;
 /// A wintun-based TUN adapter that creates a virtual network interface
 /// and provides raw IP packet read/write access.
 pub struct TunAdapter {
-    wintun: wintun::Wintun,
+    // Retain the DLL handle for the adapter/session lifetime.
+    _wintun: wintun::Wintun,
     adapter: Arc<wintun::Adapter>,
     session: Arc<wintun::Session>,
 }
@@ -48,7 +49,7 @@ impl TunAdapter {
         );
 
         Ok(Self {
-            wintun,
+            _wintun: wintun,
             adapter,
             session,
         })

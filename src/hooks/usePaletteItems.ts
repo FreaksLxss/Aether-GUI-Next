@@ -63,7 +63,9 @@ export function recordPaletteRecent(id: string) {
     const cur = getRecentIds().filter((x) => x !== id);
     cur.unshift(id);
     localStorage.setItem(RECENT_KEY, JSON.stringify(cur.slice(0, 3)));
-  } catch {}
+  } catch {
+    // Recent actions are optional when local storage is unavailable.
+  }
 }
 function getPinnedIds(): Set<string> {
   if (typeof window === "undefined") return new Set();
@@ -766,7 +768,9 @@ export function usePaletteItems(setPanel: Setter): PaletteItem[] {
         const orig = it.run;
         it.run = wrapRun(it.id, orig);
       }
-    } catch {}
+    } catch {
+      // Keep the default items when stored pins or recents cannot be applied.
+    }
 
     // Sorting: Panels + Actions first, then the rest alphabetically by group.
     // Filtering already handles keyword matching; order here is the default view.
@@ -776,7 +780,6 @@ export function usePaletteItems(setPanel: Setter): PaletteItem[] {
     profile,
     logs.length,
     leakStatus,
-    torStatus,
     torAuto,
     connect,
     disconnect,

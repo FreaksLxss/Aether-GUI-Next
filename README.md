@@ -21,12 +21,18 @@ This project does not reimplement any of Aether's tunneling logic. It drives the
   />
 </p>
 
+## Versions and engine repair
+
+**Aether-GUI 0.17.0** is the desktop app version; **Aether 2.0.0** is the separately versioned engine it requires. [`src-tauri/aether-release.json`](src-tauri/aether-release.json) pins the upstream repository, version, asset names and SHA-256 checksums for development fetches, CI and in-app engine repair. Engine repair installs that approved release, not whatever upstream labels `latest`.
+
+If the engine is missing, incompatible or missing its `pt/lyrebird` companion, stop Aether and use the app's engine install/repair action. It installs the complete, checksum-verified payload into `<app-data>/binaries/engine-2.0.0/`. The resolver prefers a compatible versioned download over bundled or legacy copies, so a stale engine cannot shadow a repaired installation. Replacement is staged; the previous directory is preserved as a sibling backup. Legacy binaries, identity files and the independent IP Changer Tor bundle are not deleted. About reports the detected engine version separately from the GUI version.
+
 ## Features
 
 - **Auto mode** — the default screen is just a single button. No configuration is required; it connects using your last-successful settings (or sensible defaults on first run).
 - **Advanced panel** — for when you want control, a collapsible panel exposes the real options Aether's setup supports:
   - **Protocol**: MASQUE (disguises traffic as normal HTTPS), WireGuard (lighter, faster), or WARP-in-WARP/gool (two nested WireGuard tunnels for extra security at a speed cost)
-  - **Scan Mode**: Turbo, Balanced, Thorough, Stealth, or Ironclad — trading route-discovery speed against how much probe traffic it generates; Ironclad opens a real tunnel through each candidate and sends a real HTTP request before trusting it (slowest, but guaranteed working)
+  - **Scan Mode**: Turbo, Balanced, Thorough, Stealth, or Ironclad — trading route-discovery speed against how much probe traffic it generates; Ironclad opens a real tunnel through each candidate and sends a real HTTP request before trusting it (slower; not a guarantee of connectivity on your network)
   - **IP Version**: IPv4, IPv6, or both
   - **MASQUE Transport**: HTTP/3 (QUIC — fastest handshake) or HTTP/2 (TCP — looks like ordinary HTTPS, works where UDP is blocked or throttled)
   - **Obfuscation**: how heavily the handshake is disguised from DPI — profiles adapt to the selected protocol; escalate if the default can't get through
@@ -42,6 +48,7 @@ This project does not reimplement any of Aether's tunneling logic. It drives the
 - **Egress location & leak check** — while connected, a small pill shows the public IP, country, and city your traffic is actually exiting through (the tunnel's egress), and a one-click refresh fettches it again. Every connect, the GUI also compares that exit IP against your real, direct IP — if they match, it raises a visible "Leak detected" warning, so you immediately know the tunnel isn't actually masking your traffic.
 - **Connection history** — every session is recorded (protocol, scan mode, duration, time, success/failure) in a collapsible panel with a clear-history action, so you can see what's been working.
 - **Live log window** — Aether's full log stream can be popped open in a separate, resizable window that stays live even when you're not watching the main screen — useful for digging into what a connection attempt actually did.
+- **Native engine Tor (Aether 2.0.0)** — built into the engine via arti, with **Tor** (WARP → Tor), **Tor-Reverse** (Tor → WARP) and **Tor-Only** (no WARP) modes, bridge policy and pluggable-transport settings. Tor mode has a separate SOCKS listener (default `127.0.0.1:1820`) whose readiness is reported separately from the primary listener (`127.0.0.1:1819` by default). Tor-Only serves on the primary listener; Tor-Reverse uses Tor internally and requires MASQUE over HTTP/2, not WireGuard/gool. The engine's `pt/lyrebird` is a transport helper, not the IP Changer's Tor binary. Enabling one Tor subsystem does not start the other.
 - **IP Changer** — an optional, self-contained Tor subprocess that gives you a fresh public egress IP on demand or on a schedule. Start Tor from the panel to see your current exit IP (country, city, ISP) resolve through the tunnel, hit **Rotate IP** to request a new identity (NEWNYM), or enable **Auto-rotate** to do it automatically every 1–60 minutes. Runs entirely independently of Aether on its own SOCKS5/control ports, with a live log stream in the panel.
 
 ## Settings
@@ -77,37 +84,45 @@ Windows x64 only for now — see [Building from source](#building-from-source) f
 
 3. **Fetch the Aether binary**
 
-   Aether-GUI bundles the real `aether` binary from [CluvexStudio/Aether releases](https://github.com/CluvexStudio/Aether/releases) rather than building it — this repo only ships the GUI. Fetch and checksum-verify it for your platform:
+   Aether-GUI bundles the prebuilt engine from [CluvexStudio/Aether releases](https://github.com/CluvexStudio/Aether/releases). Use the shared Python helper (Python 3.9+; no extra Python packages), from the repository root:
 
    ```sh
-   ./src-tauri/binaries/fetch-aether.sh
+   python src-tauri/binaries/fetch-aether.py
    ```
 
-   This script covers Linux and macOS directly. On Windows, download the matching `aether-windows-*.zip` from the [Aether releases page](https://github.com/CluvexStudio/Aether/releases) yourself, verify it against the published `SHA256SUMS.txt`, and extract `aether.exe` into `src-tauri/binaries/`.
+   On Windows, the PowerShell wrapper invokes that same helper:
 
-5. **Fetch the Tor expert bundle (for the IP Changer)**
+   ```powershell
+   ./src-tauri/binaries/fetch-aether.ps1
+   ```
+
+   On Linux/macOS, use `python3 src-tauri/binaries/fetch-aether.py` or `bash src-tauri/binaries/fetch-aether.sh`. The manifest selects Windows x86_64, Linux x86_64/aarch64 (musl), or macOS x86_64/aarch64 assets. `AETHER_ASSET` may select another pinned asset for the current OS, such as the macOS x86_64 cross-build asset; it is not an arbitrary release override.
+
+   The helper checks the archive against the manifest's SHA-256, rejects unsafe/unexpected archive members, validates both executable architectures, and stages the complete payload in `src-tauri/binaries/engine/`. Keep `aether.exe` beside `pt/lyrebird.exe` on Windows, or `aether` beside `pt/lyrebird` on Unix — copying only the main executable is incomplete. On the native architecture the helper also checks `aether --version`; that is not a live connection test. Previous engine directories are retained as sibling backups; root-level legacy binaries, identity/state files, Wintun and `binaries/tor/` are left alone. Do not read or commit provisioned identity TOMLs.
+
+4. **Provide the separate Tor expert bundle (for the IP Changer only)**
 
    The IP Changer panel drives a bundled [Tor](https://www.torproject.org/) expert bundle rather than Tor Browser. Download the `tor-expert-bundle-*-<version>.zip` for your platform from the [Tor project downloads](https://www.torproject.org/dist/), and extract the `tor.exe` binary into `src-tauri/binaries/tor/` (e.g. `binaries/tor/windows/x86_64/tor.exe` on Windows, `binaries/tor/linux/x86_64/tor` on Linux, `binaries/tor/macos/aarch64/tor` on Apple Silicon). The panel simply shows "Tor binary not found" until a matching binary is present.
 
-6. **Run in development mode**
+5. **Run in development mode**
 
    ```sh
    npm run tauri dev
    ```
 
-7. **Build a release installer**
+6. **Build a release installer**
 
    ```sh
    npm run tauri build
    ```
 
-   Installers land under `src-tauri/target/release/bundle/` (NSIS `.exe` and `.msi` on Windows; `.dmg`/`.app` on macOS; `.deb`/`.AppImage`/`.rpm` on Linux — cross-platform bundles must each be built on their own OS, or via CI).
+   Bundle configuration targets NSIS `.exe` and `.msi` on Windows, `.dmg`/`.app` on macOS, and `.deb`/`.AppImage`/`.rpm` on Linux. Outputs normally land under `src-tauri/target/release/bundle/` (or a target-specific subdirectory when `--target` is used). Each platform must be built on its own OS or corresponding CI runner. The manifest and platform configurations describe intended support; this documentation does not claim successful builds, platform verification or live network connectivity.
 
 ## How it works
 
 - **Frontend**: React 19 + Tailwind v4, state managed with Zustand, animated with [Motion](https://motion.dev/) — all talking to the Rust backend over Tauri's IPC. Deliberately lightweight: the ambient background is two compositor-only CSS gradient orbs, and every looping animation freezes while the window is unfocused, so the app costs next to nothing sitting in the background.
-- **Backend**: Rust, using [`portable-pty`](https://docs.rs/portable-pty) to spawn the real `aether` binary (v1.9.0) in a genuine pseudo-terminal. Your chosen profile — protocol, scan mode, IP version, MASQUE transport (HTTP/3 or HTTP/2), obfuscation profile, quick reconnect, upstream proxy, WARP-in-WARP endpoints, in-tunnel DNS, routing rules, Zero Trust enrolment — is passed as CLI flags/environment up front, so Aether's interactive prompts normally never appear; a background thread still watches the output and can answer any prompt that does, while forwarding every line live to the GUI's log panel. The **IP Changer** is a fully separate subsystem: `ip_changer.rs` spawns a bundled Tor on its own SOCKS5 (9050) + control (9051) ports, talks [Tor's control protocol](https://spec.torproject.org/control-spec/) over loopback with cookie auth (`SIGNAL NEWNYM` / `SIGNAL SHUTDOWN`), and reuses the leak-check's `net.rs` endpoints through a `socks5h` proxy to display the live exit IP.
-- **Ground truth for "connected"**: the GUI doesn't trust Aether's log wording alone (that's fragile across releases) — it treats a successful TCP connection to the local SOCKS5 port (`127.0.0.1:1819`) as the actual proof the tunnel is up.
+- **Backend**: Rust, using [`portable-pty`](https://docs.rs/portable-pty) to spawn the real `aether` binary (pinned to v2.0.0) in a genuine pseudo-terminal. Your chosen profile — protocol, scan mode, IP version, MASQUE transport (HTTP/3 or HTTP/2), obfuscation profile, quick reconnect, upstream proxy, WARP-in-WARP endpoints, in-tunnel DNS, routing rules, Zero Trust enrolment — is passed as CLI flags/environment up front, so Aether's interactive prompts normally never appear; a background thread still watches the output and can answer any prompt that does, while forwarding every line live to the GUI's log panel. The **IP Changer** is a fully separate subsystem: `ip_changer.rs` spawns a bundled Tor on its own SOCKS5 (9050) + control (9051) ports, talks [Tor's control protocol](https://spec.torproject.org/control-spec/) over loopback with cookie auth (`SIGNAL NEWNYM` / `SIGNAL SHUTDOWN`), and reuses the leak-check's `net.rs` endpoints through a `socks5h` proxy to display the live exit IP.
+- **Ground truth for "connected"**: the GUI probes the profile's primary local SOCKS5 listener (default `127.0.0.1:1819`), rather than relying on fragile log wording. This establishes local listener readiness, not proof of end-to-end internet connectivity or leak protection. Native Tor's secondary listener has its own readiness state; IP Changer is independent of both.
 - **State machine**: `Idle → Launching → Connecting → Connected`, with `Reconnecting` and `Error` as the two ways a connection attempt can end up needing your attention — `Reconnecting` retries automatically (with backoff, capped at 3 attempts), `Error` is the final word once retries are exhausted or something isn't retriable (e.g. the binary itself is missing).
 
 ## About Aether

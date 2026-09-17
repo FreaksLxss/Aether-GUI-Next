@@ -4,7 +4,6 @@ mod commands;
 mod error;
 mod events;
 mod focus;
-mod traffic;
 mod history;
 mod httpproxy;
 mod ip_changer;
@@ -12,6 +11,7 @@ mod net;
 mod presets;
 mod state;
 mod sysproxy;
+mod traffic;
 mod tray;
 mod tun;
 mod updater;
@@ -106,7 +106,7 @@ pub fn run() {
                     .handle()
                     .store("settings.json")
                     .ok()
-                    .and_then(|s| {
+                    .map(|s| {
                         let minimize = s
                             .get("minimize_on_startup")
                             .and_then(|v| v.as_bool())
@@ -115,7 +115,7 @@ pub fn run() {
                             .get("close_to_tray")
                             .and_then(|v| v.as_bool())
                             .unwrap_or(false);
-                        Some(minimize && close_to_tray)
+                        minimize && close_to_tray
                     })
                     .unwrap_or(false);
                 if start_minimized {
@@ -189,6 +189,8 @@ pub fn run() {
             commands::save_preset,
             commands::delete_preset,
             commands::aether_binary_exists,
+            commands::get_engine_info,
+            commands::get_engine_tor_status,
             commands::download_aether,
             commands::read_file,
             commands::write_file,

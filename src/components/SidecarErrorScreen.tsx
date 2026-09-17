@@ -12,7 +12,7 @@ interface Props {
  * run — structurally different from a normal connection error, since the
  * connect button would be meaningless to show at all in this state. */
 export function SidecarErrorScreen({ message, onRetry }: Props) {
-  const isMissing = message.toLowerCase().includes("binary not found");
+  const repairable = /binary not found|engine incompatible/i.test(message);
   const [downloading, setDownloading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const primaryRef = useRef<HTMLButtonElement>(null);
@@ -42,7 +42,7 @@ export function SidecarErrorScreen({ message, onRetry }: Props) {
         </h1>
         <p className="max-w-xs font-mono text-[12px] text-muted-foreground">{message}</p>
 
-        {isMissing ? (
+        {repairable ? (
           <div className="flex flex-col items-center gap-2">
             <Button
               ref={primaryRef}
@@ -58,7 +58,7 @@ export function SidecarErrorScreen({ message, onRetry }: Props) {
               ) : (
                 <>
                   <Download size={16} />
-                  Download Aether
+                  Install / repair Aether
                 </>
               )}
             </Button>

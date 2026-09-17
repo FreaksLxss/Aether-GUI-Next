@@ -14,7 +14,7 @@ import {
 } from "@/components/ui/dialog";
 import { useConnectionStore } from "@/state/connectionStore";
 import { syncCloseChoice } from "@/lib/close";
-import { connectionProfileSchema } from "@/lib/validators";
+import { connectionProfileSchema, validateActiveProfile } from "@/lib/validators";
 import type { ConnectionProfile } from "@/types/connection";
 
 interface SettingsExport {
@@ -107,12 +107,17 @@ export function SettingsIO() {
       const contents = await invoke<string>("read_file", { path: selected });
       const data = JSON.parse(contents) as SettingsExport;
 
-      if (data.profile) {
-        const parsed = connectionProfileSchema.safeParse(data.profile);
-        if (!parsed.success) {
-          toast.error("Invalid settings file: " + parsed.error.message);
-          return;
-        }
+      // Normalize and validate every profile before showing the diff or writing
+      // anything, so old imports get defaults and a bad preset cannot half-apply.
+      const normalize = (value: unknown): ConnectionProfile => {
+        const profile = connectionProfileSchema.parse(value);
+        const error = validateActiveProfile(profile);
+        if (error) throw new Error(error);
+        return profile;
+      };
+      if (data.profile) data.profile = normalize(data.profile);
+      if (Array.isArray(data.presets)) {
+        data.presets = data.presets.map((preset) => ({ ...preset, profile: normalize(preset.profile) }));
       }
 
       // Build diff vs current

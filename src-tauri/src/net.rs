@@ -4,6 +4,7 @@
 //!   * `through_tunnel = true`  → egress IP seen by the outside world via the
 //!     SOCKS5 proxy (i.e. Aether's exit).
 //!   * `through_tunnel = false` → the machine's raw ISP IP, fetched directly.
+//!
 //! If a connected app's direct IP is reachable by a remote host, that means
 //! the capture (proxy/TUN) is not covering that traffic — a leak.
 

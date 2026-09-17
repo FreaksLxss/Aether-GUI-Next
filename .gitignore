@@ -36,6 +36,11 @@ src-tauri/binaries/SHA256SUMS.txt
 # must never be committed.
 src-tauri/binaries/*.toml
 src-tauri/binaries/android/
+# Complete fetched engine, PT companions and transactional staging/backups.
+src-tauri/binaries/engine/
+src-tauri/binaries/pt/
+src-tauri/binaries/.engine-*/
+src-tauri/binaries/__pycache__/
 
 # === IDE / Editor ===
 .vscode/*

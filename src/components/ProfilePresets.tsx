@@ -16,43 +16,6 @@ interface ProfilePreset {
 
 export function ProfilePresetsContent() {
   const profile = useConnectionStore((s) => s.profile);
-  const setProtocol = useConnectionStore((s) => s.setProtocol);
-  const setScanMode = useConnectionStore((s) => s.setScanMode);
-  const setIpVersion = useConnectionStore((s) => s.setIpVersion);
-  const setQuickReconnect = useConnectionStore((s) => s.setQuickReconnect);
-  const setMasqueHttp2 = useConnectionStore((s) => s.setMasqueHttp2);
-  const setMasqueNoize = useConnectionStore((s) => s.setMasqueNoize);
-  const setWgNoize = useConnectionStore((s) => s.setWgNoize);
-  const setBindAddress = useConnectionStore((s) => s.setBindAddress);
-  const setWiwPeers = useConnectionStore((s) => s.setWiwPeers);
-  const setDnsServers = useConnectionStore((s) => s.setDnsServers);
-  const setRouteBlock = useConnectionStore((s) => s.setRouteBlock);
-  const setRouteDirect = useConnectionStore((s) => s.setRouteDirect);
-  const setZtTeam = useConnectionStore((s) => s.setZtTeam);
-  const setZtAccessEmail = useConnectionStore((s) => s.setZtAccessEmail);
-  const setZtAccessId = useConnectionStore((s) => s.setZtAccessId);
-  const setZtAccessSecret = useConnectionStore((s) => s.setZtAccessSecret);
-  const setZtAccessToken = useConnectionStore((s) => s.setZtAccessToken);
-  const setZtGateway = useConnectionStore((s) => s.setZtGateway);
-  const setMim = useConnectionStore((s) => s.setMim);
-  const setMimPeers = useConnectionStore((s) => s.setMimPeers);
-  const setQuicV2 = useConnectionStore((s) => s.setQuicV2);
-  const setFwMark = useConnectionStore((s) => s.setFwMark);
-  const setEngineTorMode = useConnectionStore((s) => s.setEngineTorMode);
-  const setEngineTorBind = useConnectionStore((s) => s.setEngineTorBind);
-  const setEngineTorDir = useConnectionStore((s) => s.setEngineTorDir);
-  const setEngineTorBridges = useConnectionStore((s) => s.setEngineTorBridges);
-  const setEngineTorBridgesFile = useConnectionStore((s) => s.setEngineTorBridgesFile);
-  const setEngineTorNoBridges = useConnectionStore((s) => s.setEngineTorNoBridges);
-  const setEngineTorPt = useConnectionStore((s) => s.setEngineTorPt);
-  const setEngineTorPtDir = useConnectionStore((s) => s.setEngineTorPtDir);
-  const setEngineTorCountry = useConnectionStore((s) => s.setEngineTorCountry);
-  const setEngineTorDirectSecs = useConnectionStore((s) => s.setEngineTorDirectSecs);
-  const setEngineTorStallSecs = useConnectionStore((s) => s.setEngineTorStallSecs);
-  const setMaxClients = useConnectionStore((s) => s.setMaxClients);
-  const setHalfCloseSecs = useConnectionStore((s) => s.setHalfCloseSecs);
-  const setTcpKeepaliveSecs = useConnectionStore((s) => s.setTcpKeepaliveSecs);
-  const setTcpConnectSecs = useConnectionStore((s) => s.setTcpConnectSecs);
   const status = useConnectionStore((s) => s.status);
 
   const [presets, setPresets] = useState<ProfilePreset[]>([]);
@@ -73,47 +36,23 @@ export function ProfilePresetsContent() {
   };
 
   useEffect(() => {
-    void loadPresets();
+    let cancelled = false;
+    void invoke<ProfilePreset[]>("get_presets").then(
+      (list) => { if (!cancelled) { setPresets(list); setError(null); } },
+      (e: unknown) => { if (!cancelled) setError(String(e)); },
+    );
+    return () => { cancelled = true; };
   }, []);
 
+  const applyProfile = useConnectionStore((s) => s.applyProfile);
+
   const applyPreset = (p: ProfilePreset) => {
-    setProtocol(p.profile.protocol);
-    setScanMode(p.profile.scan_mode);
-    setIpVersion(p.profile.ip_version);
-    setQuickReconnect(p.profile.quick_reconnect);
-    setMasqueHttp2(p.profile.masque_http2);
-    setMasqueNoize(p.profile.masque_noize);
-    setWgNoize(p.profile.wg_noize);
-    setBindAddress(p.profile.bind_address);
-    setWiwPeers(p.profile.wiw_peers ?? null);
-    setDnsServers(p.profile.dns_servers ?? null);
-    setRouteBlock(p.profile.route_block ?? []);
-    setRouteDirect(p.profile.route_direct ?? []);
-    setZtTeam(p.profile.zt_team ?? null);
-    setZtAccessEmail(p.profile.zt_access_email ?? null);
-    setZtAccessId(p.profile.zt_access_id ?? null);
-    setZtAccessSecret(p.profile.zt_access_secret ?? null);
-    setZtAccessToken(p.profile.zt_access_token ?? null);
-    setZtGateway(p.profile.zt_gateway ?? false);
-    setMim(p.profile.mim ?? false);
-    setMimPeers(p.profile.mim_peers ?? null);
-    setQuicV2(p.profile.quic_v2 ?? true);
-    setFwMark(p.profile.fw_mark ?? null);
-    setEngineTorMode(p.profile.engine_tor_mode ?? "disabled");
-    setEngineTorBind(p.profile.engine_tor_bind ?? null);
-    setEngineTorDir(p.profile.engine_tor_dir ?? null);
-    setEngineTorBridges(p.profile.engine_tor_bridges ?? []);
-    setEngineTorBridgesFile(p.profile.engine_tor_bridges_file ?? null);
-    setEngineTorNoBridges(p.profile.engine_tor_no_bridges ?? false);
-    setEngineTorPt(p.profile.engine_tor_pt ?? null);
-    setEngineTorPtDir(p.profile.engine_tor_pt_dir ?? null);
-    setEngineTorCountry(p.profile.engine_tor_country ?? null);
-    setEngineTorDirectSecs(p.profile.engine_tor_direct_secs ?? null);
-    setEngineTorStallSecs(p.profile.engine_tor_stall_secs ?? null);
-    setMaxClients(p.profile.max_clients ?? null);
-    setHalfCloseSecs(p.profile.half_close_secs ?? null);
-    setTcpKeepaliveSecs(p.profile.tcp_keepalive_secs ?? null);
-    setTcpConnectSecs(p.profile.tcp_connect_secs ?? null);
+    try {
+      applyProfile(p.profile);
+    } catch (e) {
+      toast.error(String(e));
+      return;
+    }
     toast.success(`Applied "${p.name}"`);
   };
 

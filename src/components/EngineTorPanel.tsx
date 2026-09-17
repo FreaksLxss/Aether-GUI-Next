@@ -1,8 +1,8 @@
 import { useRef, useState } from "react";
 import { Shield, TriangleAlert } from "lucide-react";
 import { Input } from "@/components/ui/input";
+import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
-import { Switch } from "@/components/ui/switch";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { FieldRow } from "@/components/ui/panel-section";
 import { useConnectionStore } from "@/state/connectionStore";
@@ -12,7 +12,7 @@ import { validateEngineTorBind, validateCountry } from "@/lib/validators";
 const MODE_OPTIONS: { value: EngineTorMode; label: string; desc: string }[] = [
   { value: "disabled", label: "Disabled", desc: "No engine Tor" },
   { value: "tor", label: "Tor (WARP → Tor)", desc: "you → WARP → Tor → internet (1819+1820)" },
-  { value: "tor-reverse", label: "Tor-Reverse (Tor → WARP)", desc: "you → Tor → WARP → internet, forces MASQUE H2" },
+  { value: "tor-reverse", label: "Tor-Reverse (Tor → WARP)", desc: "you → Tor → WARP → internet, runs MASQUE over HTTP/2" },
   { value: "tor-only", label: "Tor-Only", desc: "you → Tor → internet, no WARP" },
 ];
 
@@ -25,6 +25,8 @@ export function EngineTorPanel() {
   const setEngineTorDir = useConnectionStore((s) => s.setEngineTorDir);
   const setEngineTorBridges = useConnectionStore((s) => s.setEngineTorBridges);
   const setEngineTorBridgesFile = useConnectionStore((s) => s.setEngineTorBridgesFile);
+  const engineTorStatus = useConnectionStore((s) => s.engineTorStatus);
+  const setEngineTorForceBridges = useConnectionStore((s) => s.setEngineTorForceBridges);
   const setEngineTorNoBridges = useConnectionStore((s) => s.setEngineTorNoBridges);
   const setEngineTorPt = useConnectionStore((s) => s.setEngineTorPt);
   const setEngineTorPtDir = useConnectionStore((s) => s.setEngineTorPtDir);
@@ -33,11 +35,23 @@ export function EngineTorPanel() {
   const setEngineTorStallSecs = useConnectionStore((s) => s.setEngineTorStallSecs);
 
   const enabled = profile.engine_tor_mode !== "disabled";
+  // Tor-only uses the primary bind (1819) and never has a separate Tor listener.
+  const showTorBind = enabled && profile.engine_tor_mode !== "tor-only";
   const reverseConflict = profile.engine_tor_mode === "tor-reverse" && (profile.protocol === "wireguard" || profile.protocol === "gool");
 
   const [bindErr, setBindErr] = useState<string | null>(null);
   const [countryErr, setCountryErr] = useState<string | null>(null);
   const timerRef = useRef<ReturnType<typeof setTimeout>>(null);
+
+  // Manual bridge lines keep the exact draft (newlines/spaces) while editing so
+  // typing a new line is never swallowed; blank lines only drop out when the
+  // value is actually sent to the engine.
+  const manualDraft = profile.engine_tor_bridges.join("\n");
+  const setManualDraft = (text: string) => {
+    setEngineTorNoBridges(false);
+    setEngineTorForceBridges(false);
+    setEngineTorBridges(text.split("\n"));
+  };
 
   return (
     <div className="flex flex-col gap-3">
@@ -48,7 +62,7 @@ export function EngineTorPanel() {
         </p>
       </div>
 
-      <FieldRow label="Mode (Aether ≥2.0.0)" tooltip="Built-in Tor via arti. Tor-Reverse forces MASQUE over HTTP/2 and is incompatible with WireGuard/gool.">
+      <FieldRow label="Mode (Aether ≥2.0.0)" tooltip="Built-in Tor via arti. Tor-Reverse dials the tunnel through Tor so it runs MASQUE over HTTP/2 and is incompatible with WireGuard/gool.">
         <Select value={profile.engine_tor_mode} onValueChange={(v) => setEngineTorMode(v as EngineTorMode)} disabled={locked}>
           <SelectTrigger className="w-full justify-start gap-2 rounded-[35px] bg-black/20 px-3 py-5 text-xs font-medium text-foreground ring-1 ring-white/[0.07] disabled:opacity-50 [&>span]:flex-1 [&>span]:text-left [&>svg]:ml-auto" aria-label="Engine Tor mode">
             <SelectValue />
@@ -66,27 +80,46 @@ export function EngineTorPanel() {
         </Select>
       </FieldRow>
 
+      {profile.engine_tor_bridges_file?.trim() && (
+        <div role="alert" className="rounded-lg bg-destructive/10 px-3 py-2 text-[11px] text-status-error">
+          <p>The legacy bridges-file setting is unsupported and blocks Connect. No file has been read. Paste its bridge lines into Manual bridges, then clear the legacy setting.</p>
+          <Button variant="outline" size="sm" disabled={locked} onClick={() => setEngineTorBridgesFile(null)} className="mt-2">
+            Clear legacy file setting
+          </Button>
+        </div>
+      )}
+      {engineTorStatus.enabled && (
+        <p role="status" className="text-[11px] text-muted-foreground">
+          Engine Tor listener: {engineTorStatus.ready ? "Ready" : "Waiting"}
+          {engineTorStatus.address ? ` (${engineTorStatus.address})` : ""}. Separate from the primary tunnel and IP Changer.
+        </p>
+      )}
+      {profile.engine_tor_mode === "tor-reverse" && (
+        <p className="text-[11px] text-muted-foreground">Tor-Reverse forces MASQUE over HTTP/2. Your saved transport and QUIC choices are preserved for other modes.</p>
+      )}
       {reverseConflict && (
         <div className="flex items-center gap-1.5 rounded-lg bg-destructive/10 px-2.5 py-2 text-[11px] text-status-error ring-1 ring-destructive/15">
-          <TriangleAlert size={12} /> Tor-Reverse requires MASQUE (forces HTTP/2, incompatible with WireGuard/gool).
+          <TriangleAlert size={12} /> Tor-Reverse requires MASQUE (runs over HTTP/2, incompatible with WireGuard/gool).
         </div>
       )}
 
       {enabled && (
         <>
-          <FieldRow label="Tor Bind" tooltip="Engine Tor SOCKS listen address (--tor-bind), default 127.0.0.1:1820.">
-            <Input
-              type="text"
-              value={profile.engine_tor_bind ?? ""}
-              disabled={locked}
-              onChange={(e) => { const v = e.target.value.trim(); setEngineTorBind(v || null); if (bindErr) setBindErr(validateEngineTorBind(v || null)); }}
-              onBlur={() => { const e = validateEngineTorBind(profile.engine_tor_bind); setBindErr(e); if (e) { if (timerRef.current) clearTimeout(timerRef.current); timerRef.current = setTimeout(() => setBindErr(null), 2500); } }}
-              placeholder="127.0.0.1:1820"
-              aria-invalid={!!bindErr}
-              className={`h-9 rounded-xl bg-black/20 font-mono text-[11px] ring-1 ring-inset focus-visible:ring-primary ${bindErr ? "ring-status-error" : "ring-white/[0.07]"}`}
-            />
-            {bindErr && <p className="text-[11px] text-status-error">{bindErr}</p>}
-          </FieldRow>
+          {showTorBind && (
+            <FieldRow label="Tor Bind" tooltip="Engine Tor SOCKS listen address (--tor-bind), default 127.0.0.1:1820. Tor-Only serves on the main proxy address instead, so no separate bind applies.">
+              <Input
+                type="text"
+                value={profile.engine_tor_bind ?? ""}
+                disabled={locked}
+                onChange={(e) => { const v = e.target.value.trim(); setEngineTorBind(v || null); if (bindErr) setBindErr(validateEngineTorBind(v || null)); }}
+                onBlur={() => { const e = validateEngineTorBind(profile.engine_tor_bind); setBindErr(e); if (e) { if (timerRef.current) clearTimeout(timerRef.current); timerRef.current = setTimeout(() => setBindErr(null), 2500); } }}
+                placeholder="127.0.0.1:1820"
+                aria-invalid={!!bindErr}
+                className={`h-9 rounded-xl bg-black/20 font-mono text-[11px] ring-1 ring-inset focus-visible:ring-primary ${bindErr ? "ring-status-error" : "ring-white/[0.07]"}`}
+              />
+              {bindErr && <p className="text-[11px] text-status-error">{bindErr}</p>}
+            </FieldRow>
+          )}
 
           <FieldRow label="Tor Dir" tooltip="Directory for Tor state (--tor-dir). Leave empty for default.">
             <Input type="text" value={profile.engine_tor_dir ?? ""} disabled={locked} onChange={(e) => setEngineTorDir(e.target.value.trim() || null)} placeholder="/path/to/tor-dir" className="h-9 rounded-xl bg-black/20 font-mono text-[11px] ring-1 ring-white/[0.07]" />
@@ -107,41 +140,86 @@ export function EngineTorPanel() {
             {countryErr && <p className="text-[11px] text-status-error">{countryErr}</p>}
           </FieldRow>
 
-          <FieldRow label="Bridges" tooltip="One bridge per line (--tor-bridge, repeatable). Leave empty to fetch or use --no-tor-bridges.">
+          <FieldRow
+            label="Bridge policy"
+            tooltip="Automatic (default): try Tor plainly first, fetch bridges if blocked. Force automatic: use fetched bridges immediately (--tor-bridges). Manual: only your bridge lines (--tor-bridge, repeated). Disabled: never use bridges (--no-tor-bridges)."
+          >
+            <Select
+              value={
+                profile.engine_tor_no_bridges ? "none"
+                  : profile.engine_tor_bridges.length > 0 ? "manual"
+                  : profile.engine_tor_force_bridges ? "force"
+                  : "auto"
+              }
+              onValueChange={(policy) => {
+                setEngineTorNoBridges(policy === "none");
+                setEngineTorForceBridges(policy === "force");
+                if (policy !== "manual") setEngineTorBridges([]);
+                else if (profile.engine_tor_bridges.length === 0) setEngineTorBridges([""]);
+              }}
+              disabled={locked}
+            >
+              <SelectTrigger className="w-full justify-start gap-2 rounded-[35px] bg-black/20 px-3 py-5 text-xs font-medium text-foreground ring-1 ring-white/[0.07] disabled:opacity-50 [&>span]:flex-1 [&>span]:text-left [&>svg]:ml-auto" aria-label="Tor bridge policy">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent className="rounded-[35px] bg-surface-2 p-1 ring-1 ring-white/10">
+                <SelectItem value="auto" className="cursor-pointer rounded-lg px-2.5 py-2 text-xs focus:bg-primary/15 data-[highlighted]:bg-primary/15">
+                  <div className="flex flex-col gap-0.5">
+                    <span className="font-medium">Automatic</span>
+                    <span className="text-[11px] text-muted-foreground">try plain Tor first, fetch bridges if blocked</span>
+                  </div>
+                </SelectItem>
+                <SelectItem value="force" className="cursor-pointer rounded-lg px-2.5 py-2 text-xs focus:bg-primary/15 data-[highlighted]:bg-primary/15">
+                  <div className="flex flex-col gap-0.5">
+                    <span className="font-medium">Force automatic</span>
+                    <span className="text-[11px] text-muted-foreground">use fetched bridges immediately</span>
+                  </div>
+                </SelectItem>
+                <SelectItem value="manual" className="cursor-pointer rounded-lg px-2.5 py-2 text-xs focus:bg-primary/15 data-[highlighted]:bg-primary/15">
+                  <div className="flex flex-col gap-0.5">
+                    <span className="font-medium">Manual</span>
+                    <span className="text-[11px] text-muted-foreground">only your bridge lines below</span>
+                  </div>
+                </SelectItem>
+                <SelectItem value="none" className="cursor-pointer rounded-lg px-2.5 py-2 text-xs focus:bg-primary/15 data-[highlighted]:bg-primary/15">
+                  <div className="flex flex-col gap-0.5">
+                    <span className="font-medium">Disabled</span>
+                    <span className="text-[11px] text-muted-foreground">never use bridges</span>
+                  </div>
+                </SelectItem>
+              </SelectContent>
+            </Select>
+          </FieldRow>
+
+          <FieldRow
+            label="Manual bridges"
+            tooltip="One bridge per line (--tor-bridge, repeatable), e.g. obfs4 1.2.3.4:443 FINGERPRINT cert=… iat-mode=0. Only sent when the policy is Manual; lines are kept while you edit."
+          >
             <Textarea
-              value={profile.engine_tor_bridges.join("\n")}
-              disabled={locked || profile.engine_tor_no_bridges}
-              onChange={(e) => setEngineTorBridges(e.target.value.split("\n").map((s) => s.trim()).filter(Boolean))}
+              value={manualDraft}
+              disabled={locked}
+              onChange={(e) => setManualDraft(e.target.value)}
               placeholder="obfs4 1.2.3.4:443 ..."
               className="min-h-[64px] rounded-xl bg-black/20 font-mono text-[11px] ring-1 ring-white/[0.07] disabled:opacity-50"
             />
           </FieldRow>
 
-          <FieldRow label="Bridges file" tooltip="Path to bridges file (--tor-bridges).">
-            <Input type="text" value={profile.engine_tor_bridges_file ?? ""} disabled={locked} onChange={(e) => setEngineTorBridgesFile(e.target.value.trim() || null)} placeholder="/path/to/bridges.txt" className="h-9 rounded-xl bg-black/20 font-mono text-[11px] ring-1 ring-white/[0.07]" />
+          <FieldRow label="PT binary" tooltip="Pluggable transport binary for manual bridges (--tor-pt [name=]path), e.g. /usr/bin/lyrebird or snowflake=/usr/bin/snowflake-client. Leave empty to let the engine find one.">
+            <Input type="text" value={profile.engine_tor_pt ?? ""} disabled={locked} onChange={(e) => setEngineTorPt(e.target.value.trim() || null)} placeholder="/path/to/lyrebird" className="h-9 rounded-xl bg-black/20 font-mono text-[11px] ring-1 ring-white/[0.07]" />
           </FieldRow>
 
-          <div className="flex items-center justify-between rounded-lg bg-black/15 px-3 py-2.5 ring-1 ring-white/[0.04]">
-            <span className="text-[11px] font-medium text-foreground/80">No bridges</span>
-            <Switch checked={profile.engine_tor_no_bridges} onCheckedChange={setEngineTorNoBridges} disabled={locked} aria-label="No bridges" />
-          </div>
-
-          <FieldRow label="PT name" tooltip="Pluggable transport name (--tor-pt), binaries in pt/ folder.">
-            <Input type="text" value={profile.engine_tor_pt ?? ""} disabled={locked} onChange={(e) => setEngineTorPt(e.target.value.trim() || null)} placeholder="obfs4proxy" className="h-9 rounded-xl bg-black/20 font-mono text-[11px] ring-1 ring-white/[0.07]" />
-          </FieldRow>
-
-          <FieldRow label="PT dir" tooltip="PT binaries directory (--tor-pt-dir).">
+          <FieldRow label="PT dirs" tooltip="Extra folders to look in for transport binaries (--tor-pt-dir).">
             <Input type="text" value={profile.engine_tor_pt_dir ?? ""} disabled={locked} onChange={(e) => setEngineTorPtDir(e.target.value.trim() || null)} placeholder="/path/to/pt" className="h-9 rounded-xl bg-black/20 font-mono text-[11px] ring-1 ring-white/[0.07]" />
           </FieldRow>
 
           <details className="rounded-lg bg-black/10 px-3 py-2 ring-1 ring-white/[0.04]">
             <summary className="cursor-pointer text-[11px] font-medium text-muted-foreground">Advanced (direct/stall secs)</summary>
             <div className="mt-2 flex flex-col gap-2">
-              <FieldRow label="Direct secs" tooltip="AETHER_TOR_DIRECT_SECS">
-                <Input type="number" value={profile.engine_tor_direct_secs ?? ""} disabled={locked} onChange={(e) => setEngineTorDirectSecs(e.target.value.trim() ? Number(e.target.value) : null)} placeholder="auto" className="h-9 rounded-xl bg-black/20 font-mono text-[11px] ring-1 ring-white/[0.07]" />
+              <FieldRow label="Direct secs" tooltip="AETHER_TOR_DIRECT_SECS — how long to try Tor plainly before bridges (default 75). 0 forces bridges immediately.">
+                <Input type="number" min={0} value={profile.engine_tor_direct_secs ?? ""} disabled={locked} onChange={(e) => setEngineTorDirectSecs(e.target.value.trim() ? Number(e.target.value) : null)} placeholder="auto" className="h-9 rounded-xl bg-black/20 font-mono text-[11px] ring-1 ring-white/[0.07]" />
               </FieldRow>
-              <FieldRow label="Stall secs" tooltip="AETHER_TOR_STALL_SECS">
-                <Input type="number" value={profile.engine_tor_stall_secs ?? ""} disabled={locked} onChange={(e) => setEngineTorStallSecs(e.target.value.trim() ? Number(e.target.value) : null)} placeholder="auto" className="h-9 rounded-xl bg-black/20 font-mono text-[11px] ring-1 ring-white/[0.07]" />
+              <FieldRow label="Stall secs" tooltip="AETHER_TOR_STALL_SECS — give up on a bridge after this long with no headway (default 75).">
+                <Input type="number" min={0} value={profile.engine_tor_stall_secs ?? ""} disabled={locked} onChange={(e) => setEngineTorStallSecs(e.target.value.trim() ? Number(e.target.value) : null)} placeholder="auto" className="h-9 rounded-xl bg-black/20 font-mono text-[11px] ring-1 ring-white/[0.07]" />
               </FieldRow>
             </div>
           </details>

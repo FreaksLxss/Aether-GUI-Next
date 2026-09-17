@@ -149,7 +149,7 @@ export function VirtualLogList({
           role="log"
           aria-label="Aether connection logs"
           className="max-h-52 overflow-y-auto rounded-b-xl p-2.5 font-mono text-[10px] leading-relaxed [scrollbar-width:thin]"
-          style={{ scrollbarGutter: "stable" as any }}
+          style={{ scrollbarGutter: "stable" }}
         >
         {logs.length === 0 ? (
           filter ? (
