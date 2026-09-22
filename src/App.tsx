@@ -50,6 +50,7 @@ import { useConnectionSound } from "@/hooks/useConnectionSound";
 import { initConnectionListeners, useConnectionStore } from "@/state/connectionStore";
 import { initIpChangerListeners } from "@/stores/ipChangerStore";
 import { SCREEN_FADE, SPRING } from "@/lib/motion";
+import { useIpChangerSound } from "./hooks/useIpChangerSound";
 
 export type AccordionPanel = PanelId | null;
 
@@ -112,8 +113,8 @@ function MainScreen() {
       >
         {isLeaking && <LeakBanner />}
         <ConnectionStatusLine
-          onTryStealth={() => {
-            setScanMode("stealth");
+          onTryVerified={() => {
+            setScanMode("verified");
             openAdvancedHighlightScan();
           }}
         />
@@ -261,6 +262,7 @@ export function App() {
 
   useKeyboardShortcuts();
   useConnectionSound();
+  useIpChangerSound();
   useWindowPersist();
 
   useLayoutEffect(() => {

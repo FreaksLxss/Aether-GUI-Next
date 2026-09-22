@@ -1,11 +1,12 @@
 //! In-memory traffic counters — upload / download / rates.
-//! Uses OS interface octet counters on Windows (GetIfTable2) so it works for
-//! any app (browser, Telegram, video) regardless of capture mode / whether
-//! the app respects the system proxy. Falls back to the proxy/TUN atomics on
-//! other platforms or if the IP Helper call fails. Counters are process-
-//! scoped: BASELINE is taken on first snapshot and never persisted, so totals
-//! reset when the app process exits ("resets every time user turn off/on
-//! the app").
+//! Counts bytes actually carried through the tunnel: the HTTP proxy relay
+//! (`httpproxy.rs`) and the TUN forwarder (`tun/forwarder.rs`) feed the
+//! atomics once per payload byte — a 330 MB download shows ≈330 MB, nothing
+//! else on the NIC (background, retries, wire overhead) leaks in. ponytail:
+//! in proxy mode, apps that ignore the system proxy aren't counted — switch
+//! to per-NIC OS counters (`GetBestInterface` + `GetIfEntry2`) if system-wide
+//! totals are ever wanted. Totals are in-memory: `reset()` on
+//! connect/disconnect, gone on exit.
 
 use serde::Serialize;
 use std::sync::{
@@ -27,9 +28,6 @@ static RX_BYTES: AtomicU64 = AtomicU64::new(0);
 
 /// Previous snapshot used to compute B/s rate.
 static PREV: Mutex<(u64, u64, Option<Instant>)> = Mutex::new((0, 0, None));
-/// Baseline OS counters taken on first successful OS snapshot so `tx/rx`
-/// are deltas from app start (in-memory reset).
-static BASELINE: Mutex<Option<(u64, u64)>> = Mutex::new(None);
 
 pub fn record_tx(n: u64) {
     if n == 0 {
@@ -45,108 +43,18 @@ pub fn record_rx(n: u64) {
     RX_BYTES.fetch_add(n, Ordering::Relaxed);
 }
 
-#[cfg(windows)]
-fn os_counters() -> Option<(u64, u64)> {
-    unsafe {
-        use windows_sys::Win32::NetworkManagement::IpHelper::MIB_IF_TABLE2;
-        use windows_sys::Win32::NetworkManagement::IpHelper::{FreeMibTable, GetIfTable2};
-
-        let mut table: *mut MIB_IF_TABLE2 = std::ptr::null_mut();
-        let ret = GetIfTable2(&mut table);
-        if ret != 0 || table.is_null() {
-            return None;
-        }
-        let num = (*table).NumEntries as usize;
-        if num == 0 {
-            FreeMibTable(table as *mut _);
-            return None;
-        }
-        // MIB_IF_TABLE2 is variable-length: NumEntries + Table[1] as start
-        let rows = std::slice::from_raw_parts((*table).Table.as_ptr(), num);
-        let mut out: u64 = 0;
-        let mut inn: u64 = 0;
-        for row in rows {
-            // Skip software loopback (Type 24) — its counters double-count
-            // loopback HTTP→SOCKS bridge traffic and are not real Internet use.
-            // Otherwise sum every oper-up interface so Telegram/UDP/video that
-            // bypasses the HTTP bridge is still captured.
-            if row.Type == 24 {
-                continue;
-            }
-            // IfOperStatusUp = 1
-            if row.OperStatus != 1 {
-                continue;
-            }
-            out = out.wrapping_add(row.OutOctets);
-            inn = inn.wrapping_add(row.InOctets);
-        }
-        FreeMibTable(table as *mut _);
-        // If both zero, treat as no data (e.g. all adapters down)
-        if out == 0 && inn == 0 {
-            return None;
-        }
-        Some((out, inn))
-    }
-}
-
-/// Snapshot current totals + rates. On Windows prefers OS counters (system-
-/// wide) so it works regardless of capture mode; falls back to proxy/TUN
-/// atomics elsewhere.
-pub fn snapshot() -> TrafficStats {
-    #[cfg(windows)]
-    {
-        if let Some((cur_tx, cur_rx)) = os_counters() {
-            // Establish baseline on first call
-            let (base_tx, base_rx) = {
-                let mut base = BASELINE.lock().unwrap();
-                match *base {
-                    Some(v) => v,
-                    None => {
-                        *base = Some((cur_tx, cur_rx));
-                        (cur_tx, cur_rx)
-                    }
-                }
-            };
-            let tx = cur_tx.saturating_sub(base_tx);
-            let rx = cur_rx.saturating_sub(base_rx);
-
-            let mut prev = PREV.lock().unwrap();
-            let now = Instant::now();
-            let (tx_rate, rx_rate) = match prev.2 {
-                Some(prev_time) => {
-                    let elapsed = now.duration_since(prev_time).as_secs_f64();
-                    if elapsed > 0.05 {
-                        let dtx = (tx.saturating_sub(prev.0) as f64 / elapsed) as u64;
-                        let drx = (rx.saturating_sub(prev.1) as f64 / elapsed) as u64;
-                        (dtx, drx)
-                    } else {
-                        (0, 0)
-                    }
-                }
-                None => (0, 0),
-            };
-            *prev = (tx, rx, Some(now));
-            return TrafficStats {
-                tx_bytes: tx,
-                rx_bytes: rx,
-                tx_rate,
-                rx_rate,
-            };
-        }
-    }
-
-    // Fallback: proxy/TUN atomics
-    let tx = TX_BYTES.load(Ordering::Relaxed);
-    let rx = RX_BYTES.load(Ordering::Relaxed);
+/// Totals + rates from the last observation window.
+fn rates(tx: u64, rx: u64) -> TrafficStats {
     let mut prev = PREV.lock().unwrap();
     let now = Instant::now();
     let (tx_rate, rx_rate) = match prev.2 {
         Some(prev_time) => {
             let elapsed = now.duration_since(prev_time).as_secs_f64();
             if elapsed > 0.05 {
-                let dtx = tx.saturating_sub(prev.0) as f64 / elapsed;
-                let drx = rx.saturating_sub(prev.1) as f64 / elapsed;
-                (dtx as u64, drx as u64)
+                (
+                    (tx.saturating_sub(prev.0) as f64 / elapsed) as u64,
+                    (rx.saturating_sub(prev.1) as f64 / elapsed) as u64,
+                )
             } else {
                 (0, 0)
             }
@@ -162,10 +70,17 @@ pub fn snapshot() -> TrafficStats {
     }
 }
 
+/// Snapshot current totals + rates — tunnel-scoped atomics only.
+pub fn snapshot() -> TrafficStats {
+    rates(
+        TX_BYTES.load(Ordering::Relaxed),
+        RX_BYTES.load(Ordering::Relaxed),
+    )
+}
+
 pub fn reset() {
     TX_BYTES.store(0, Ordering::Relaxed);
     RX_BYTES.store(0, Ordering::Relaxed);
-    *BASELINE.lock().unwrap() = None;
     *PREV.lock().unwrap() = (0, 0, None);
 }
 
@@ -337,25 +252,4 @@ pub fn active_connections() -> Vec<ActiveConn> {
         out.truncate(64);
         out
     }
-}
-
-/// Current totals without advancing the rate window — used only if needed.
-#[allow(dead_code)]
-pub fn totals() -> (u64, u64) {
-    // Prefer OS delta if available
-    #[cfg(windows)]
-    {
-        if let Some((cur_tx, cur_rx)) = os_counters() {
-            if let Some((base_tx, base_rx)) = *BASELINE.lock().unwrap() {
-                return (
-                    cur_tx.saturating_sub(base_tx),
-                    cur_rx.saturating_sub(base_rx),
-                );
-            }
-        }
-    }
-    (
-        TX_BYTES.load(Ordering::Relaxed),
-        RX_BYTES.load(Ordering::Relaxed),
-    )
 }

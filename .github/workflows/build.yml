@@ -64,9 +64,10 @@ jobs:
 
       # The same pinned manifest (src-tauri/aether-release.json) drives every
       # platform: fetch-aether.py verifies the archive SHA-256, extracts only
-      # aether + pt/lyrebird into src-tauri/binaries/engine/, and validates
-      # both executables' architecture. The PowerShell wrapper handles the
-      # Windows zip asset; bash handles the tar.gz assets.
+      # aether + pt/lyrebird + pt/psiphon-tunnel-core into
+      # src-tauri/binaries/engine/, and validates each executable's
+      # architecture. The PowerShell wrapper handles the Windows zip asset;
+      # bash handles the tar.gz assets.
       - name: Fetch Aether core (Windows)
         if: runner.os == 'Windows'
         shell: pwsh

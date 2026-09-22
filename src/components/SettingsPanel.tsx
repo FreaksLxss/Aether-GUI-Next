@@ -1,4 +1,4 @@
-import { Info, Monitor, Network, Palette } from "lucide-react";
+import { Info, Monitor, Network, Palette, Volume2 } from "lucide-react";
 import { SystemProxyToggle } from "@/components/SystemProxyToggle";
 import { CaptureModeSelect } from "@/components/CaptureModeSelect";
 import { DnsModeSelect } from "@/components/DnsModeSelect";
@@ -9,6 +9,7 @@ import { CloseToTrayToggle } from "@/components/CloseToTrayToggle";
 import { ThemeToggle } from "@/components/ThemeToggle";
 import { ColorTheme } from "@/components/ColorTheme";
 import { SettingsIO } from "@/components/SettingsIO";
+import { SoundSettings } from "@/components/SoundSettings";
 import { AboutDialog } from "@/components/AboutDialog";
 import { UpdateChecker } from "@/components/UpdateChecker";
 import { useConnectionStore } from "@/state/connectionStore";
@@ -45,6 +46,10 @@ export function SettingsContent() {
           </div>
           <SettingsIO />
         </div>
+      </Section>
+
+      <Section title="Sound" icon={Volume2}>
+        <SoundSettings />
       </Section>
 
       <Section title="About" icon={Info}>

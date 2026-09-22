@@ -12,7 +12,7 @@
 //!   terminal. Shutdown always falls through to `kill()` after the grace
 //!   period (see status::GRACEFUL_SHUTDOWN_GRACE).
 
-use super::profiles::ConnectionProfile;
+use super::profiles::{ConnectionProfile, PROXY_ENV_KEYS};
 use super::pty_output::{drain_lines, strip_ansi};
 use crate::error::AetherError;
 use crate::events::{now_millis, LogEvent};
@@ -89,6 +89,11 @@ pub fn spawn(
     for (key, value) in profile.environment() {
         cmd.env(key, value);
     }
+    for k in PROXY_ENV_KEYS {
+        cmd.env_remove(k);
+    }
+    cmd.env("NO_PROXY", "localhost,127.0.0.1,::1");
+    cmd.env("no_proxy", "localhost,127.0.0.1,::1");
 
     let mut child = cmd
         .spawn()

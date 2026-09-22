@@ -52,6 +52,7 @@ export function AppMenu({
               <button
                 key={id}
                 onClick={() => onOpen(id)}
+                data-cuelume-press="press"
                 className="flex w-full items-center gap-2.5 rounded-md px-2.5 py-2 text-left transition-colors hover:bg-foreground/[0.06] active:bg-foreground/[0.08]"
               >
                 <span className="flex size-7 shrink-0 items-center justify-center rounded-md bg-surface-3 ring-1 ring-border">

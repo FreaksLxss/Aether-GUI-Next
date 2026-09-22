@@ -5,7 +5,8 @@ import { MapPin, RefreshCw, ShieldAlert, ShieldCheck, ShieldOff } from "lucide-r
 import { Button } from "@/components/ui/button";
 import { useConnectionStore } from "@/state/connectionStore";
 import { SPRING } from "@/lib/motion";
-import { countryName, flagEmoji } from "@/lib/location";
+import { countryName } from "@/lib/location";
+import { CountryFlag } from "@/components/CountryFlag";
 
 /** Compact egress-location + leak-status pill shown while connected. */
 export function PublicLocation() {
@@ -67,7 +68,7 @@ export function PublicLocation() {
       className="flex h-7 w-full max-w-[320px] items-center gap-1.5 rounded-full bg-surface-2 px-2.5 text-[11px] font-mono tabular-nums text-muted-foreground ring-1 ring-border"
     >
       <span className="flex min-w-0 items-center gap-1">
-        {publicIp ? <span className="text-[11px] leading-none">{flagEmoji(publicIp.country_code)}</span> : <MapPin size={11} className="text-primary" />}
+        {publicIp ? <CountryFlag code={publicIp.country_code} /> : <MapPin size={11} className="text-primary" />}
         <span className="truncate font-medium text-foreground/90">{place}</span>
       </span>
       {ip && <span className="text-muted-foreground/50">·</span>}

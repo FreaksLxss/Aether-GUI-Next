@@ -485,7 +485,9 @@ fn do_start(app: &AppHandle, manager: &Arc<Mutex<TorManager>>) -> Result<(), Aet
             (m.socks_port, m.control_port)
         };
         for port in [socks, control] {
-            if crate::aether::status::port_is_live(&SocketAddr::from(([127, 0, 0, 1], port))) {
+            let addr = SocketAddr::from(([127, 0, 0, 1], port));
+            // Our own claimed bridge door is not a conflict — it's ours to keep.
+            if crate::aether::status::port_is_live(&addr) && !crate::httpproxy::is_claimed(&addr) {
                 return Err(AetherError::PortInUse(port));
             }
         }
@@ -510,10 +512,20 @@ fn do_start(app: &AppHandle, manager: &Arc<Mutex<TorManager>>) -> Result<(), Aet
     // network (useful for routing other devices through this exit).
     let socks_host = if lan_bind { "0.0.0.0" } else { "127.0.0.1" };
 
+    // Steal the advertised SOCKS door for the counting bridge; Tor binds a
+    // private loopback port behind it — same arrangement as the main engine.
+    let tor_upstream = crate::httpproxy::free_loopback_ports(1)
+        .map_err(AetherError::Internal)?
+        .into_iter()
+        .next()
+        .expect("one port");
+    crate::httpproxy::claim(&format!("{socks_host}:{socks_port}"), tor_upstream)
+        .map_err(|e| AetherError::Internal(format!("claim {socks_host}:{socks_port}: {e}")))?;
+
     let mut cmd = Command::new(&binary);
     crate::childproc::hidden(&mut cmd); // no console flash on Windows
     cmd.arg("--SocksPort")
-        .arg(format!("{socks_host}:{socks_port}"))
+        .arg(tor_upstream.to_string())
         .arg("--ControlPort")
         .arg(format!("127.0.0.1:{control_port}"))
         .arg("--CookieAuthentication")

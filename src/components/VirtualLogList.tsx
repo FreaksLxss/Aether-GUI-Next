@@ -3,7 +3,7 @@ import { useVirtualizer } from "@tanstack/react-virtual";
 import { writeText } from "@tauri-apps/plugin-clipboard-manager";
 import { save } from "@tauri-apps/plugin-dialog";
 import { invoke } from "@tauri-apps/api/core";
-import { toast } from "sonner";
+import { toast } from "@/lib/toast";
 import { Copy, Download, FileText, SearchX } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import type { LogLine } from "@/types/connection";

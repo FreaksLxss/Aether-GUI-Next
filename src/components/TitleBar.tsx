@@ -3,6 +3,7 @@ import { Maximize2, Minus, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { ProxyIndicator } from "@/components/ProxyIndicator";
 import { handleClose, tauriWindow } from "@/lib/close";
+import { cue } from "@/lib/sound";
 import { useConnectionStore } from "@/state/connectionStore";
 
 function useElapsed(sinceMs: number | null): string {
@@ -45,7 +46,10 @@ export function TitleBar() {
             size="icon"
             className="size-8 rounded-full text-muted-foreground hover:bg-foreground/[0.06] hover:text-foreground active:scale-95 transition"
             aria-label="Minimize"
-            onClick={() => void tauriWindow()?.minimize()}
+            onClick={() => {
+              cue("droplet");
+              void tauriWindow()?.minimize();
+            }}
           >
             <Minus className="size-4" />
           </Button>

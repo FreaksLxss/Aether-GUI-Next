@@ -1,7 +1,6 @@
 import { useRef, useState } from "react";
 import { Shield, TriangleAlert } from "lucide-react";
 import { Input } from "@/components/ui/input";
-import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { FieldRow } from "@/components/ui/panel-section";
@@ -33,6 +32,8 @@ export function EngineTorPanel() {
   const setEngineTorCountry = useConnectionStore((s) => s.setEngineTorCountry);
   const setEngineTorDirectSecs = useConnectionStore((s) => s.setEngineTorDirectSecs);
   const setEngineTorStallSecs = useConnectionStore((s) => s.setEngineTorStallSecs);
+  const setEngineTorRelays = useConnectionStore((s) => s.setEngineTorRelays);
+  const setEngineTorRelayPorts = useConnectionStore((s) => s.setEngineTorRelayPorts);
 
   const enabled = profile.engine_tor_mode !== "disabled";
   // Tor-only uses the primary bind (1819) and never has a separate Tor listener.
@@ -80,18 +81,13 @@ export function EngineTorPanel() {
         </Select>
       </FieldRow>
 
-      {profile.engine_tor_bridges_file?.trim() && (
-        <div role="alert" className="rounded-lg bg-destructive/10 px-3 py-2 text-[11px] text-status-error">
-          <p>The legacy bridges-file setting is unsupported and blocks Connect. No file has been read. Paste its bridge lines into Manual bridges, then clear the legacy setting.</p>
-          <Button variant="outline" size="sm" disabled={locked} onClick={() => setEngineTorBridgesFile(null)} className="mt-2">
-            Clear legacy file setting
-          </Button>
-        </div>
-      )}
-      {engineTorStatus.enabled && (
+      {/* Same non-blink gate as PsiphonPanel: mode + live session, not the
+          event flag that a VPN retry resets to default. */}
+      {profile.engine_tor_mode === "tor"
+        && status.state !== "Idle" && status.state !== "Error" && (
         <p role="status" className="text-[11px] text-muted-foreground">
           Engine Tor listener: {engineTorStatus.ready ? "Ready" : "Waiting"}
-          {engineTorStatus.address ? ` (${engineTorStatus.address})` : ""}. Separate from the primary tunnel and IP Changer.
+          {` (${engineTorStatus.address ?? (profile.engine_tor_bind?.trim() || "127.0.0.1:1820")})`}. Separate from the primary tunnel and IP Changer.
         </p>
       )}
       {profile.engine_tor_mode === "tor-reverse" && (
@@ -138,6 +134,33 @@ export function EngineTorPanel() {
               maxLength={2}
             />
             {countryErr && <p className="text-[11px] text-status-error">{countryErr}</p>}
+          </FieldRow>
+
+          <FieldRow label="Relays" tooltip="--tor-relays (Aether ≥2.1.0): auto | only | off | a count — how the engine sources directory relates. Empty keeps the engine default.">
+            <Input
+              type="text"
+              value={profile.engine_tor_relays ?? ""}
+              disabled={locked}
+              onChange={(e) => setEngineTorRelays(e.target.value.trim() || null)}
+              placeholder="auto"
+              className="h-9 rounded-xl bg-black/20 font-mono text-[11px] ring-1 ring-white/[0.07]"
+            />
+          </FieldRow>
+
+          <FieldRow label="Relay ports" tooltip="--tor-relay-ports (Aether ≥2.1.0): Web = only ports 80/443 (engine default), Any = any relay port.">
+            <Select
+              value={profile.engine_tor_relay_ports ?? "web"}
+              onValueChange={(v) => setEngineTorRelayPorts(v as "web" | "any")}
+              disabled={locked}
+            >
+              <SelectTrigger className="w-full justify-start gap-2 rounded-[35px] bg-black/20 px-3 py-5 text-xs font-medium text-foreground ring-1 ring-white/[0.07] disabled:opacity-50 [&>span]:flex-1 [&>span]:text-left [&>svg]:ml-auto" aria-label="Tor relay ports">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent className="rounded-[35px] bg-surface-2 p-1 ring-1 ring-white/10">
+                <SelectItem value="web" className="cursor-pointer rounded-lg px-2.5 py-2 text-xs focus:bg-primary/15 data-[highlighted]:bg-primary/15">Web ports (80, 443) — default</SelectItem>
+                <SelectItem value="any" className="cursor-pointer rounded-lg px-2.5 py-2 text-xs focus:bg-primary/15 data-[highlighted]:bg-primary/15">Any port</SelectItem>
+              </SelectContent>
+            </Select>
           </FieldRow>
 
           <FieldRow
@@ -206,6 +229,17 @@ export function EngineTorPanel() {
 
           <FieldRow label="PT binary" tooltip="Pluggable transport binary for manual bridges (--tor-pt [name=]path), e.g. /usr/bin/lyrebird or snowflake=/usr/bin/snowflake-client. Leave empty to let the engine find one.">
             <Input type="text" value={profile.engine_tor_pt ?? ""} disabled={locked} onChange={(e) => setEngineTorPt(e.target.value.trim() || null)} placeholder="/path/to/lyrebird" className="h-9 rounded-xl bg-black/20 font-mono text-[11px] ring-1 ring-white/[0.07]" />
+          </FieldRow>
+
+          <FieldRow label="Bridge file" tooltip="Obfs4 bridge lines from a file (--tor-bridge-file, Aether ≥2.1.0). The engine reads the path itself — the GUI never opens it. Counts as manual bridges for policy conflicts.">
+            <Input
+              type="text"
+              value={profile.engine_tor_bridges_file ?? ""}
+              disabled={locked}
+              onChange={(e) => setEngineTorBridgesFile(e.target.value.trim() || null)}
+              placeholder="/path/to/bridges.txt"
+              className="h-9 rounded-xl bg-black/20 font-mono text-[11px] ring-1 ring-white/[0.07]"
+            />
           </FieldRow>
 
           <FieldRow label="PT dirs" tooltip="Extra folders to look in for transport binaries (--tor-pt-dir).">

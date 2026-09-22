@@ -4,6 +4,7 @@ import { writeText } from "@tauri-apps/plugin-clipboard-manager";
 import { Check, Link } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useConnectionStore } from "@/state/connectionStore";
+import { cue } from "@/lib/sound";
 
 export function PacUrl() {
   const status = useConnectionStore((s) => s.status);
@@ -11,16 +12,18 @@ export function PacUrl() {
 
   if (status.state !== "Connected") return null;
 
-  const addr = "socks_addr" in status ? status.socks_addr : "127.0.0.1:1819";
+  const addr = "bridge_addr" in status ? status.bridge_addr : "127.0.0.1:1819";
   const pacScript = `function FindProxyForURL(url, host) { if (isInNet(host, "127.0.0.1", "255.0.0.0") || isInNet(host, "10.0.0.0", "255.0.0.0") || isInNet(host, "192.168.0.0", "255.255.0.0")) return "DIRECT"; return "SOCKS5 ${addr}; DIRECT"; }`;
   const pacUrl = `data:application/x-ns-proxy-autoconfig,${encodeURIComponent(pacScript)}`;
 
   const handleCopy = async () => {
     try {
       await writeText(pacUrl);
+      cue("success");
       setCopied(true);
       setTimeout(() => setCopied(false), 1500);
     } catch (e) {
+      cue("error");
       console.error("Copy failed:", e);
     }
   };

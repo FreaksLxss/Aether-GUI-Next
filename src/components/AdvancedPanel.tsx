@@ -39,6 +39,7 @@ import { cn } from "@/lib/utils";
 import { MimPeersField } from "@/components/MimPeersField";
 import { MarkField } from "@/components/MarkField";
 import { EngineTorPanel } from "@/components/EngineTorPanel";
+import { PsiphonPanel } from "@/components/PsiphonPanel";
 import {
   validateUpstream,
   validateDnsServers,
@@ -55,6 +56,11 @@ export function AdvancedPanelContent({
   const logs = useConnectionStore((s) => s.logs);
   const profile = useConnectionStore((s) => s.profile);
   const quickReconnect = profile.quick_reconnect;
+  const stats = profile.stats;
+  const setExitLoc = useConnectionStore((s) => s.setExitLoc);
+  const setExitLocSecs = useConnectionStore((s) => s.setExitLocSecs);
+  const setStats = useConnectionStore((s) => s.setStats);
+  const setStatsSecs = useConnectionStore((s) => s.setStatsSecs);
   const setQuickReconnect = useConnectionStore((s) => s.setQuickReconnect);
   const protocol = profile.protocol;
   const masqueHttp2 = profile.masque_http2;
@@ -191,7 +197,7 @@ export function AdvancedPanelContent({
             <FieldRow
               label="HTTP Proxy (Aether ≥1.6.0)"
               htmlFor="aether-field-http-proxy"
-              tooltip="An optional HTTP CONNECT proxy next to the SOCKS5 one (--http-proxy), for clients that can't speak SOCKS. Address:port, e.g. 127.0.0.1:1818. Leave empty to disable."
+              tooltip="An optional HTTP CONNECT proxy next to the SOCKS5 one, for clients that can't speak SOCKS. Address:port, e.g. 127.0.0.1:1818. Leave empty to disable."
             >
               <HttpProxyAddressField id="aether-field-http-proxy" />
             </FieldRow>
@@ -278,12 +284,63 @@ export function AdvancedPanelContent({
               onCheckedChange={setAutoReprovision}
               disabled={locked}
             />
+            <FieldRow
+              label="Exit location"
+              htmlFor="aether-field-exit-loc"
+              tooltip="--exit-loc (Aether ≥2.1.0) — pin the bridge/WARP exit country: comma-separated two-letter codes, optional leading ! to exclude (e.g. DE,SE or !IR,AZ,RU). Empty omits the flag."
+            >
+              <Input
+                id="aether-field-exit-loc"
+                type="text"
+                value={profile.exit_loc ?? ""}
+                disabled={locked}
+                onChange={(e) => setExitLoc(e.target.value.trim() || null)}
+                placeholder="DE,SE or !IR,AZ,RU"
+                className="h-9 rounded-xl bg-black/20 font-mono text-[11px] ring-1 ring-white/[0.07]"
+              />
+            </FieldRow>
+            <FieldRow
+              label="Exit recheck secs"
+              htmlFor="aether-field-exit-loc-secs"
+              tooltip="--exit-loc-secs — how often the pinned exit is rechecked. Only sent with Exit location."
+            >
+              <Input
+                id="aether-field-exit-loc-secs"
+                type="number"
+                min={0}
+                value={profile.exit_loc_secs ?? ""}
+                disabled={locked || !profile.exit_loc?.trim()}
+                onChange={(e) => setExitLocSecs(e.target.value.trim() ? Number(e.target.value) : null)}
+                placeholder="auto"
+                className="h-9 rounded-xl bg-black/20 font-mono text-[11px] ring-1 ring-white/[0.07]"
+              />
+            </FieldRow>
+            <SwitchRow
+              label="Stats logging (Aether ≥2.1.0)"
+              tooltip="--stats — print periodic throughput/latency stats into the log. Interval via Stats secs."
+              checked={stats}
+              onCheckedChange={setStats}
+              disabled={locked}
+            />
+            {stats && (
+              <FieldRow label="Stats secs" tooltip="--stats-secs — seconds between stats lines (empty keeps the engine default).">
+                <Input
+                  type="number"
+                  min={0}
+                  value={profile.stats_secs ?? ""}
+                  disabled={locked}
+                  onChange={(e) => setStatsSecs(e.target.value.trim() ? Number(e.target.value) : null)}
+                  placeholder="auto"
+                  className="h-9 rounded-xl bg-black/20 font-mono text-[11px] ring-1 ring-white/[0.07]"
+                />
+              </FieldRow>
+            )}
             <SwitchRow
               label="QUIC v2 probe (Aether ≥2.0.0)"
-              tooltip="Sends version-negotiation probe before HTTP/3 (AETHER_QUIC_V2, default on). Off emits --no-quic-v2. Only applies to MASQUE over HTTP/3. Tor-Reverse forces HTTP/2; Tor-Only does not use MASQUE. Your choice is kept for regular connects."
+              tooltip="Sends version-negotiation probe before HTTP/3 (AETHER_QUIC_V2, default on). Off emits --no-quic-v2. Only applies to MASQUE over HTTP/3. Reverse/only Tor or Psiphon modes force HTTP/2 or skip MASQUE. Your choice is kept for regular connects."
               checked={quicV2}
               onCheckedChange={setQuicV2}
-              disabled={locked || masqueHttp2 || protocol === "wireguard" || protocol === "gool" || profile.engine_tor_mode === "tor-reverse" || profile.engine_tor_mode === "tor-only"}
+              disabled={locked || masqueHttp2 || protocol === "wireguard" || protocol === "gool" || profile.engine_tor_mode === "tor-reverse" || profile.engine_tor_mode === "tor-only" || profile.engine_psiphon_mode === "psiphon-reverse" || profile.engine_psiphon_mode === "psiphon-only"}
             />
             {masqueHttp2 && !quicV2 && (
               <p className="text-[11px] text-muted-foreground/50">HTTP/2 uses TCP — probe not applicable.</p>
@@ -293,6 +350,12 @@ export function AdvancedPanelContent({
             )}
             {!masqueHttp2 && profile.engine_tor_mode === "tor-only" && (
               <p className="text-[11px] text-muted-foreground/50">Tor-Only never dials Cloudflare — QUIC probe is not applicable.</p>
+            )}
+            {!masqueHttp2 && profile.engine_psiphon_mode === "psiphon-reverse" && (
+              <p className="text-[11px] text-muted-foreground/50">Psiphon-Reverse runs MASQUE over HTTP/2 — QUIC probe is bypassed for those connects.</p>
+            )}
+            {!masqueHttp2 && profile.engine_psiphon_mode === "psiphon-only" && (
+              <p className="text-[11px] text-muted-foreground/50">Psiphon-Only never dials Cloudflare — QUIC probe is not applicable.</p>
             )}
             <FieldRow
               label="Firewall mark (Linux/Android)"
@@ -342,6 +405,9 @@ export function AdvancedPanelContent({
             <EngineTorPanel />
           </Section>
 
+          <Section title="Psiphon — Built-in (Aether ≥2.1.0)" icon={Shield}>
+            <PsiphonPanel />
+          </Section>
 
           <Section title="Logs" icon={Terminal}>
             <div className="flex items-center gap-1.5">

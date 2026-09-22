@@ -49,7 +49,7 @@ function ScanProgressBar({ percent }: { percent: number | null }) {
   );
 }
 
-export function ConnectionStatusLine({ onTryStealth }: { onTryStealth?: () => void }) {
+export function ConnectionStatusLine({ onTryVerified }: { onTryVerified?: () => void }) {
   const status = useConnectionStore((s) => s.status);
   const scanBudgetSecs = useConnectionStore((s) => s.scanBudgetSecs);
 
@@ -143,13 +143,13 @@ export function ConnectionStatusLine({ onTryStealth }: { onTryStealth?: () => vo
       {status.state === "Error" && (
         <div className="flex flex-col items-center gap-2">
           <p className="max-w-xs text-[11px] leading-relaxed text-muted-foreground">
-            If the tunnel can&apos;t get through, Stealth mode probes more
-            cautiously and is harder for a censor to detect.
+            If the tunnel can&apos;t get through, Verified mode dials only
+            gateways measured to answer connect-ip — no guessed neighbours.
           </p>
           <div className="flex items-center gap-1.5">
-            <Button size="sm" variant="outline" onClick={onTryStealth} className="h-7 gap-1.5 text-[11px]">
+            <Button size="sm" variant="outline" onClick={onTryVerified} className="h-7 gap-1.5 text-[11px]">
               <EyeOff size={11} />
-              Try Stealth mode
+              Try Verified mode
             </Button>
             <Button
               size="sm"

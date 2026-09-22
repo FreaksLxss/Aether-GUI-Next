@@ -29,8 +29,9 @@ import {
   Upload,
   Zap,
 } from "lucide-react";
-import { toast } from "sonner";
+import { toast } from "@/lib/toast";
 import { writeText } from "@tauri-apps/plugin-clipboard-manager";
+import { cue } from "@/lib/sound";
 import { useConnectionStore } from "@/state/connectionStore";
 import { useIpChangerStore } from "@/stores/ipChangerStore";
 import { openLogWindow } from "@/lib/log-window";
@@ -200,7 +201,7 @@ export function usePaletteItems(setPanel: Setter): PaletteItem[] {
       });
     }
 
-    const socksAddr = connected && "socks_addr" in status ? (status.socks_addr as string) : "127.0.0.1:1819";
+    const socksAddr = connected && "bridge_addr" in status ? (status.bridge_addr as string) : "127.0.0.1:1819";
     items.push(
       {
         id: "action-copy-socks",
@@ -209,7 +210,10 @@ export function usePaletteItems(setPanel: Setter): PaletteItem[] {
         keywords: "copy socks proxy address clipboard",
         group: "Actions",
         icon: Copy,
-        run: () => void writeText(socksAddr),
+        run: () =>
+          void writeText(socksAddr)
+            .then(() => cue("success"))
+            .catch(() => cue("error")),
       },
       {
         id: "action-copy-pac",
@@ -220,7 +224,9 @@ export function usePaletteItems(setPanel: Setter): PaletteItem[] {
         icon: Link,
         run: () => {
           const pac = `function FindProxyForURL(url, host) { if (isInNet(host, "127.0.0.1", "255.0.0.0") || isInNet(host, "10.0.0.0", "255.0.0.0") || isInNet(host, "192.168.0.0", "255.255.0.0")) return "DIRECT"; return "SOCKS5 ${socksAddr}; DIRECT"; }`;
-          void writeText(`data:application/x-ns-proxy-autoconfig,${encodeURIComponent(pac)}`);
+          void writeText(`data:application/x-ns-proxy-autoconfig,${encodeURIComponent(pac)}`)
+            .then(() => cue("success"))
+            .catch(() => cue("error"));
         },
       },
       {
@@ -244,11 +250,11 @@ export function usePaletteItems(setPanel: Setter): PaletteItem[] {
     );
 
     // ── Tuning / Protocol (quick) ─────────────────────────────────────────
-    const tunings: { id: string; label: string; mode: "turbo" | "balanced" | "thorough" | "stealth"; icon: typeof Zap; hint: string }[] = [
+    const tunings: { id: string; label: string; mode: "turbo" | "balanced" | "thorough" | "verified"; icon: typeof Zap; hint: string }[] = [
       { id: "turbo", label: "Tuning: Fast", mode: "turbo", icon: Zap, hint: "Scan mode Turbo" },
       { id: "balanced", label: "Tuning: Balanced", mode: "balanced", icon: Gauge, hint: "Scan mode Balanced" },
       { id: "thorough", label: "Tuning: Secure", mode: "thorough", icon: Shield, hint: "Scan mode Thorough" },
-      { id: "stealth", label: "Tuning: Stealth", mode: "stealth", icon: EyeOff, hint: "Scan mode Stealth — hardest to fingerprint" },
+      { id: "verified", label: "Tuning: Verified", mode: "verified", icon: EyeOff, hint: "Scan mode Verified — only measured gateways" },
     ];
     for (const t of tunings) {
       const active = profile.scan_mode === t.mode;
@@ -262,7 +268,7 @@ export function usePaletteItems(setPanel: Setter): PaletteItem[] {
         run: () => void setScanMode(t.mode),
       });
     }
-    // Include Ironclad as stealth-adjacent tuning
+    // Include Ironclad as verified-adjacent tuning
     if (profile.scan_mode === "ironclad") {
       items.push({
         id: "tuning-ironclad",

@@ -10,7 +10,7 @@ const SCAN_LABELS: Record<ScanMode, string> = {
   turbo: "Turbo",
   balanced: "Balanced",
   thorough: "Thorough",
-  stealth: "Stealth",
+  verified: "Verified",
   ironclad: "Ironclad",
 };
 
@@ -34,7 +34,7 @@ export function TrafficStats({ onOpenActive }: { onOpenActive?: () => void }) {
   const txRate = traffic?.tx_rate ?? 0;
   const rxRate = traffic?.rx_rate ?? 0;
 
-  const addr = isConnected && "socks_addr" in status ? status.socks_addr : "127.0.0.1:1819";
+  const addr = isConnected && "bridge_addr" in status ? status.bridge_addr : "127.0.0.1:1819";
   const protocol = profile.protocol === "auto" ? "MASQUE" : profile.protocol.toUpperCase();
   const scanMode = SCAN_LABELS[profile.scan_mode];
   const ipVersion = IP_LABELS[profile.ip_version];

@@ -3,7 +3,7 @@ import { Button } from "@/components/ui/button";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { useConnectionStore } from "@/state/connectionStore";
 import { writeText } from "@tauri-apps/plugin-clipboard-manager";
-import { toast } from "sonner";
+import { toast } from "@/lib/toast";
 
 export function InlineErrorBanner({
   message,

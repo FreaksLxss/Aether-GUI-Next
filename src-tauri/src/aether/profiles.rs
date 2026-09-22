@@ -1,5 +1,20 @@
 use serde::{Deserialize, Serialize};
 
+/// Parent (VPN/system) proxy vars that must never reach the engine: reverse
+/// and psiphon-only bootstrap dial direct, and HTTP_PROXY pointing at the OS
+/// proxy (or our not-yet-ready bridge) deadlocks psiphon-tunnel-core.
+/// Stripped in both pty.rs and pty_android.rs after `environment()`.
+pub const PROXY_ENV_KEYS: &[&str] = &[
+    "HTTP_PROXY",
+    "HTTPS_PROXY",
+    "ALL_PROXY",
+    "FTP_PROXY",
+    "http_proxy",
+    "https_proxy",
+    "all_proxy",
+    "ftp_proxy",
+];
+
 /// How network traffic is captured and routed through the tunnel.
 /// `Proxy` is the original behavior (Windows system proxy via registry).
 /// `Tun` uses a wintun adapter to capture all IP-layer traffic.
@@ -52,7 +67,11 @@ pub enum ScanMode {
     Turbo,
     Balanced,
     Thorough,
-    Stealth,
+    /// Aether ≥2.1.0 renamed Stealth → Verified (the engine still accepts
+    /// `--scan stealth` and maps it to verified; the alias keeps profiles
+    /// saved by older GUI versions loading).
+    #[serde(alias = "stealth")]
+    Verified,
     Ironclad,
 }
 
@@ -62,7 +81,7 @@ impl ScanMode {
             ScanMode::Turbo => "1",
             ScanMode::Balanced => "2",
             ScanMode::Thorough => "3",
-            ScanMode::Stealth => "4",
+            ScanMode::Verified => "4",
             ScanMode::Ironclad => "5",
         }
     }
@@ -206,6 +225,58 @@ impl EngineTorMode {
     }
 }
 
+/// Aether ≥2.1.0: built-in Psiphon mode. `Disabled` omits all `--psiphon*`
+/// flags. Chain listens on 127.0.0.1:1821 by default (WARP stays on 1819).
+///
+/// **Isolation invariant:** same as EngineTorMode — engine Psiphon (port
+/// 1821, aether://psiphon-status) never mixes with engine arti Tor (1820)
+/// or `ip_changer.rs` TorManager (9050/9051). `psiphon-only` XOR any Tor
+/// mode: both claim the primary bind. Reverse modes need MASQUE (H2), and
+/// tor-reverse + psiphon-reverse can't both own the outer tunnel.
+#[derive(Serialize, Deserialize, Clone, Debug, PartialEq, Eq, Default)]
+#[serde(rename_all = "snake_case")]
+pub enum EnginePsiphonMode {
+    #[default]
+    Disabled,
+    Psiphon,
+    #[serde(rename = "psiphon-reverse", alias = "psiphon_reverse")]
+    PsiphonReverse,
+    #[serde(rename = "psiphon-only", alias = "psiphon_only")]
+    PsiphonOnly,
+}
+
+impl EnginePsiphonMode {
+    pub fn as_flag(&self) -> Option<&'static str> {
+        match self {
+            EnginePsiphonMode::Disabled => None,
+            EnginePsiphonMode::Psiphon => Some("--psiphon"),
+            EnginePsiphonMode::PsiphonReverse => Some("--psiphon-reverse"),
+            EnginePsiphonMode::PsiphonOnly => Some("--psiphon-only"),
+        }
+    }
+}
+
+/// `--psiphon-mode <shape>`: CDN-fronted vs direct Psiphon transport.
+/// `Auto` omits the flag (engine default).
+#[derive(Serialize, Deserialize, Clone, Copy, Debug, PartialEq, Eq, Default)]
+#[serde(rename_all = "lowercase")]
+pub enum PsiphonShape {
+    #[default]
+    Auto,
+    Cdn,
+    Direct,
+}
+
+impl PsiphonShape {
+    pub fn as_flag(&self) -> &'static str {
+        match self {
+            PsiphonShape::Auto => "auto",
+            PsiphonShape::Cdn => "cdn",
+            PsiphonShape::Direct => "direct",
+        }
+    }
+}
+
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, Eq)]
 pub struct ConnectionProfile {
     pub protocol: Protocol,
@@ -234,10 +305,10 @@ pub struct ConnectionProfile {
     /// 127.0.0.1:1819; users can change the port or bind to 0.0.0.0 for LAN.
     #[serde(default = "default_bind_address")]
     pub bind_address: String,
-    /// Aether ≥1.6.0: local HTTP CONNECT proxy listen address
-    /// (`--http-proxy`), exposed next to the SOCKS5 one for clients that
-    /// can't speak SOCKS. `None` omits the flag (no HTTP proxy). Only
-    /// forwarded when parseable, like `bind_address`.
+    /// Aether ≥1.6.0: local HTTP CONNECT proxy listen address, exposed next
+    /// to the SOCKS5 one for clients that can't speak SOCKS. Served by the
+    /// counting bridge (claimed at connect), never the engine's native
+    /// `--http-proxy`. `None` disables the door.
     #[serde(default)]
     pub http_proxy_address: Option<String>,
     /// Aether ≥1.7.0: dial out through another proxy already on the machine
@@ -358,8 +429,9 @@ pub struct ConnectionProfile {
     /// Force automatic bridges immediately (`--tor-bridges`, no value).
     #[serde(default)]
     pub engine_tor_force_bridges: bool,
-    /// Legacy unsupported path. Retained only to report an explicit migration error.
-    /// Never read this path or forward it to the engine.
+    /// Aether ≥2.1.0: obfs4 bridge lines from a file (`--tor-bridge-file`).
+    /// Read by the engine itself; the GUI never opens it. Counts as a manual
+    /// bridge source for policy conflicts.
     #[serde(default)]
     pub engine_tor_bridges_file: Option<String>,
     #[serde(default)]
@@ -374,6 +446,38 @@ pub struct ConnectionProfile {
     pub engine_tor_direct_secs: Option<u32>,
     #[serde(default)]
     pub engine_tor_stall_secs: Option<u32>,
+    // ── Aether ≥2.1.0 ──────────────────────────────────────────────
+    /// Built-in Psiphon mode. Disabled omits all --psiphon* flags. See EnginePsiphonMode doc.
+    #[serde(default)]
+    pub engine_psiphon_mode: EnginePsiphonMode,
+    /// Chain/reverse secondary bind (`--psiphon-bind`). `None` → default 127.0.0.1:1821.
+    #[serde(default)]
+    pub engine_psiphon_bind: Option<String>,
+    /// `--psiphon-mode <shape>` transport; `PsiphonShape::Auto` omits the flag.
+    #[serde(default)]
+    pub psiphon_shape: PsiphonShape,
+    /// Two-letter exit country (`--psiphon-region`).
+    #[serde(default)]
+    pub psiphon_region: Option<String>,
+    /// Tor relay set (`--tor-relays`): auto | only | off | <count>.
+    #[serde(default)]
+    pub engine_tor_relays: Option<String>,
+    /// Tor relay ports (`--tor-relay-ports`): web | any. `None` = engine default (web).
+    #[serde(default)]
+    pub engine_tor_relay_ports: Option<String>,
+    /// Pin the bridge/WARP exit country (`--exit-loc`), comma-separated
+    /// two-letter codes with optional leading `!` (e.g. "DE,SE,!IR").
+    #[serde(default)]
+    pub exit_loc: Option<String>,
+    /// Recheck interval for --exit-loc (`--exit-loc-secs`).
+    #[serde(default)]
+    pub exit_loc_secs: Option<u32>,
+    /// Periodic stats logging (`--stats`).
+    #[serde(default)]
+    pub stats: bool,
+    /// Stats interval (`--stats-secs`).
+    #[serde(default)]
+    pub stats_secs: Option<u32>,
     // Env-only proxy tuning (no flag)
     #[serde(default)]
     pub max_clients: Option<u32>,
@@ -436,7 +540,7 @@ impl ConnectionProfile {
             ScanMode::Turbo => "--turbo".into(),
             ScanMode::Balanced => "--balanced".into(),
             ScanMode::Thorough => "--thorough".into(),
-            ScanMode::Stealth => "--stealth".into(),
+            ScanMode::Verified => "--verified".into(),
             ScanMode::Ironclad => "--ironclad".into(),
         });
         args.push(match self.ip_version {
@@ -465,15 +569,10 @@ impl ConnectionProfile {
             args.push("--bind".into());
             args.push(self.bind_address.trim().into());
         }
-        // Aether ≥1.6.0: HTTP CONNECT proxy next to the SOCKS5 one. Only
-        // forwarded when parseable, so a half-typed address can't reach the
-        // binary as a mangled flag.
-        if let Some(ref addr) = self.http_proxy_address {
-            if !addr.trim().is_empty() && socket_address(addr, "http_proxy_address").is_ok() {
-                args.push("--http-proxy".into());
-                args.push(addr.trim().into());
-            }
-        }
+        // http_proxy_address is deliberately NOT forwarded as --http-proxy:
+        // that bind is claimed by the counting bridge at connect (the bridge
+        // already speaks HTTP CONNECT), so engine-native listeners can't
+        // swallow bytes uncounted.
         // Aether ≥1.7.0: upstream proxy chaining. The value is scheme+URL
         // shaped (socks5://user:pass@host:port, http://host:port, host:port),
         // so unlike --bind it can't be SocketAddr-validated — only forwarded
@@ -488,7 +587,7 @@ impl ConnectionProfile {
         // Aether ≥1.9.0: manual WARP-in-WARP endpoints, gool only. One hop
         // may be given alone (the scan finds the other); every entry must
         // carry a port (SocketAddr parsing enforces it) or the flag is
-        // dropped whole, mirroring the --bind/--http-proxy guardrails.
+        // dropped whole, mirroring the --bind guardrail.
         if self.protocol == Protocol::Gool {
             if let Some(ref wiw) = self.wiw_peers {
                 let entries: Vec<&str> = wiw
@@ -596,8 +695,31 @@ impl ConnectionProfile {
                 self.engine_tor_mode,
                 EngineTorMode::TorReverse | EngineTorMode::TorOnly
             )
+            && !matches!(
+                self.engine_psiphon_mode,
+                EnginePsiphonMode::PsiphonReverse | EnginePsiphonMode::PsiphonOnly
+            )
         {
             args.push("--no-quic-v2".into());
+        }
+        // Aether ≥2.1.0: exit-country pin + periodic stats logging.
+        if let Some(ref loc) = self.exit_loc {
+            let t = loc.trim();
+            if !t.is_empty() && exit_loc_tokens_ok(t) {
+                args.push("--exit-loc".into());
+                args.push(t.into());
+                if let Some(n) = self.exit_loc_secs {
+                    args.push("--exit-loc-secs".into());
+                    args.push(n.to_string());
+                }
+            }
+        }
+        if self.stats {
+            args.push("--stats".into());
+            if let Some(n) = self.stats_secs {
+                args.push("--stats-secs".into());
+                args.push(n.to_string());
+            }
         }
         // --mark: Linux/Android only.
         #[cfg(any(target_os = "linux", target_os = "android"))]
@@ -654,6 +776,51 @@ impl ConnectionProfile {
                 let t = d.trim();
                 if !t.is_empty() {
                     args.push("--tor-pt-dir".into());
+                    args.push(t.into());
+                }
+            }
+            // Aether ≥2.1.0: relay set/ports + bridge file.
+            if let Some(ref r) = self.engine_tor_relays {
+                let t = r.trim().to_ascii_lowercase();
+                if t == "auto" || t == "only" || t == "off" || t.parse::<u32>().is_ok() {
+                    args.push("--tor-relays".into());
+                    args.push(t);
+                }
+            }
+            if let Some(ref rp) = self.engine_tor_relay_ports {
+                if rp.trim() == "web" || rp.trim() == "any" {
+                    args.push("--tor-relay-ports".into());
+                    args.push(rp.trim().into());
+                }
+            }
+            if let Some(ref bf) = self.engine_tor_bridges_file {
+                let t = bf.trim();
+                if !t.is_empty() {
+                    args.push("--tor-bridge-file".into());
+                    args.push(t.into());
+                }
+            }
+        }
+        // Aether ≥2.1.0: built-in Psiphon — isolated like EngineTorMode.
+        if let Some(flag) = self.engine_psiphon_mode.as_flag() {
+            args.push(flag.into());
+            if self.engine_psiphon_mode != EnginePsiphonMode::PsiphonOnly {
+                if let Some(ref b) = self.engine_psiphon_bind {
+                    let t = b.trim();
+                    if !t.is_empty() && t.parse::<std::net::SocketAddr>().is_ok() {
+                        args.push("--psiphon-bind".into());
+                        args.push(t.into());
+                    }
+                }
+            }
+            if self.psiphon_shape != PsiphonShape::Auto {
+                args.push("--psiphon-mode".into());
+                args.push(self.psiphon_shape.as_flag().into());
+            }
+            if let Some(ref r) = self.psiphon_region {
+                let t = r.trim();
+                if !t.is_empty() {
+                    args.push("--psiphon-region".into());
                     args.push(t.into());
                 }
             }
@@ -792,6 +959,16 @@ impl Default for ConnectionProfile {
             engine_tor_country: None,
             engine_tor_direct_secs: None,
             engine_tor_stall_secs: None,
+            engine_psiphon_mode: EnginePsiphonMode::Disabled,
+            engine_psiphon_bind: None,
+            psiphon_shape: PsiphonShape::Auto,
+            psiphon_region: None,
+            engine_tor_relays: None,
+            engine_tor_relay_ports: None,
+            exit_loc: None,
+            exit_loc_secs: None,
+            stats: false,
+            stats_secs: None,
             max_clients: None,
             half_close_secs: None,
             tcp_keepalive_secs: None,
@@ -860,14 +1037,19 @@ fn listeners_collide(a: std::net::SocketAddr, b: std::net::SocketAddr) -> bool {
         || b.ip() == std::net::Ipv6Addr::UNSPECIFIED)
 }
 
+/// Every comma-separated --exit-loc token is a two-letter country code with
+/// an optional leading `!` (negation), per Aether ≥2.1.0.
+fn exit_loc_tokens_ok(value: &str) -> bool {
+    !value.trim().is_empty()
+        && value.split(',').all(|raw| {
+            let t = raw.trim();
+            let t = t.strip_prefix('!').unwrap_or(t);
+            t.len() == 2 && t.bytes().all(|b| b.is_ascii_alphabetic())
+        })
+}
+
 pub fn validate(p: &ConnectionProfile) -> Result<(), String> {
     use std::net::IpAddr;
-    if p.engine_tor_bridges_file
-        .as_deref()
-        .is_some_and(|s| !s.trim().is_empty())
-    {
-        return Err("Legacy Tor bridges-file setting is unsupported. Paste bridge lines into Manual bridges, then clear the legacy file setting. No file has been read.".into());
-    }
     let mut listeners = vec![(
         "bind_address",
         socket_address(&p.bind_address, "bind_address")?,
@@ -893,6 +1075,20 @@ pub fn validate(p: &ConnectionProfile) -> Result<(), String> {
             .unwrap_or("127.0.0.1:1820");
         listeners.push(("engine_tor_bind", socket_address(bind, "engine_tor_bind")?));
     }
+    if matches!(
+        p.engine_psiphon_mode,
+        EnginePsiphonMode::Psiphon | EnginePsiphonMode::PsiphonReverse
+    ) {
+        let bind = p
+            .engine_psiphon_bind
+            .as_deref()
+            .filter(|s| !s.trim().is_empty())
+            .unwrap_or("127.0.0.1:1821");
+        listeners.push((
+            "engine_psiphon_bind",
+            socket_address(bind, "engine_psiphon_bind")?,
+        ));
+    }
     for (i, (name, addr)) in listeners.iter().enumerate() {
         for (other_name, other) in &listeners[..i] {
             if listeners_collide(*addr, *other) {
@@ -909,7 +1105,41 @@ pub fn validate(p: &ConnectionProfile) -> Result<(), String> {
             "tor-reverse requires MASQUE (forces HTTP/2, incompatible with WireGuard/gool)".into(),
         );
     }
-    let warp_active = p.engine_tor_mode != EngineTorMode::TorOnly;
+    if p.engine_psiphon_mode == EnginePsiphonMode::PsiphonReverse
+        && matches!(p.protocol, Protocol::Wireguard | Protocol::Gool)
+    {
+        return Err(
+            "psiphon-reverse requires MASQUE (forces HTTP/2, incompatible with WireGuard/gool)"
+                .into(),
+        );
+    }
+    // Primary-listener exclusivity: only-modes and any-Tor/any-Psiphon mix
+    // that would double-claim it (reverse+reverse also fights over MASQUE).
+    if p.engine_psiphon_mode == EnginePsiphonMode::PsiphonOnly
+        && p.engine_tor_mode != EngineTorMode::Disabled
+    {
+        return Err(
+            "psiphon-only cannot be combined with engine Tor — both claim the primary listener"
+                .into(),
+        );
+    }
+    if p.engine_tor_mode == EngineTorMode::TorOnly
+        && p.engine_psiphon_mode != EnginePsiphonMode::Disabled
+    {
+        return Err(
+            "tor-only cannot be combined with engine Psiphon — both claim the primary listener"
+                .into(),
+        );
+    }
+    if p.engine_tor_mode == EngineTorMode::TorReverse
+        && p.engine_psiphon_mode == EnginePsiphonMode::PsiphonReverse
+    {
+        return Err(
+            "tor-reverse and psiphon-reverse cannot both run — each needs MASQUE as its sole outer tunnel".into(),
+        );
+    }
+    let warp_active = p.engine_tor_mode != EngineTorMode::TorOnly
+        && p.engine_psiphon_mode != EnginePsiphonMode::PsiphonOnly;
     if warp_active && p.protocol == Protocol::Gool {
         if let Some(w) = p.wiw_peers.as_deref().filter(|s| !s.trim().is_empty()) {
             peer_list(w, "wiw_peers")?;
@@ -950,7 +1180,11 @@ pub fn validate(p: &ConnectionProfile) -> Result<(), String> {
         validate_mark(mark)?;
     }
     if p.engine_tor_mode != EngineTorMode::Disabled {
-        let manual = p.engine_tor_bridges.iter().any(|s| !s.trim().is_empty());
+        // A non-empty bridges file counts as a manual bridge source.
+        let manual = p.engine_tor_bridges.iter().any(|s| !s.trim().is_empty())
+            || p.engine_tor_bridges_file
+                .as_deref()
+                .is_some_and(|s| !s.trim().is_empty());
         if (p.engine_tor_force_bridges && (manual || p.engine_tor_no_bridges))
             || (manual && p.engine_tor_no_bridges)
         {
@@ -965,6 +1199,47 @@ pub fn validate(p: &ConnectionProfile) -> Result<(), String> {
             {
                 return Err("engine_tor_country: use a two-letter country code".into());
             }
+        }
+        if let Some(relays) = p
+            .engine_tor_relays
+            .as_deref()
+            .map(str::trim)
+            .filter(|s| !s.is_empty())
+        {
+            let t = relays.to_ascii_lowercase();
+            if t != "auto" && t != "only" && t != "off" && t.parse::<u32>().is_err() {
+                return Err("engine_tor_relays: use auto, only, off, or a number".into());
+            }
+        }
+        if let Some(rp) = p
+            .engine_tor_relay_ports
+            .as_deref()
+            .map(str::trim)
+            .filter(|s| !s.is_empty())
+        {
+            if rp != "web" && rp != "any" {
+                return Err("engine_tor_relay_ports: use web or any".into());
+            }
+        }
+    }
+    if p.engine_psiphon_mode != EnginePsiphonMode::Disabled {
+        if let Some(region) = p.psiphon_region.as_deref().filter(|s| !s.trim().is_empty()) {
+            if region.trim().len() != 2 || !region.trim().bytes().all(|b| b.is_ascii_alphabetic()) {
+                return Err("psiphon_region: use a two-letter country code".into());
+            }
+        }
+    }
+    if let Some(loc) = p
+        .exit_loc
+        .as_deref()
+        .map(str::trim)
+        .filter(|s| !s.is_empty())
+    {
+        if !exit_loc_tokens_ok(loc) {
+            return Err(
+                "exit_loc: comma-separated two-letter country codes, optional leading ! (e.g. \"DE,SE,!IR\")"
+                    .into(),
+            );
         }
     }
     // All tuning fields deserialize as u32: fractional, negative and overflowing
@@ -1126,17 +1401,17 @@ mod tests {
     }
 
     #[test]
-    fn valid_http_proxy_emits_flag() {
-        let p = ConnectionProfile {
-            http_proxy_address: Some("127.0.0.1:1818".into()),
-            ..ConnectionProfile::default()
-        };
-        let args = p.as_args();
-        let i = args
-            .iter()
-            .position(|a| a == "--http-proxy")
-            .expect("missing --http-proxy");
-        assert_eq!(args.get(i + 1).map(String::as_str), Some("127.0.0.1:1818"));
+    fn http_proxy_never_reaches_engine() {
+        // The bind is claimed by the counting bridge — the engine must never
+        // get a native listener that would swallow those bytes uncounted.
+        for addr in ["127.0.0.1:1818", "0.0.0.0:1818"] {
+            let p = ConnectionProfile {
+                http_proxy_address: Some(addr.into()),
+                ..ConnectionProfile::default()
+            };
+            let args = p.as_args();
+            assert!(!args.iter().any(|a| a == "--http-proxy"), "args={args:?}");
+        }
     }
 
     #[test]
@@ -1448,25 +1723,84 @@ mod tests {
     }
 
     #[test]
-    fn bridge_conflicts_and_legacy_paths_block_validation() {
+    fn bridge_file_is_forwarded_and_policies_still_conflict() {
+        // Aether ≥2.1.0 --tor-bridge-file: real field, engine reads it.
         let mut p = ConnectionProfile {
-            engine_tor_bridges_file: Some("C:/legacy/bridges.txt".into()),
+            engine_tor_bridges_file: Some("C:/bridges.txt".into()),
+            engine_tor_mode: EngineTorMode::Tor,
             ..ConnectionProfile::default()
         };
-        assert!(validate(&p).unwrap_err().contains("No file has been read"));
-        assert!(!p.as_args().contains(&"C:/legacy/bridges.txt".into()));
+        assert!(validate(&p).is_ok());
+        let args = p.as_args();
+        assert!(args.contains(&"--tor-bridge-file".into()));
+        assert!(args.contains(&"C:/bridges.txt".into()));
         p.engine_tor_bridges_file = Some("  ".into());
         assert!(validate(&p).is_ok());
-        p.engine_tor_mode = EngineTorMode::Tor;
-        p.engine_tor_force_bridges = true;
+        assert!(!p.as_args().contains(&"--tor-bridge-file".into()));
+        // File counts as a manual bridge source for policy conflicts.
+        p.engine_tor_bridges_file = Some("C:/bridges.txt".into());
         p.engine_tor_no_bridges = true;
         assert!(validate(&p).is_err());
         p.engine_tor_no_bridges = false;
-        p.engine_tor_bridges = vec!["manual line".into()];
+        p.engine_tor_force_bridges = true;
         assert!(validate(&p).is_err());
-        p.engine_tor_force_bridges = false;
-        p.engine_tor_no_bridges = true;
+    }
+
+    #[test]
+    fn psiphon_modes_emit_flags_and_enforce_exclusions() {
+        let mut p = ConnectionProfile {
+            engine_psiphon_mode: EnginePsiphonMode::Psiphon,
+            ..ConnectionProfile::default()
+        };
+        assert!(validate(&p).is_ok());
+        let args = p.as_args();
+        assert!(args.contains(&"--psiphon".into()));
+        // Chain/reverse secondary bind joins the listener-collision list.
+        p.engine_psiphon_bind = Some("127.0.0.1:1819".into());
         assert!(validate(&p).is_err());
+        p.engine_psiphon_bind = None;
+        // Reverse needs MASQUE, and can't double with tor-reverse.
+        p.engine_psiphon_mode = EnginePsiphonMode::PsiphonReverse;
+        p.protocol = Protocol::Wireguard;
+        assert!(validate(&p).is_err());
+        p.protocol = Protocol::Masque;
+        assert!(validate(&p).is_ok());
+        p.engine_tor_mode = EngineTorMode::TorReverse;
+        assert!(validate(&p).is_err());
+        // Only-modes XOR: each claims the primary listener.
+        p.engine_tor_mode = EngineTorMode::Disabled;
+        p.engine_psiphon_mode = EnginePsiphonMode::PsiphonOnly;
+        assert!(validate(&p).is_ok());
+        p.engine_tor_mode = EngineTorMode::TorOnly;
+        assert!(validate(&p).is_err());
+        p.engine_tor_mode = EngineTorMode::Tor;
+        assert!(validate(&p).is_err());
+    }
+
+    #[test]
+    fn relays_and_exit_loc_format() {
+        let mut p = ConnectionProfile {
+            engine_tor_mode: EngineTorMode::Tor,
+            engine_tor_relays: Some("bogus".into()),
+            ..ConnectionProfile::default()
+        };
+        assert!(validate(&p).is_err());
+        p.engine_tor_relays = Some("only".into());
+        p.engine_tor_relay_ports = Some("any".into());
+        assert!(validate(&p).is_ok());
+        let args = p.as_args();
+        assert!(args.windows(2).any(|w| w == ["--tor-relays", "only"]));
+        assert!(args.windows(2).any(|w| w == ["--tor-relay-ports", "any"]));
+        p.exit_loc = Some("Germany".into());
+        assert!(validate(&p).is_err());
+        p.exit_loc = Some("DE,!IR".into());
+        p.exit_loc_secs = Some(300);
+        p.stats = true;
+        assert!(validate(&p).is_ok());
+        let args = p.as_args();
+        assert!(args.windows(2).any(|w| w == ["--exit-loc", "DE,!IR"]));
+        assert!(args.windows(2).any(|w| w == ["--exit-loc-secs", "300"]));
+        assert!(args.contains(&"--stats".into()));
     }
 
     #[test]

@@ -2,6 +2,7 @@ import { useEffect, useRef } from "react";
 import { Terminal, Trash2, Copy } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useIpChangerStore } from "@/stores/ipChangerStore";
+import { cue } from "@/lib/sound";
 
 const TIME_FMT = new Intl.DateTimeFormat(undefined, {
   hour: "2-digit",
@@ -31,7 +32,13 @@ export function LogViewer() {
           <Button
             variant="ghost"
             size="icon-xs"
-            onClick={() => navigator.clipboard?.writeText(logs.map(l => `${TIME_FMT.format(l.timestamp)} ${l.line}`).join("\n"))}
+            onClick={() => {
+              const copied = navigator.clipboard?.writeText(
+                logs.map((l) => `${TIME_FMT.format(l.timestamp)} ${l.line}`).join("\n"),
+              );
+              if (!copied) return;
+              void copied.then(() => cue("success")).catch(() => cue("error"));
+            }}
             disabled={logs.length === 0}
             aria-label="Copy all logs"
             title="Copy all logs"

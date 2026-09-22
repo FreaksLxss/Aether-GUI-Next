@@ -11,6 +11,10 @@ pub const LOG_EVENT: &str = "aether://log";
 /// to the IP Changer's `ip-changer://status` Tor. Reset to the default
 /// whenever the session stops/restarts.
 pub const ENGINE_TOR_STATUS_EVENT: &str = "aether://tor-status";
+/// Engine chain-Psiphon secondary listener readiness (Aether ≥2.1.0 `--psiphon`,
+/// default 127.0.0.1:1821). Same shape as EngineTorStatus; reset to the default
+/// whenever the session stops/restarts, like the Tor twin.
+pub const ENGINE_PSIHON_STATUS_EVENT: &str = "aether://psiphon-status";
 
 #[derive(Serialize, Clone, Debug, Default, PartialEq, Eq)]
 pub struct EngineTorStatus {
@@ -18,6 +22,9 @@ pub struct EngineTorStatus {
     pub ready: bool,
     pub address: Option<String>,
 }
+
+/// Alias: the Psiphon status event reuses the `EngineTorStatus` shape.
+pub type EnginePsiphonStatus = EngineTorStatus;
 
 /// Live TUN/HTTP-proxy traffic counters — `TrafficStats`.
 pub const TRAFFIC_EVENT: &str = "aether://traffic";

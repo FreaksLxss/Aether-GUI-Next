@@ -25,7 +25,12 @@ pub enum ConnectionState {
     /// a pre-computed elapsed duration, so the frontend can render a live-
     /// updating session timer without needing another event from the backend.
     Connected {
+        /// The engine's raw SOCKS5 bind address — used to point the bridge's
+        /// upstream (`set_target`); never hand this to apps directly.
         socks_addr: String,
+        /// Loopback HTTP+SOCKS5 counting bridge — hand this to apps, PAC and
+        /// manual proxy configs so their bytes land in the traffic monitor.
+        bridge_addr: String,
         connected_at_ms: u64,
     },
     Reconnecting {

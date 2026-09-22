@@ -12,7 +12,8 @@ pub mod status;
 
 use crate::error::AetherError;
 use crate::events::{
-    now_millis, EngineTorStatus, LogEvent, ENGINE_TOR_STATUS_EVENT, LOG_EVENT, STATUS_EVENT,
+    now_millis, EnginePsiphonStatus, EngineTorStatus, LogEvent, ENGINE_PSIHON_STATUS_EVENT,
+    ENGINE_TOR_STATUS_EVENT, LOG_EVENT, STATUS_EVENT,
 };
 use crate::history::{self, ConnectionEntry};
 use crate::state::ConnectionState;
@@ -37,6 +38,10 @@ pub struct AetherManager {
     /// compute session duration for connection history.
     connected_at: Option<u64>,
     tor_status: EngineTorStatus,
+    psiphon_status: EnginePsiphonStatus,
+    /// Bumped on every spawn. Monitors capture it at start and bail if it
+    /// changes, so a stale monitor can never kill or manage a newer session.
+    epoch: u64,
 }
 
 impl AetherManager {
@@ -48,6 +53,8 @@ impl AetherManager {
             retry_count: 0,
             connected_at: None,
             tor_status: EngineTorStatus::default(),
+            psiphon_status: EnginePsiphonStatus::default(),
+            epoch: 0,
         }
     }
 
@@ -59,10 +66,21 @@ impl AetherManager {
         self.tor_status.clone()
     }
 
+    pub fn psiphon_status(&self) -> EnginePsiphonStatus {
+        self.psiphon_status.clone()
+    }
+
     fn update_tor_status(&mut self, app: &AppHandle, status: EngineTorStatus) {
         if self.tor_status != status {
             self.tor_status = status;
             let _ = app.emit(ENGINE_TOR_STATUS_EVENT, &self.tor_status);
+        }
+    }
+
+    fn update_psiphon_status(&mut self, app: &AppHandle, status: EnginePsiphonStatus) {
+        if self.psiphon_status != status {
+            self.psiphon_status = status;
+            let _ = app.emit(ENGINE_PSIHON_STATUS_EVENT, &self.psiphon_status);
         }
     }
 }
@@ -118,14 +136,84 @@ pub fn start_connect(
         ) {
             return Err(AetherError::AlreadyRunning);
         }
-        // Defensive guard independent of the pid-file mechanism in orphan.rs
-        // (covers a manually-started Aether or a missing/corrupted pid file),
-        // checked under the same lock as the state check above so a rapid
-        // double-click can't race two connect() calls past this guard before
-        // the first transitions to Launching.
-        let socks = status::parse_bind_address(&profile.bind_address);
-        if status::port_is_live(&socks) {
-            return Err(AetherError::PortInUse(socks.port()));
+        // Secondary arti door the engine will bind (chain mode default 1820;
+        // reverse only when explicitly set) — claimed alongside the main bind.
+        let tor_door = match profile.engine_tor_mode {
+            profiles::EngineTorMode::Tor => status::secondary_tor_address(&profile),
+            profiles::EngineTorMode::TorReverse => profile
+                .engine_tor_bind
+                .as_deref()
+                .map(str::trim)
+                .filter(|s| !s.is_empty())
+                .and_then(|s| s.parse().ok()),
+            _ => None,
+        };
+        // Engine Psiphon secondary door (chain default 1821; reverse only when
+        // explicitly set) — claimed after route_connect resets stale ports.
+        let psiphon_door = match profile.engine_psiphon_mode {
+            profiles::EnginePsiphonMode::Psiphon => status::secondary_psiphon_address(&profile),
+            profiles::EnginePsiphonMode::PsiphonReverse => profile
+                .engine_psiphon_bind
+                .as_deref()
+                .map(str::trim)
+                .filter(|s| !s.is_empty())
+                .and_then(|s| s.parse().ok()),
+            _ => None,
+        };
+        // Claim the advertised port (default 1819) for the counting bridge and
+        // give the engine a private loopback port behind it, so hardcoded
+        // configs like Telegram → 127.0.0.1:1819 land on the counter instead
+        // of bypassing it. A foreign process on the advertised port errors
+        // here the same way the old port-live probe did. Under the same lock
+        // as the state check so a rapid double-click can't race past it.
+        if let Err(e) = crate::httpproxy::route_connect(&profile.bind_address, tor_door) {
+            let port = status::parse_bind_address(&profile.bind_address).port();
+            log::warn!(
+                "[httpproxy] route_connect({}) failed: {e}",
+                profile.bind_address
+            );
+            return Err(AetherError::PortInUse(port));
+        }
+        // The optional HTTP door gets the same treatment — the bridge already
+        // speaks HTTP CONNECT, so the engine never needs its native listener.
+        if let Some(http) = profile
+            .http_proxy_address
+            .as_deref()
+            .map(str::trim)
+            .filter(|s| !s.is_empty())
+        {
+            let engine = crate::httpproxy::engine_addr();
+            if let Err(e) = crate::httpproxy::claim(http, engine) {
+                let port = status::parse_bind_address(http).port();
+                log::warn!("[httpproxy] claim({http}) failed: {e}");
+                return Err(AetherError::PortInUse(port));
+            }
+        }
+        // Same treatment for the Psiphon chain/reverse secondary door.
+        if let Some(door) = psiphon_door {
+            if let Err(e) = crate::httpproxy::claim_psiphon_door(door) {
+                log::warn!("[httpproxy] claim_psiphon_door({door}) failed: {e}");
+                return Err(AetherError::PortInUse(door.port()));
+            }
+        }
+        // Reverse with no advertised door still binds a local SOCKS for the
+        // tunnel to dial through — reserve a private port so the engine never
+        // lands on 1821/1820 this process already holds from a chain session.
+        if profile.engine_psiphon_mode == profiles::EnginePsiphonMode::PsiphonReverse
+            && crate::httpproxy::engine_psiphon_addr().is_none()
+        {
+            if let Err(e) = crate::httpproxy::reserve_engine_psiphon() {
+                log::warn!("[httpproxy] reserve_engine_psiphon failed: {e}");
+                return Err(AetherError::Internal(e));
+            }
+        }
+        if profile.engine_tor_mode == profiles::EngineTorMode::TorReverse
+            && crate::httpproxy::engine_tor_addr().is_none()
+        {
+            if let Err(e) = crate::httpproxy::reserve_engine_tor() {
+                log::warn!("[httpproxy] reserve_engine_tor failed: {e}");
+                return Err(AetherError::Internal(e));
+            }
         }
         mgr.state = ConnectionState::Launching;
         // A fresh user-initiated connect always gets a full retry budget,
@@ -150,7 +238,17 @@ fn spawn_and_monitor(
     profile: ConnectionProfile,
 ) -> Result<(), AetherError> {
     let (log_tx, log_rx) = mpsc::channel::<LogEvent>();
-    let session_or_err = pty::spawn(&binary, &data_dir, profile.clone(), log_tx);
+    // Engine gets the private ports `route_connect` allocated — the advertised
+    // binds in `profile` stay advertised (they're bridge doors now).
+    let mut engine_profile = profile.clone();
+    engine_profile.bind_address = crate::httpproxy::engine_addr().to_string();
+    if let Some(tor) = crate::httpproxy::engine_tor_addr() {
+        engine_profile.engine_tor_bind = Some(tor.to_string());
+    }
+    if let Some(psi) = crate::httpproxy::engine_psiphon_addr() {
+        engine_profile.engine_psiphon_bind = Some(psi.to_string());
+    }
+    let session_or_err = pty::spawn(&binary, &data_dir, engine_profile, log_tx);
     let session = match session_or_err {
         Ok(session) => session,
         Err(e) => {
@@ -179,7 +277,9 @@ fn spawn_and_monitor(
         let mut mgr = manager.lock().unwrap();
         mgr.session = Some(session);
         mgr.user_requested_stop = false;
+        mgr.epoch += 1;
         mgr.update_tor_status(&app, status::secondary_tor_status(&profile, false));
+        mgr.update_psiphon_status(&app, status::secondary_psiphon_status(&profile, false));
     }
 
     // Forward every log line to the frontend's advanced/log panel as it
@@ -243,7 +343,10 @@ fn handle_unexpected_failure(
             );
         }
         mgr.session = None;
-        mgr.update_tor_status(&app, EngineTorStatus::default());
+        // Keep the secondary listeners "enabled" (unready) across a retry so
+        // the UI line doesn't unmount/remount when a VPN flap forces reconnect.
+        mgr.update_tor_status(&app, status::secondary_tor_status(&profile, false));
+        mgr.update_psiphon_status(&app, status::secondary_psiphon_status(&profile, false));
         mgr.retry_count += 1;
         mgr.retry_count
     };
@@ -314,15 +417,19 @@ fn monitor_connect(
     profile: ConnectionProfile,
 ) {
     let deadline = Instant::now() + status::startup_timeout(&profile);
-    let socks = status::parse_bind_address(&profile.bind_address);
+    let epoch = manager.lock().unwrap().epoch;
     let mut announced_connecting = false;
 
     loop {
         std::thread::sleep(Duration::from_millis(400));
         let mut mgr = manager.lock().unwrap();
-        if mgr.user_requested_stop {
+        if mgr.user_requested_stop || mgr.epoch != epoch {
             return;
         }
+        // Liveness probes the ENGINE's private port — re-read every tick: a
+        // later route_connect may have moved it. The advertised bind is the
+        // bridge, always live, and would report a false Connected.
+        let socks = crate::httpproxy::engine_addr();
 
         if let Some(exit) = mgr.session.as_mut().and_then(|s| s.try_wait()) {
             // A permanent configuration failure (rejected option/value,
@@ -339,6 +446,7 @@ fn monitor_connect(
             {
                 mgr.session = None;
                 mgr.update_tor_status(&app, EngineTorStatus::default());
+                mgr.update_psiphon_status(&app, EnginePsiphonStatus::default());
                 mgr.state = ConnectionState::Error {
                     message: failure.message().into(),
                     phase: "configuration".into(),
@@ -365,7 +473,23 @@ fn monitor_connect(
             return;
         }
 
-        mgr.update_tor_status(&app, status::secondary_tor_status(&profile, true));
+        // Sticky once ready: re-probing a live SOCKS with a bare TCP connect
+        // makes Psiphon log EOF every tick and (under PTY backpressure) flap
+        // `ready` — which is exactly the status text blinking in the UI.
+        let tor = mgr.tor_status();
+        let next_tor = if tor.enabled && tor.ready {
+            tor
+        } else {
+            status::secondary_tor_status(&profile, true)
+        };
+        mgr.update_tor_status(&app, next_tor);
+        let psi = mgr.psiphon_status();
+        let next_psi = if psi.enabled && psi.ready {
+            psi
+        } else {
+            status::secondary_psiphon_status(&profile, true)
+        };
+        mgr.update_psiphon_status(&app, next_psi);
 
         if !announced_connecting {
             let done = mgr
@@ -392,8 +516,16 @@ fn monitor_connect(
 
         if status::port_is_live(&socks) {
             let now = now_millis();
+            let engine = crate::httpproxy::engine_addr();
+            // Belt-and-braces: `route_connect` already pointed the bridge here,
+            // but a retry may have re-allocated the engine port since.
+            crate::httpproxy::set_target(&engine.to_string());
             let new_state = ConnectionState::Connected {
-                socks_addr: profile.bind_address.clone(),
+                // Private engine port — only for set_target/SystemProxyToggle.
+                socks_addr: engine.to_string(),
+                // The advertised bind is now this process's counting bridge —
+                // hand it to copy/PAC/apps so their bytes land on the counter.
+                bridge_addr: profile.bind_address.clone(),
                 connected_at_ms: now,
             };
             mgr.state = new_state.clone();
@@ -418,7 +550,10 @@ fn monitor_connect(
                 let mut tun = tun_manager.lock().unwrap();
                 let resource_dir = app.path().resource_dir().ok();
                 let resource_dir_ref = resource_dir.as_deref();
-                if let Err(e) = tun.activate(&profile.bind_address, &profile, resource_dir_ref) {
+                // Forwarder talks to the engine directly (already counted on
+                // the TUN side) — going through the bridge would double-count.
+                let engine = crate::httpproxy::engine_addr().to_string();
+                if let Err(e) = tun.activate(&engine, &profile, resource_dir_ref) {
                     let _ = app.emit(
                         LOG_EVENT,
                         LogEvent {
@@ -464,13 +599,28 @@ fn monitor_connected(
     data_dir: PathBuf,
     profile: ConnectionProfile,
 ) {
+    let epoch = manager.lock().unwrap().epoch;
     loop {
         std::thread::sleep(Duration::from_millis(500));
         let mut mgr = manager.lock().unwrap();
-        if mgr.user_requested_stop {
+        if mgr.user_requested_stop || mgr.epoch != epoch {
             return;
         }
-        mgr.update_tor_status(&app, status::secondary_tor_status(&profile, true));
+        // Same stickiness as monitor_connect — a stable Ready must not re-probe.
+        let tor = mgr.tor_status();
+        let next_tor = if tor.enabled && tor.ready {
+            tor
+        } else {
+            status::secondary_tor_status(&profile, true)
+        };
+        mgr.update_tor_status(&app, next_tor);
+        let psi = mgr.psiphon_status();
+        let next_psi = if psi.enabled && psi.ready {
+            psi
+        } else {
+            status::secondary_psiphon_status(&profile, true)
+        };
+        mgr.update_psiphon_status(&app, next_psi);
         if let Some(exit) = mgr.session.as_mut().and_then(|s| s.try_wait()) {
             mgr.session = None;
             drop(mgr);
@@ -546,11 +696,15 @@ pub fn request_disconnect(
 
     let had_session = {
         let mut mgr = manager.lock().unwrap();
-        // Reconnecting has no live session (the old one already exited; the
-        // retry's replacement hasn't spawned yet) — still a valid thing to
-        // cancel, it just means there's nothing to send Ctrl-C to.
-        let reconnecting = matches!(mgr.state, ConnectionState::Reconnecting { .. });
-        if mgr.session.is_none() && !reconnecting {
+        // Any non-terminal state is cancellable even with no session behind it
+        // (mid-backoff Reconnecting, a zombie Launching/Connecting whose
+        // monitor already dropped the session) — otherwise the user is stuck
+        // until app restart. Only Idle/Error have nothing to cancel.
+        let cancellable = !matches!(
+            mgr.state,
+            ConnectionState::Idle | ConnectionState::Error { .. }
+        );
+        if mgr.session.is_none() && !cancellable {
             return Err(AetherError::NotConnected);
         }
         // Record history for a successful session being closed by the user.
@@ -604,6 +758,7 @@ pub fn request_disconnect(
                 mgr.session = None;
                 mgr.user_requested_stop = false;
                 mgr.update_tor_status(&app, EngineTorStatus::default());
+                mgr.update_psiphon_status(&app, EnginePsiphonStatus::default());
                 drop(mgr);
                 orphan::clear_pid(&app_data_dir(&app));
                 // Tunnel is fully down now — turn off the system proxy so it

@@ -3,6 +3,7 @@ import { motion, AnimatePresence } from "motion/react";
 import { writeText } from "@tauri-apps/plugin-clipboard-manager";
 import { Check, Copy } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { cue } from "@/lib/sound";
 import { useConnectionStore } from "@/state/connectionStore";
 
 export function CopyProxyButton() {
@@ -11,11 +12,12 @@ export function CopyProxyButton() {
 
   if (status.state !== "Connected") return null;
 
-  const addr = "socks_addr" in status ? status.socks_addr : "127.0.0.1:1819";
+  const addr = "bridge_addr" in status ? status.bridge_addr : "127.0.0.1:1819";
 
   const handleCopy = async () => {
     try {
       await writeText(addr);
+      cue("success");
       setCopied(true);
       setTimeout(() => setCopied(false), 1500);
     } catch (e) {

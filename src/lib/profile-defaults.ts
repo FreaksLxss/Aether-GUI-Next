@@ -15,6 +15,9 @@ export function defaultConnectionProfile(): ConnectionProfile {
     engine_tor_bridges: [], engine_tor_force_bridges: false, engine_tor_bridges_file: null,
     engine_tor_no_bridges: false, engine_tor_pt: null, engine_tor_pt_dir: null,
     engine_tor_country: null, engine_tor_direct_secs: null, engine_tor_stall_secs: null,
+    engine_psiphon_mode: "disabled", engine_psiphon_bind: null, psiphon_shape: "auto",
+    psiphon_region: null, engine_tor_relays: null, engine_tor_relay_ports: null,
+    exit_loc: null, exit_loc_secs: null, stats: false, stats_secs: null,
     max_clients: null, half_close_secs: null, tcp_keepalive_secs: null, tcp_connect_secs: null,
   };
 }

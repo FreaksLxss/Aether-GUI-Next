@@ -1,26 +1,26 @@
 {
-  "version": "2.0.0",
+  "version": "2.1.0",
   "repository": "CluvexStudio/Aether",
   "assets": {
     "windows-x86_64": {
       "name": "aether-windows-x86_64.zip",
-      "sha256": "95a2abcb34c6bb22207214b32d1e58f55a304b352d26e3bf6a0c05cda7a2c4df"
+      "sha256": "16221819f57b1519302dec4488ff2890a1e64ebab233ed27a289be167138677b"
     },
     "linux-x86_64": {
       "name": "aether-linux-x86_64-musl.tar.gz",
-      "sha256": "d79b8c296381d2e48175df319fa2f6d208d127331f3bc2aa2864f3e73d63fae2"
+      "sha256": "db70a0f5258ae27695d4f14e98f88049e761c1985908582a941d25e57febbf5b"
     },
     "linux-aarch64": {
       "name": "aether-linux-aarch64-musl.tar.gz",
-      "sha256": "839316b7ac3571d32bf2c17311a01cfa10cfef73838c9b14ce0c485cef0888d3"
+      "sha256": "8bbc8ba5dcbe01d08a63424793d55a23002e1220eb2752ab46bb61e09a5e15e9"
     },
     "macos-x86_64": {
       "name": "aether-macos-x86_64.tar.gz",
-      "sha256": "653df62da166666a4f3c13b2c205ec87d38f2d7a06a4cd94d7716510fa88cd7b"
+      "sha256": "d80e4bd11125b7b4511de454d7baf51470f7e377691b6a9ca30d29fad2685b54"
     },
     "macos-aarch64": {
       "name": "aether-macos-arm64.tar.gz",
-      "sha256": "b8472cc1b7f2788c180f8924fb24093cb35ccb600a045091e95edc1dc9b4ea42"
+      "sha256": "4cb73361301ccf87f6b15eedb1c058a7cc0fb41508dc1943f307439ed6774881"
     }
   }
 }

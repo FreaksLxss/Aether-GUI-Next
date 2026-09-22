@@ -34,8 +34,9 @@ class FetchTests(unittest.TestCase):
     def test_complete_pt_layout(self):
         with tempfile.TemporaryDirectory() as tmp:
             dest = Path(tmp)
-            fetch.extract_payload(archive([("aether.exe", pe()), ("pt/lyrebird.exe", pe()), ("run-aether.bat", b"ignored")]), "windows-x86_64", dest)
+            fetch.extract_payload(archive([("aether.exe", pe()), ("pt/lyrebird.exe", pe()), ("pt/psiphon-tunnel-core.exe", pe()), ("run-aether.bat", b"ignored")]), "windows-x86_64", dest)
             self.assertEqual((dest / "pt/lyrebird.exe").read_bytes(), pe())
+            self.assertEqual((dest / "pt/psiphon-tunnel-core.exe").read_bytes(), pe())
             self.assertFalse((dest / "run-aether.bat").exists())
 
     def test_checksum_mismatch(self):
@@ -43,8 +44,9 @@ class FetchTests(unittest.TestCase):
             fetch.verify_checksum(b"bad", "0" * 64)
 
     def test_missing_pt(self):
-        with tempfile.TemporaryDirectory() as tmp, self.assertRaisesRegex(ValueError, "Incomplete"):
-            fetch.extract_payload(archive([("aether.exe", pe())]), "windows-x86_64", Path(tmp))
+        for entries in ([("aether.exe", pe())], [("aether.exe", pe()), ("pt/lyrebird.exe", pe())]):
+            with self.subTest(entries=[n for n, _ in entries]), tempfile.TemporaryDirectory() as tmp, self.assertRaisesRegex(ValueError, "Incomplete"):
+                fetch.extract_payload(archive(entries), "windows-x86_64", Path(tmp))
 
     def test_unsafe_paths_and_unexpected_files(self):
         for name in ["../aether.exe", "/aether.exe", "C:/aether.exe", "pt\\lyrebird.exe", "evil/aether.exe", "aether.toml", "./aether.exe", "PT/lyrebird.exe"]:

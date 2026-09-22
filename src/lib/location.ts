@@ -27,16 +27,6 @@ const COUNTRY_NAMES: Record<string, string> = {
   VE: "Venezuela", VN: "Vietnam", YE: "Yemen", ZA: "South Africa", ZW: "Zimbabwe",
 };
 
-/** ISO-3166 alpha-2 → flag emoji via regional indicator symbols. */
-export function flagEmoji(code: string | null): string {
-  if (!code || code.length !== 2) return "🌐";
-  const base = 0x1f1e6 - 0x41;
-  return String.fromCodePoint(
-    base + code.charCodeAt(0),
-    base + code.charCodeAt(1),
-  );
-}
-
 export function countryName(code: string | null): string {
   if (!code) return "Unknown";
   return COUNTRY_NAMES[code.toUpperCase()] ?? code.toUpperCase();

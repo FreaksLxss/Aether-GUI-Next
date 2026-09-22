@@ -6,7 +6,9 @@ import tseslint from 'typescript-eslint'
 import { defineConfig, globalIgnores } from 'eslint/config'
 
 export default defineConfig([
-  globalIgnores(['dist', 'src-tauri/target']),
+  // `.claude/worktrees` holds throwaway agent checkouts. Each carries its own
+  // tsconfig, which makes the parser's root ambiguous and fails every file.
+  globalIgnores(['dist', 'src-tauri/target', '.claude']),
   {
     files: ['**/*.{ts,tsx}'],
     extends: [

@@ -6,6 +6,7 @@ import { useWindowFocused } from "@/state/windowFocus";
 import type { ConnectionStatus } from "@/types/connection";
 import { cn } from "@/lib/utils";
 import { SPRING_FAST } from "@/lib/motion";
+import { cue } from "@/lib/sound";
 
 const MagicRings = lazy(() => import("@/components/MagicRings"));
 
@@ -126,6 +127,7 @@ export function ConnectButton() {
   const playState = { animationPlayState: focused ? ("running" as const) : ("paused" as const) };
 
   const handleClick = () => {
+    cue("pulse");
     if (phase === "idle" || phase === "error") {
       void connect();
     } else {

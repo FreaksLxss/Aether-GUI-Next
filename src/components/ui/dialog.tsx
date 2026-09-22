@@ -2,6 +2,7 @@ import * as React from "react"
 import { Dialog as DialogPrimitive } from "radix-ui"
 
 import { cn } from "@/lib/utils"
+import { cue } from "@/lib/sound"
 import { Button } from "@/components/ui/button"
 import { XIcon } from "lucide-react"
 
@@ -53,6 +54,10 @@ function DialogContent({
 }: React.ComponentProps<typeof DialogPrimitive.Content> & {
   showCloseButton?: boolean
 }) {
+  React.useEffect(() => {
+    cue("page");
+  }, []);
+
   return (
     <DialogPortal>
       <DialogOverlay />

@@ -1,4 +1,4 @@
-use super::profiles::ConnectionProfile;
+use super::profiles::{ConnectionProfile, PROXY_ENV_KEYS};
 use super::prompts::{looks_like_choice_prompt, PROMPT_TABLE};
 use super::pty_output::{drain_lines, finish_lines, strip_ansi, OutputDiagnostics, StartupFailure};
 use crate::error::AetherError;
@@ -115,6 +115,11 @@ pub fn spawn(
     for (key, value) in profile.environment() {
         cmd.env(key, value);
     }
+    for k in PROXY_ENV_KEYS {
+        cmd.env_remove(k);
+    }
+    cmd.env("NO_PROXY", "localhost,127.0.0.1,::1");
+    cmd.env("no_proxy", "localhost,127.0.0.1,::1");
 
     let child = pair
         .slave
@@ -194,6 +199,10 @@ fn read_loop(
             if line.is_empty() {
                 continue;
             }
+            // First real engine output: with a full CLI the interactive prompts
+            // never appear, so waiting for answered.len()==PROMPT_TABLE.len()
+            // would leave the UI stuck in Launching forever.
+            prompts_done.store(true, Ordering::Relaxed);
             for rule in PROMPT_TABLE {
                 if (rule.header_matches)(&line) {
                     current_section = Some(rule.id);

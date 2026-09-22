@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
-"""Fetch the pinned engine + PT into binaries/engine (Python 3, no packages).
+"""Fetch the pinned engine payload set (aether + pt/lyrebird + pt/psiphon-tunnel-core)
+into binaries/engine (Python 3, no packages).
 
 Only public release bytes and engine payloads are read. Existing root binaries,
 Tor, Wintun and identity/state files are never modified. A replaced engine
@@ -70,7 +71,8 @@ def extract_payload(data, target, dest):
     windows = target.startswith("windows-")
     engine = "aether.exe" if windows else "aether"
     pt = "pt/lyrebird.exe" if windows else "pt/lyrebird"
-    required = {engine, pt}
+    psiphon = "pt/psiphon-tunnel-core.exe" if windows else "pt/psiphon-tunnel-core"
+    required = {engine, pt, psiphon}
     seen = set()
     total = 0
 
@@ -79,7 +81,7 @@ def extract_payload(data, target, dest):
         # Match raw archive names, not normalized paths or suffixes.
         if directory:
             name = name.removesuffix("/")
-        allowed = {engine, pt, "pt"}
+        allowed = {engine, pt, psiphon, "pt"}
         if windows:
             allowed.add("run-aether.bat")  # known upstream launcher, not installed
         if name not in allowed or name in seen or directory != (name == "pt") or not regular:
@@ -115,7 +117,7 @@ def extract_payload(data, target, dest):
                 accept(entry.name, entry.isdir(), entry.isfile() or entry.isdir(), entry.size,
                        lambda e=entry: archive.extractfile(e).read(MAX_FILE + 1))
     if not required.issubset(seen):
-        raise ValueError("Incomplete engine archive: both aether and pt/lyrebird are required")
+        raise ValueError("Incomplete engine archive: aether, pt/lyrebird and pt/psiphon-tunnel-core are required")
     return engine
 
 

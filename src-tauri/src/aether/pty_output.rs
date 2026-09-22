@@ -63,7 +63,10 @@ fn classify_startup_failure(line: &str) -> Option<StartupFailure> {
         .any(|s| lower.contains(s))
     {
         Some(StartupFailure::MissingTransport)
-    } else if lower.contains("address already in use") {
+    } else if lower.contains("address already in use")
+        // Windows' phrasing of the same bind conflict.
+        || lower.contains("only one usage of each socket address")
+    {
         Some(StartupFailure::BindInUse)
     } else {
         None
@@ -294,6 +297,13 @@ mod tests {
         );
         assert_eq!(
             classify_startup_failure("Error: address already in use: 127.0.0.1:1819"),
+            Some(StartupFailure::BindInUse)
+        );
+        // Windows phrasing of the same conflict (observed with psiphon-reverse).
+        assert_eq!(
+            classify_startup_failure(
+                "ERROR aether::psiphon: error initializing local SOCKS proxy: listen tcp: bind: Only one usage of each socket address (protocol/network address/port) is normally permitted."
+            ),
             Some(StartupFailure::BindInUse)
         );
     }

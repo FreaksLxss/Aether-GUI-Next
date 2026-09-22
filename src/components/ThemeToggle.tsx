@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { Monitor, Moon, Sun } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { applyColors } from "@/lib/theme";
+import { cue } from "@/lib/sound";
 
 type Theme = "dark" | "light" | "system";
 
@@ -48,6 +49,7 @@ export function ThemeToggle() {
 
   const cycle = () => {
     const next: Theme = theme === "dark" ? "light" : theme === "light" ? "system" : "dark";
+    cue("chime");
     setTheme(next);
     localStorage.setItem(THEME_KEY, next);
     applyTheme(next);

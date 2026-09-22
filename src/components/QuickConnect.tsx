@@ -12,7 +12,7 @@ interface QuickPreset {
   label: string;
   icon: typeof Zap;
   protocol: "auto" | "masque" | "wireguard";
-  scanMode: "turbo" | "balanced" | "thorough" | "stealth";
+  scanMode: "turbo" | "balanced" | "thorough" | "verified";
   description: string;
 }
 
@@ -39,11 +39,11 @@ const PRESETS: QuickPreset[] = [
     description: "Maximum security",
   },
   {
-    label: "Stealth",
+    label: "Verified",
     icon: EyeOff,
     protocol: "auto",
-    scanMode: "stealth",
-    description: "Hardest to detect",
+    scanMode: "verified",
+    description: "Only measured gateways",
   },
 ];
 
@@ -53,7 +53,7 @@ const ACTIVE_PRESET: Record<string, string> = {
   turbo: "Fast",
   balanced: "Balanced",
   thorough: "Secure",
-  stealth: "Stealth",
+  verified: "Verified",
   ironclad: "Secure",
 };
 

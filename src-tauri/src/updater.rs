@@ -118,9 +118,10 @@ fn find_download_url(release: &serde_json::Value) -> Option<String> {
 /// Runtime layout on success:
 ///   dest/aether.exe (aether on Unix)
 ///   dest/pt/lyrebird.exe (pt/lyrebird on Unix)
+///   dest/pt/psiphon-tunnel-core.exe (pt/psiphon-tunnel-core on Unix)
 ///
 /// The download is SHA-256 verified against the pinned manifest, the archive is
-/// restricted to the two required payloads (plus the upstream launcher, which
+/// restricted to the three required payloads (plus the upstream launcher, which
 /// is not installed), each executable is checked against the target
 /// architecture, and extraction happens in a hidden staging directory next to
 /// `dest`. The directory is activated with a rename only after complete,
@@ -183,11 +184,15 @@ fn verify_checksum(bytes: &[u8], expected: &str) -> Result<(), String> {
     Ok(())
 }
 
-fn payload_names(target: &str) -> (&'static str, &'static str) {
+fn payload_names(target: &str) -> (&'static str, &'static str, &'static str) {
     if target.starts_with("windows-") {
-        ("aether.exe", "pt/lyrebird.exe")
+        (
+            "aether.exe",
+            "pt/lyrebird.exe",
+            "pt/psiphon-tunnel-core.exe",
+        )
     } else {
-        ("aether", "pt/lyrebird")
+        ("aether", "pt/lyrebird", "pt/psiphon-tunnel-core")
     }
 }
 
@@ -237,7 +242,7 @@ struct PayloadWriter<'a> {
 
 impl PayloadWriter<'_> {
     /// Validate one archive member against a strict allowlist and, when it is
-    /// one of the two required payloads, verify its architecture and write it
+    /// one of the three required payloads, verify its architecture and write it
     /// out. Rejects traversal, absolute paths, backslashes, non-regular files,
     /// duplicates and anything outside the expected payload set.
     fn entry(
@@ -253,9 +258,10 @@ impl PayloadWriter<'_> {
         } else {
             raw
         };
-        let (engine, pt) = payload_names(self.target);
+        let (engine, pt, psiphon) = payload_names(self.target);
         let allowed = name == engine
             || name == pt
+            || name == psiphon
             || name == "pt"
             || (self.target.starts_with("windows-") && name == "run-aether.bat");
         if !allowed
@@ -291,7 +297,7 @@ impl PayloadWriter<'_> {
         if bytes.len() as u64 != size {
             return Err("Truncated archive member".into());
         }
-        if name != engine && name != pt {
+        if name != engine && name != pt && name != psiphon {
             return Ok(()); // known upstream launcher: validated, not installed
         }
         check_architecture(&bytes, self.target)?;
@@ -391,9 +397,10 @@ fn extract_payload(bytes: &[u8], target: &str, dest: &std::path::Path) -> Result
             .read_to_end(&mut Vec::new())
             .map_err(|e| e.to_string())?;
     }
-    let (engine, pt) = payload_names(target);
-    if !writer.seen.contains(engine) || !writer.seen.contains(pt) {
-        return Err("Incomplete archive: both engine and PT are required".into());
+    let (engine, pt, psiphon) = payload_names(target);
+    if !writer.seen.contains(engine) || !writer.seen.contains(pt) || !writer.seen.contains(psiphon)
+    {
+        return Err("Incomplete archive: engine, PT and psiphon binaries are required".into());
     }
     Ok(())
 }
@@ -547,7 +554,7 @@ mod tests {
 
     #[test]
     fn pinned_manifest_and_platforms() {
-        assert_eq!(expected_version(), "2.0.0");
+        assert_eq!(expected_version(), "2.1.0");
         assert_eq!(engine_release().assets.len(), 5);
         assert!(engine_release().assets["linux-x86_64"]
             .name
@@ -561,14 +568,19 @@ mod tests {
         let archive = zip(&[
             ("aether.exe", &bytes),
             ("pt/lyrebird.exe", &bytes),
+            ("pt/psiphon-tunnel-core.exe", &bytes),
             ("run-aether.bat", b"upstream launcher"),
         ]);
-        let dest = temp.0.join("engine-2.0.0");
+        let dest = temp.0.join("engine-2.1.0");
         assert_eq!(
             install_archive(&archive, &asset(&archive), "windows-x86_64", &dest).unwrap(),
             dest.join("aether.exe")
         );
         assert_eq!(std::fs::read(dest.join("pt/lyrebird.exe")).unwrap(), bytes);
+        assert_eq!(
+            std::fs::read(dest.join("pt/psiphon-tunnel-core.exe")).unwrap(),
+            bytes
+        );
         assert!(!dest.join("run-aether.bat").exists());
     }
 
@@ -696,7 +708,7 @@ mod tests {
         elf[18] = 62;
         let gz = flate2::write::GzEncoder::new(Vec::new(), flate2::Compression::default());
         let mut archive = tar::Builder::new(gz);
-        for name in ["aether", "pt/lyrebird"] {
+        for name in ["aether", "pt/lyrebird", "pt/psiphon-tunnel-core"] {
             let mut header = tar::Header::new_gnu();
             header.set_size(elf.len() as u64);
             header.set_mode(0o755);
@@ -726,7 +738,11 @@ mod tests {
         std::fs::create_dir(&dest).unwrap();
         std::fs::write(dest.join("aether.exe"), b"old").unwrap();
         let bytes = pe();
-        let archive = zip(&[("aether.exe", &bytes), ("pt/lyrebird.exe", &bytes)]);
+        let archive = zip(&[
+            ("aether.exe", &bytes),
+            ("pt/lyrebird.exe", &bytes),
+            ("pt/psiphon-tunnel-core.exe", &bytes),
+        ]);
         install_archive(&archive, &asset(&archive), "windows-x86_64", &dest).unwrap();
         let backup = std::fs::read_dir(&temp.0)
             .unwrap()

@@ -310,6 +310,11 @@ pub fn get_engine_tor_status(state: State<AppState>) -> crate::events::EngineTor
 }
 
 #[tauri::command]
+pub fn get_engine_psiphon_status(state: State<AppState>) -> crate::events::EnginePsiphonStatus {
+    state.manager.lock().unwrap().psiphon_status()
+}
+
+#[tauri::command]
 pub async fn download_aether(app: AppHandle) -> Result<String, AetherError> {
     let binaries_dir = aether::engine::install_dir(&app)?;
     {

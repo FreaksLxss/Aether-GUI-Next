@@ -24,6 +24,9 @@ import type {
   ActiveConn,
   EngineTorMode,
   EngineTorStatus,
+  EnginePsiphonMode,
+  EnginePsiphonStatus,
+  PsiphonShape,
 } from "@/types/connection";
 
 import { defaultConnectionProfile } from "@/lib/profile-defaults";
@@ -68,6 +71,7 @@ async function sendNotification(title: string, body: string) {
 interface ConnectionState {
   status: ConnectionStatus;
   engineTorStatus: EngineTorStatus;
+  enginePsiphonStatus: EnginePsiphonStatus;
   profile: ConnectionProfile;
   logs: LogLine[];
   sidecarError: string | null;
@@ -137,6 +141,16 @@ interface ConnectionState {
   setEngineTorBridgesFile: (engine_tor_bridges_file: string | null) => void;
   setEngineTorNoBridges: (engine_tor_no_bridges: boolean) => void;
   setEngineTorForceBridges: (engine_tor_force_bridges: boolean) => void;
+  setEngineTorRelays: (engine_tor_relays: string | null) => void;
+  setEngineTorRelayPorts: (engine_tor_relay_ports: "web" | "any" | null) => void;
+  setEnginePsiphonMode: (engine_psiphon_mode: EnginePsiphonMode) => void;
+  setEnginePsiphonBind: (engine_psiphon_bind: string | null) => void;
+  setPsiphonShape: (psiphon_shape: PsiphonShape) => void;
+  setPsiphonRegion: (psiphon_region: string | null) => void;
+  setExitLoc: (exit_loc: string | null) => void;
+  setExitLocSecs: (exit_loc_secs: number | null) => void;
+  setStats: (stats: boolean) => void;
+  setStatsSecs: (stats_secs: number | null) => void;
   /** Atomically replace all fields with a normalized, validated profile. */
   applyProfile: (profile: unknown) => void;
   setEngineTorPt: (engine_tor_pt: string | null) => void;
@@ -170,6 +184,7 @@ export const useConnectionStore = create<ConnectionState>((set, get) => {
   return {
   status: { state: "Idle" },
   engineTorStatus: { enabled: false, ready: false, address: null },
+  enginePsiphonStatus: { enabled: false, ready: false, address: null },
   profile: defaultConnectionProfile(),
   applyProfile: (value) => {
     const profile = connectionProfileSchema.parse(value);
@@ -209,6 +224,9 @@ export const useConnectionStore = create<ConnectionState>((set, get) => {
       // SidecarErrorScreen instead of the button's own error state.
       if (/binary not found|engine incompatible|engine_incompatible/i.test(message)) {
         set({ sidecarError: message });
+      } else if (/already running/i.test(message)) {
+        // Backend still owns the attempt — its aether://status event will
+        // catch the UI up; don't flip to Error while it's Launching.
       } else {
         set({ status: { state: "Error", message, phase: "launching" } });
       }
@@ -333,6 +351,16 @@ export const useConnectionStore = create<ConnectionState>((set, get) => {
   setEngineTorBridgesFile: (engine_tor_bridges_file) => { set((s) => ({ profile: { ...s.profile, engine_tor_bridges_file } })); schedulePersist(); },
   setEngineTorNoBridges: createPersistSetter("engine_tor_no_bridges"),
   setEngineTorForceBridges: createPersistSetter("engine_tor_force_bridges"),
+  setEngineTorRelays: (engine_tor_relays) => { set((s) => ({ profile: { ...s.profile, engine_tor_relays } })); schedulePersist(); },
+  setEngineTorRelayPorts: createPersistSetter("engine_tor_relay_ports"),
+  setEnginePsiphonMode: createPersistSetter("engine_psiphon_mode"),
+  setEnginePsiphonBind: (engine_psiphon_bind) => { set((s) => ({ profile: { ...s.profile, engine_psiphon_bind } })); schedulePersist(); },
+  setPsiphonShape: createPersistSetter("psiphon_shape"),
+  setPsiphonRegion: (psiphon_region) => { set((s) => ({ profile: { ...s.profile, psiphon_region } })); schedulePersist(); },
+  setExitLoc: (exit_loc) => { set((s) => ({ profile: { ...s.profile, exit_loc } })); schedulePersist(); },
+  setExitLocSecs: (exit_loc_secs) => { set((s) => ({ profile: { ...s.profile, exit_loc_secs } })); schedulePersist(); },
+  setStats: createPersistSetter("stats"),
+  setStatsSecs: (stats_secs) => { set((s) => ({ profile: { ...s.profile, stats_secs } })); schedulePersist(); },
   setEngineTorPt: (engine_tor_pt) => { set((s) => ({ profile: { ...s.profile, engine_tor_pt } })); schedulePersist(); },
   setEngineTorPtDir: (engine_tor_pt_dir) => { set((s) => ({ profile: { ...s.profile, engine_tor_pt_dir } })); schedulePersist(); },
   setEngineTorCountry: (engine_tor_country) => { set((s) => ({ profile: { ...s.profile, engine_tor_country } })); schedulePersist(); },
@@ -453,7 +481,8 @@ export async function initConnectionListeners(): Promise<() => void> {
   let lastNotifiedState: string | null = useConnectionStore.getState().status.state;
 
   let torStatusReceived = false;
-  const [unlistenStatus, unlistenLog, unlistenTraffic, unlistenTorStatus] = await Promise.all([
+  let psiphonStatusReceived = false;
+  const [unlistenStatus, unlistenLog, unlistenTraffic, unlistenTorStatus, unlistenPsiphonStatus] = await Promise.all([
     listen<ConnectionStatus>("aether://status", (e) => {
       const newState = e.payload.state;
       useConnectionStore.setState({
@@ -489,6 +518,10 @@ export async function initConnectionListeners(): Promise<() => void> {
       torStatusReceived = true;
       useConnectionStore.setState({ engineTorStatus: e.payload });
     }),
+    listen<EnginePsiphonStatus>("aether://psiphon-status", (e) => {
+      psiphonStatusReceived = true;
+      useConnectionStore.setState({ enginePsiphonStatus: e.payload });
+    }),
   ]);
 
   // Reconcile state in case the window reopened mid-session, and load the
@@ -496,17 +529,19 @@ export async function initConnectionListeners(): Promise<() => void> {
   // command touches the Aether binary, so a failure here is an IPC-layer
   // bug, not a sidecar problem — logged rather than shown as sidecarError.
   try {
-    const [status, profile, traffic, engineTorStatus] = await Promise.all([
+    const [status, profile, traffic, engineTorStatus, enginePsiphonStatus] = await Promise.all([
       invoke<ConnectionStatus>("get_status"),
       invoke<ConnectionProfile>("get_default_profile"),
       invoke<TrafficStats>("get_traffic_stats").catch(() => null as TrafficStats | null),
       invoke<EngineTorStatus>("get_engine_tor_status").catch(() => null),
+      invoke<EnginePsiphonStatus>("get_engine_psiphon_status").catch(() => null),
     ]);
     useConnectionStore.setState({
       status,
       profile: connectionProfileSchema.parse(profile),
       ...(traffic ? { traffic } : {}),
       ...(!torStatusReceived && engineTorStatus ? { engineTorStatus } : {}),
+      ...(!psiphonStatusReceived && enginePsiphonStatus ? { enginePsiphonStatus } : {}),
     });
   } catch (e) {
     console.error("Failed to load initial connection state:", e);
@@ -517,6 +552,7 @@ export async function initConnectionListeners(): Promise<() => void> {
     unlistenLog();
     unlistenTraffic();
     unlistenTorStatus();
+    unlistenPsiphonStatus();
     if (flushTimer !== null) clearTimeout(flushTimer);
   };
 }

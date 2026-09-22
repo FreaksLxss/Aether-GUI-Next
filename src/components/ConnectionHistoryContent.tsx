@@ -7,7 +7,7 @@ import { SPRING_FAST } from "@/lib/motion";
 import type { ConnectionHistoryEntry } from "@/types/connection";
 import { save } from "@tauri-apps/plugin-dialog";
 import { invoke } from "@tauri-apps/api/core";
-import { toast } from "sonner";
+import { toast } from "@/lib/toast";
 
 function formatDuration(secs: number): string {
   if (secs < 60) return `${secs}s`;

@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { Palette } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { cue } from "@/lib/sound";
 import { Separator } from "@/components/ui/separator";
 import {
   Popover,
@@ -44,7 +45,10 @@ function ColorSwatches({
       {colors.map(([hex, name]) => (
         <button
           key={hex}
-          onClick={() => onSelect(hex)}
+          onClick={() => {
+            cue("sparkle");
+            onSelect(hex);
+          }}
           aria-label={`Color: ${name}`}
           className={`size-7 cursor-pointer rounded-md ring-1 transition-all hover:scale-110 ${
             selected === hex

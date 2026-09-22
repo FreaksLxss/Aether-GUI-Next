@@ -1,6 +1,7 @@
 import { useIpChangerStore } from "@/stores/ipChangerStore";
 import { LoaderCircle, MapPin } from "lucide-react";
-import { countryName, flagEmoji } from "@/lib/location";
+import { countryName } from "@/lib/location";
+import { CountryFlag } from "@/components/CountryFlag";
 
 function formatRotated(t: number | null): string {
   if (t === null) return "never rotated yet";
@@ -68,7 +69,7 @@ export function IpDisplay() {
             <span className="truncate text-muted-foreground/70">looking up exit IP…</span>
           ) : place ? (
             <>
-              <span className="shrink-0">{flagEmoji(currentIp!.country_code)}</span>
+              <CountryFlag code={currentIp?.country_code} />
               <span className="min-w-0 truncate">{place}</span>
               {currentIp?.org && (
                 <>

@@ -5,13 +5,14 @@ export type ConnectionStatus =
   | { state: "Idle" }
   | { state: "Launching" }
   | { state: "Connecting" }
-  | { state: "Connected"; socks_addr: string; connected_at_ms: number }
+  | { state: "Connected"; socks_addr: string; bridge_addr: string; connected_at_ms: number }
   | { state: "Reconnecting"; attempt: number; max_attempts: number }
   | { state: "Disconnecting" }
   | { state: "Error"; message: string; phase: string };
 
 export type Protocol = "auto" | "masque" | "wireguard" | "gool";
-export type ScanMode = "turbo" | "balanced" | "thorough" | "stealth" | "ironclad";
+/** Aether ≥2.1.0 renamed stealth → verified (engine still accepts "stealth"). */
+export type ScanMode = "turbo" | "balanced" | "thorough" | "verified" | "ironclad";
 export type IpVersion = "v4" | "v6" | "both";
 /** Aether ≥1.6.0: "light" added as a gentler MASQUE obfuscation profile. */
 export type MasqueNoize = "firewall" | "gfw" | "light" | "off";
@@ -27,6 +28,10 @@ export type DnsMode = "forward" | "direct";
 
 /** Aether ≥2.0.0: built-in Tor (arti) mode — separate from IP Changer Tor (9050). */
 export type EngineTorMode = "disabled" | "tor" | "tor-reverse" | "tor-only";
+/** Aether ≥2.1.0: built-in Psiphon mode — separate from engine Tor (1820) and IP Changer (9050). */
+export type EnginePsiphonMode = "disabled" | "psiphon" | "psiphon-reverse" | "psiphon-only";
+/** --psiphon-mode <shape> transport; "auto" omits the flag. */
+export type PsiphonShape = "auto" | "cdn" | "direct";
 
 export interface ConnectionProfile {
   protocol: Protocol;
@@ -44,8 +49,8 @@ export interface ConnectionProfile {
   wg_noize: WgNoize;
   /** Local SOCKS5 listen address (--bind). Default 127.0.0.1:1819. */
   bind_address: string;
-  /** Aether ≥1.6.0: local HTTP CONNECT proxy listen address (--http-proxy),
-   * next to the SOCKS5 one for clients that can't speak SOCKS. null = omit flag. */
+  /** Aether ≥1.6.0: local HTTP CONNECT proxy listen address, next to the
+   * SOCKS5 one for clients that can't speak SOCKS. null = door off. */
   http_proxy_address: string | null;
   /** Aether ≥1.7.0: dial out through another proxy already on the machine
    * (--upstream), chaining Aether behind it. socks5://host:port,
@@ -110,7 +115,8 @@ export interface ConnectionProfile {
   engine_tor_bridges: string[];
   /** Force automatic bridges now (--tor-bridges, no value). */
   engine_tor_force_bridges: boolean;
-  /** Legacy migration only: never read or pass this path to the engine. */
+  /** Aether ≥2.1.0: obfs4 bridge lines from a file (--tor-bridge-file). The
+   * engine reads it; the GUI never opens the path. */
   engine_tor_bridges_file: string | null;
   engine_tor_no_bridges: boolean;
   engine_tor_pt: string | null;
@@ -118,6 +124,26 @@ export interface ConnectionProfile {
   engine_tor_country: string | null;
   engine_tor_direct_secs: number | null;
   engine_tor_stall_secs: number | null;
+  /** Aether ≥2.1.0: built-in Psiphon mode — port 1821, separate from engine Tor and IP Changer. */
+  engine_psiphon_mode: EnginePsiphonMode;
+  /** Chain/reverse secondary bind (--psiphon-bind). null → default 127.0.0.1:1821. */
+  engine_psiphon_bind: string | null;
+  /** --psiphon-mode <shape>: cdn fronting vs direct; "auto" omits the flag. */
+  psiphon_shape: PsiphonShape;
+  /** Two-letter exit country (--psiphon-region). */
+  psiphon_region: string | null;
+  /** --tor-relays: auto | only | off | <count>. null = engine default. */
+  engine_tor_relays: string | null;
+  /** --tor-relay-ports: web | any. null = engine default (web). */
+  engine_tor_relay_ports: "web" | "any" | null;
+  /** --exit-loc: comma-separated two-letter codes, optional leading ! (e.g. "DE,SE,!IR"). */
+  exit_loc: string | null;
+  /** --exit-loc-secs: recheck interval for exit-loc. */
+  exit_loc_secs: number | null;
+  /** --stats: periodic stats logging. */
+  stats: boolean;
+  /** --stats-secs: stats interval. */
+  stats_secs: number | null;
   /** Aether ≥2.0.0: env-only proxy tuning (no flag) */
   max_clients: number | null;
   half_close_secs: number | null;
@@ -131,6 +157,9 @@ export interface EngineTorStatus {
   ready: boolean;
   address: string | null;
 }
+
+/** Engine Psiphon chain listener readiness; same shape as EngineTorStatus. */
+export type EnginePsiphonStatus = EngineTorStatus;
 
 export interface LogLine {
   line: string;

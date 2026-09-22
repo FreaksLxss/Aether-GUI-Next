@@ -69,6 +69,9 @@ pub fn disable_if_main() {
 /// upstream is Aether's SOCKS5 listener at `addr`. Works on every platform;
 /// see the module docs for how each OS applies the bridge address.
 pub fn enable(addr: &str, source: u8) -> Result<(), String> {
+    // Plain storage: if `addr` names a door the bridge itself claims (1819,
+    // 9050, …), `target_for` chases the pin at connection time so we can
+    // never chain bridge→bridge.
     crate::httpproxy::set_target(addr);
     let listen = crate::httpproxy::local_addr()
         .ok_or_else(|| "HTTP proxy bridge is not running".to_string())?;

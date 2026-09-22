@@ -3,9 +3,8 @@ import { Input } from "@/components/ui/input";
 import { useConnectionStore } from "@/state/connectionStore";
 import { validateDnsServers } from "@/lib/validators";
 
-/** Aether ≥1.6.0: local HTTP CONNECT proxy address (--http-proxy), next to
- * the SOCKS5 one for clients that can't speak SOCKS. Empty input stores null
- * so the flag is omitted (no HTTP proxy). */
+/** Aether ≥1.6.0: local HTTP CONNECT proxy address, next to the SOCKS5 one
+ * for clients that can't speak SOCKS. Empty input stores null (door off). */
 export function HttpProxyAddressField({ id }: { id?: string }) {
   const addr = useConnectionStore((s) => s.profile.http_proxy_address);
   const setAddr = useConnectionStore((s) => s.setHttpProxyAddress);

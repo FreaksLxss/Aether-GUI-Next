@@ -255,7 +255,8 @@ export function validateCountry(v: string | null): string | null {
 const profileShape = z
   .object({
     protocol: z.enum(["auto", "masque", "wireguard", "gool"]),
-    scan_mode: z.enum(["turbo", "balanced", "thorough", "stealth", "ironclad"]),
+    scan_mode: z.enum(["turbo", "balanced", "thorough", "verified", "ironclad", "stealth"])
+      .transform((v) => v === "stealth" ? "verified" as const : v),
     ip_version: z.enum(["v4", "v6", "both"]),
     quick_reconnect: z.boolean(),
     masque_http2: z.boolean(),
@@ -300,6 +301,17 @@ const profileShape = z
     engine_tor_country: z.string().nullable(),
     engine_tor_direct_secs: z.number().nullable(),
     engine_tor_stall_secs: z.number().nullable(),
+    engine_psiphon_mode: z.enum(["disabled", "psiphon", "psiphon-reverse", "psiphon-only", "psiphon_reverse", "psiphon_only"])
+      .transform((v) => v === "psiphon_reverse" ? "psiphon-reverse" as const : v === "psiphon_only" ? "psiphon-only" as const : v),
+    engine_psiphon_bind: z.string().nullable(),
+    psiphon_shape: z.enum(["auto", "cdn", "direct"]),
+    psiphon_region: z.string().nullable(),
+    engine_tor_relays: z.string().nullable(),
+    engine_tor_relay_ports: z.enum(["web", "any"]).nullable(),
+    exit_loc: z.string().nullable(),
+    exit_loc_secs: z.number().nullable(),
+    stats: z.boolean(),
+    stats_secs: z.number().nullable(),
     max_clients: z.number().nullable(),
     half_close_secs: z.number().nullable(),
     tcp_keepalive_secs: z.number().nullable(),
@@ -316,20 +328,26 @@ export const connectionProfileSchema = z.preprocess((value) => {
   return { ...defaults, ...value };
 }, profileShape);
 
-export const LEGACY_BRIDGES_MESSAGE = "Legacy Tor bridges-file setting is unsupported. Paste bridge lines into Manual bridges, then clear the legacy file setting. No file has been read.";
-
 export function validateUint32(value: number | null): string | null {
   return value === null || (Number.isInteger(value) && value >= 0 && value <= 0xffffffff)
     ? null : "Must be an integer from 0 to 4294967295";
 }
 
+/** Every --exit-loc token: two-letter country, optional leading `!`. */
+function exitLocOk(value: string): boolean {
+  if (!value.trim()) return false;
+  return value.split(",").every((raw) => /^[A-Za-z]{2}$/.test(raw.trim().replace(/^!/, "")));
+}
+
 /** Shared active-field validation for Connect, presets and the advanced banner. */
 export function validateActiveProfile(p: ConnectionProfile): string | null {
-  if (p.engine_tor_bridges_file?.trim()) return LEGACY_BRIDGES_MESSAGE;
   const listeners: [string, string][] = [["bind_address", p.bind_address]];
   if (p.http_proxy_address?.trim()) listeners.push(["http_proxy_address", p.http_proxy_address]);
   if (p.engine_tor_mode === "tor" || p.engine_tor_mode === "tor-reverse") {
     listeners.push(["engine_tor_bind", p.engine_tor_bind?.trim() || "127.0.0.1:1820"]);
+  }
+  if (p.engine_psiphon_mode === "psiphon" || p.engine_psiphon_mode === "psiphon-reverse") {
+    listeners.push(["engine_psiphon_bind", p.engine_psiphon_bind?.trim() || "127.0.0.1:1821"]);
   }
   const parsed: { name: string; ip: string; port: number }[] = [];
   for (const [name, value] of listeners) {
@@ -345,10 +363,23 @@ export function validateActiveProfile(p: ConnectionProfile): string | null {
     }
     parsed.push({ name, ...addr });
   }
-  const warp = p.engine_tor_mode !== "tor-only";
+  const warp = p.engine_tor_mode !== "tor-only" && p.engine_psiphon_mode !== "psiphon-only";
   const masque = p.protocol === "auto" || p.protocol === "masque";
   if (p.engine_tor_mode === "tor-reverse" && !masque) {
     return "tor-reverse requires MASQUE (forces HTTP/2, incompatible with WireGuard/gool)";
+  }
+  if (p.engine_psiphon_mode === "psiphon-reverse" && !masque) {
+    return "psiphon-reverse requires MASQUE (forces HTTP/2, incompatible with WireGuard/gool)";
+  }
+  // Primary-listener exclusivity (mirrors src-tauri profiles::validate).
+  if (p.engine_psiphon_mode === "psiphon-only" && p.engine_tor_mode !== "disabled") {
+    return "psiphon-only cannot be combined with engine Tor — both claim the primary listener";
+  }
+  if (p.engine_tor_mode === "tor-only" && p.engine_psiphon_mode !== "disabled") {
+    return "tor-only cannot be combined with engine Psiphon — both claim the primary listener";
+  }
+  if (p.engine_tor_mode === "tor-reverse" && p.engine_psiphon_mode === "psiphon-reverse") {
+    return "tor-reverse and psiphon-reverse cannot both run — each needs MASQUE as its sole outer tunnel";
   }
   const fieldChecks: [string, string | null][] = [
     ["wiw_peers", warp && p.protocol === "gool" ? validateWiwPeers(p.wiw_peers) : null],
@@ -365,14 +396,25 @@ export function validateActiveProfile(p: ConnectionProfile): string | null {
     if (!canonicalIp(p.tun_dns.includes(":") ? `[${p.tun_dns}]` : p.tun_dns)) return "tun_dns: invalid IP";
   }
   if (p.engine_tor_mode !== "disabled") {
-    const manual = p.engine_tor_bridges.some((s) => s.trim());
+    // A non-empty bridges file counts as a manual bridge source (Aether ≥2.1.0).
+    const manual = p.engine_tor_bridges.some((s) => s.trim()) || !!p.engine_tor_bridges_file?.trim();
     if ((p.engine_tor_force_bridges && (manual || p.engine_tor_no_bridges)) || (manual && p.engine_tor_no_bridges)) {
       return "Tor bridge policies conflict: choose automatic fallback, force automatic, manual lines, or disabled";
     }
     fieldChecks.push(["engine_tor_country", validateCountry(p.engine_tor_country)]);
+    const relays = p.engine_tor_relays?.trim().toLowerCase();
+    if (relays && relays !== "auto" && relays !== "only" && relays !== "off" && !/^\d+$/.test(relays)) {
+      return "engine_tor_relays: use auto, only, off, or a number";
+    }
+  }
+  if (p.engine_psiphon_mode !== "disabled") {
+    fieldChecks.push(["psiphon_region", validateCountry(p.psiphon_region)]);
+  }
+  if (p.exit_loc?.trim() && !exitLocOk(p.exit_loc)) {
+    return 'exit_loc: comma-separated two-letter country codes, optional leading ! (e.g. "DE,SE,!IR")';
   }
   // serde stores these as Option<u32>, including inactive saved values.
-  for (const key of ["route_sniff_ms", "engine_tor_direct_secs", "engine_tor_stall_secs", "max_clients", "half_close_secs", "tcp_keepalive_secs", "tcp_connect_secs"] as const) {
+  for (const key of ["route_sniff_ms", "engine_tor_direct_secs", "engine_tor_stall_secs", "exit_loc_secs", "stats_secs", "max_clients", "half_close_secs", "tcp_keepalive_secs", "tcp_connect_secs"] as const) {
     fieldChecks.push([key, validateUint32(p[key])]);
   }
   const failed = fieldChecks.find(([, error]) => error);

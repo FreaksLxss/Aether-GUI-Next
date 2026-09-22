@@ -191,6 +191,7 @@ pub fn run() {
             commands::aether_binary_exists,
             commands::get_engine_info,
             commands::get_engine_tor_status,
+            commands::get_engine_psiphon_status,
             commands::download_aether,
             commands::read_file,
             commands::write_file,
