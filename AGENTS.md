@@ -2,6 +2,8 @@
 
 Aether-GUI is a Tauri 2 desktop GUI wrapper for the [Aether](https://github.com/CluvexStudio/Aether) censorship-circumvention tunnel. This repo ships **only the GUI** — all tunnel/protocol logic lives upstream. Windows-first (Windows-only installers today), AGPL-3.0.
 
+**No code comments:** never write comments (line, block, doc, `//`, `#`, `<!-- -->`) in any source file unless explicitly asked to.
+
 ## Stack & layout
 
 - Frontend `src/`: React 19 + TypeScript + Tailwind v4 + Zustand + Motion. Aliased as `@/*` → `src/*`.
