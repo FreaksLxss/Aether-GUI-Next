@@ -93,7 +93,7 @@ export function AboutDialog() {
             <Button
               variant="ghost"
               size="sm"
-              onClick={() => void open("https://github.com/FreaksLxss/Aether-GUI-Remake")}
+              onClick={() => void open("https://github.com/FreaksLxss/Aether-GUI-Next")}
               className="h-7 justify-start gap-1.5 px-1.5 text-xs text-muted-foreground"
             >
               <ExternalLink size={10} />

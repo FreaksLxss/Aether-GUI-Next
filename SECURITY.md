@@ -5,7 +5,7 @@
 **Please do not open a public issue for security vulnerabilities.**
 
 Report privately through GitHub Security Advisories:
-[**Report a vulnerability**](https://github.com/MatinSenPai/Aether-GUI/security/advisories/new).
+[**Report a vulnerability**](https://github.com/FreaksLxss/Aether-GUI-Next/security/advisories/new).
 
 You'll get an acknowledgement as soon as possible, and we'll coordinate a fix and disclosure with you.
 

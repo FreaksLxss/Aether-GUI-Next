@@ -1,7 +1,7 @@
 # Aether-GUI
 
-[![Release](https://img.shields.io/github/v/release/MatinSenPai/Aether-GUI?sort=semver)](https://github.com/MatinSenPai/Aether-GUI/releases)
-[![License: AGPL v3](https://img.shields.io/github/license/MatinSenPai/Aether-GUI)](LICENSE)
+[![Release](https://img.shields.io/github/v/release/FreaksLxss/Aether-GUI-Next?sort=semver)](https://github.com/FreaksLxss/Aether-GUI-Next/releases)
+[![License: AGPL v3](https://img.shields.io/github/license/FreaksLxss/Aether-GUI-Next)](LICENSE)
 ![Platform](https://img.shields.io/badge/platform-Windows-0078D6)
 ![Tauri](https://img.shields.io/badge/Tauri-2-24C8DB?logo=tauri&logoColor=white)
 ![React](https://img.shields.io/badge/React-19-61DAFB?logo=react&logoColor=black)
@@ -63,7 +63,7 @@ Beyond the connect screen and the advanced profile, a Settings panel houses the 
 
 ## Installing
 
-Grab the latest installer from the [Releases page](https://github.com/MatinSenPai/Aether-GUI/releases):
+Grab the latest installer from the [Releases page](https://github.com/FreaksLxss/Aether-GUI-Next/releases):
 
 - `Aether-GUI_x.y.z_x64-setup.exe` — standard installer (recommended)
 - `Aether-GUI_x.y.z_x64_en-US.msi` — MSI package, for scripted or enterprise installs

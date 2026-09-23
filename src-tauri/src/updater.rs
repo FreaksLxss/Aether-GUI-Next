@@ -2,7 +2,7 @@ use serde::Serialize;
 use std::io::Read;
 use std::path::{Path, PathBuf};
 
-const GUI_REPO: &str = "FreaksLxss/Aether-GUI-Remake";
+const GUI_REPO: &str = "FreaksLxss/Aether-GUI-Next";
 
 #[derive(serde::Deserialize)]
 struct EngineRelease {

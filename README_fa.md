@@ -2,8 +2,8 @@
 
 # Aether-GUI
 
-[![Release](https://img.shields.io/github/v/release/MatinSenPai/Aether-GUI?sort=semver)](https://github.com/MatinSenPai/Aether-GUI/releases)
-[![License: AGPL v3](https://img.shields.io/github/license/MatinSenPai/Aether-GUI)](LICENSE)
+[![Release](https://img.shields.io/github/v/release/FreaksLxss/Aether-GUI-Next?sort=semver)](https://github.com/FreaksLxss/Aether-GUI-Next/releases)
+[![License: AGPL v3](https://img.shields.io/github/license/FreaksLxss/Aether-GUI-Next)](LICENSE)
 ![Platform](https://img.shields.io/badge/platform-Windows-0078D6)
 ![Tauri](https://img.shields.io/badge/Tauri-2-24C8DB?logo=tauri&logoColor=white)
 ![React](https://img.shields.io/badge/React-19-61DAFB?logo=react&logoColor=black)
@@ -61,7 +61,7 @@
 
 ## نصب
 
-جدیدترین نصب‌کننده را از [صفحه‌ی Releases](https://github.com/MatinSenPai/Aether-GUI/releases) بردارید:
+جدیدترین نصب‌کننده را از [صفحه‌ی Releases](https://github.com/FreaksLxss/Aether-GUI-Next/releases) بردارید:
 
 - `Aether-GUI_x.y.z_x64-setup.exe`: نصب‌کننده‌ی معمولی (پیشنهادی)
 - `Aether-GUI_x.y.z_x64_en-US.msi`: بسته‌ی MSI، برای نصبِ اسکریپتی/سازمانی
