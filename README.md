@@ -45,7 +45,7 @@ If the engine is missing, incompatible or missing its `pt/lyrebird` companion, s
   Each option has an explanation on hover.
 - **Live progress** — while Aether searches for a working route, the GUI shows real elapsed time and, once Aether reports its own scan budget, an actual percentage and progress bar — not just a spinner.
 - **Automatic reconnect** — if the tunnel drops unexpectedly mid-session (observed occasionally with WARP-in-WARP, but handled the same way for every protocol), the GUI retries automatically with backoff, shown as a visible "Reconnecting… (attempt N of 3)" rather than silently dying or dumping you back to a bare error. A user-requested disconnect is never retried.
-- **Egress location & leak check** — while connected, a small pill shows the public IP, country, and city your traffic is actually exiting through (the tunnel's egress), and a one-click refresh fettches it again. Every connect, the GUI also compares that exit IP against your real, direct IP — if they match, it raises a visible "Leak detected" warning, so you immediately know the tunnel isn't actually masking your traffic.
+- **Egress location & leak check** — while connected, a small pill shows the public IP, country, and city your traffic is actually exiting through (the tunnel's egress), and a one-click refresh fetches it again. Every connect, the GUI also compares that exit IP against your real, direct IP — if they match, it raises a visible "Leak detected" warning, so you immediately know the tunnel isn't actually masking your traffic.
 - **Connection history** — every session is recorded (protocol, scan mode, duration, time, success/failure) in a collapsible panel with a clear-history action, so you can see what's been working.
 - **Live log window** — Aether's full log stream can be popped open in a separate, resizable window that stays live even when you're not watching the main screen — useful for digging into what a connection attempt actually did.
 - **Native engine Tor (Aether ≥2.0.0)** — built into the engine via arti, with **Tor** (WARP → Tor), **Tor-Reverse** (Tor → WARP) and **Tor-Only** (no WARP) modes, bridge policy and pluggable-transport settings. Tor mode has a separate SOCKS listener (default `127.0.0.1:1820`) whose readiness is reported separately from the primary listener (`127.0.0.1:1819` by default). Tor-Only serves on the primary listener; Tor-Reverse uses Tor internally and requires MASQUE over HTTP/2, not WireGuard/gool. The engine's `pt/lyrebird` is a transport helper, not the IP Changer's Tor binary. Enabling one Tor subsystem does not start the other.
@@ -129,6 +129,14 @@ Windows x64 only for now — see [Building from source](#building-from-source) f
 ## About Aether
 
 [Aether](https://github.com/CluvexStudio/Aether) is the actual censorship-circumvention engine this app wraps — a standalone terminal tool that discovers reachable routes and establishes the tunnel, independent of any GUI. If you'd rather use it directly from a terminal, or want to understand exactly what it's doing under the hood, that's the repo to read. Aether-GUI exists purely to make that tool one click away for people who don't want to live in a terminal.
+
+## Attribution & trademark
+
+- **Aether belongs to [CluvexStudio/Aether](https://github.com/CluvexStudio/Aether).** The name "Aether", its logo and its branding are trademarks of that project, governed by its [TRADEMARK.md](https://github.com/CluvexStudio/Aether/blob/main/TRADEMARK.md); the AGPL-3.0 license on the engine's code grants no rights to that identity. Aether-GUI is an independent, third-party front end — not affiliated with, sponsored, or endorsed by CluvexStudio, and nothing here claims official status.
+- **No engine code is copied into this repo.** This repository ships only the GUI wrapper (AGPL-3.0). The `aether` binaries it runs are unmodified upstream release artifacts, fetched from [CluvexStudio/Aether releases](https://github.com/CluvexStudio/Aether/releases) and pinned by SHA-256 in [`src-tauri/aether-release.json`](src-tauri/aether-release.json); the engine's Corresponding Source lives in the upstream repository.
+- **Rights concerns (DMCA).** If you believe material here infringes your rights — engine binaries, branding, documentation, or anything else — contact the maintainer through GitHub, or file through [GitHub's DMCA process](https://docs.github.com/en/site-policy/content-removal-policies/dmca-takedown-policy). Reported material is reviewed promptly, and valid claims get the material removed or the attribution corrected.
+
+Aether is designed and maintained by CluvexStudio. If it helps you, consider [supporting its development](https://github.com/CluvexStudio/Aether#donate).
 
 ## License
 
