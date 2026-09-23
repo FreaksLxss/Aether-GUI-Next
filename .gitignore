@@ -63,3 +63,4 @@ coverage/
 # === Misc ===
 .mimocode/
 /ci-artifacts/
+.claude/worktrees/
