@@ -21,7 +21,6 @@ export function OnboardingTour() {
     let timer: ReturnType<typeof setTimeout> | null = null;
 
     const decide = async () => {
-      // Existing users have history — never show, and mark so we never check again.
       const cur = useConnectionStore.getState().history;
       if (cur.length > 0) {
         localStorage.setItem(KEY, "1");
@@ -30,7 +29,6 @@ export function OnboardingTour() {
       try {
         await useConnectionStore.getState().loadHistory();
       } catch {
-        // History is optional; continue onboarding with the available local state.
       }
       if (cancelled) return;
       const after = useConnectionStore.getState().history;
@@ -41,8 +39,6 @@ export function OnboardingTour() {
       if (localStorage.getItem(KEY) === "1") return;
       timer = setTimeout(() => {
         if (cancelled) return;
-        // Persist immediately on first show so killing the app mid-tour
-        // doesn't cause it to reappear every launch.
         localStorage.setItem(KEY, "1");
         setOpen(true);
       }, 900);

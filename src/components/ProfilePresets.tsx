@@ -86,7 +86,7 @@ export function ProfilePresetsContent() {
   return (
     <div className="flex flex-col gap-4">
       {error && <InlineErrorBanner message={error} onRetry={() => void loadPresets()} />}
-      {/* save card */}
+      {}
       <div className="flex flex-col gap-3 rounded-2xl bg-card p-3.5 shadow-[0_16px_48px_-20px_rgba(0,0,0,0.75),0_8px_24px_-12px_rgba(0,0,0,0.55),inset_0_1px_0_0_rgba(255,255,255,0.06)] light:border light:border-black/[0.08] light:shadow-none">
         <div className="flex items-center gap-2">
           <span className="flex size-6 items-center justify-center rounded-lg bg-white/[0.06] ring-1 ring-white/[0.06] light:bg-black/5 light:ring-black/5">
@@ -119,7 +119,7 @@ export function ProfilePresetsContent() {
         </div>
       </div>
 
-      {/* list */}
+      {}
       {presets.length === 0 ? (
         <div className="flex flex-col items-center gap-2 rounded-[35px] border-0 bg-card px-4 py-10 shadow-[0_16px_48px_-20px_rgba(0,0,0,0.75),0_8px_24px_-12px_rgba(0,0,0,0.55),inset_0_1px_0_0_rgba(255,255,255,0.06)] light:border light:border-dashed light:border-black/10 light:shadow-none text-muted-foreground">
           <span className="flex size-9 items-center justify-center rounded-xl bg-white/[0.04] ring-1 ring-white/[0.05] light:bg-black/[0.04] light:ring-black/5">
@@ -196,7 +196,6 @@ export function ProfilePresetsContent() {
   );
 }
 
-// Back-compat shim (not used in new menu)
 export function ProfilePresets(props: { open: boolean; onToggle: () => void }) {
   void props;
   return <ProfilePresetsContent />;

@@ -95,7 +95,6 @@ export function CommandPalette({
   const [active, setActive] = useState(0);
   const [wasOpen, setWasOpen] = useState(open);
 
-  // Reset before rendering a newly opened palette, including externally triggered opens.
   if (open !== wasOpen) {
     setWasOpen(open);
     if (open) {
@@ -136,7 +135,6 @@ export function CommandPalette({
     return () => cancelAnimationFrame(frame);
   }, [open]);
 
-  // keep active item visible
   useEffect(() => {
     const el = listRef.current?.querySelector('[data-active="true"]');
     el?.scrollIntoView({ block: "nearest" });

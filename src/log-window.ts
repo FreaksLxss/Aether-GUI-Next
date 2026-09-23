@@ -24,14 +24,9 @@ interface LogLine {
 let allLines: LogLine[] = [];
 let autoScroll = true;
 let filterText = "";
-/** How many of `allLines` already have DOM nodes appended. Lets the hot path
- * (a log event per line during a fast scan) append incrementally instead of
- * re-rendering the whole list every event. */
 let renderedCount = 0;
-/** Set when the ring buffer dropped the oldest lines (offsets shift). */
 let truncated = false;
 
-// Auto-scroll detection
 viewport.addEventListener("scroll", () => {
   const atBottom =
     viewport.scrollHeight - viewport.scrollTop - viewport.clientHeight < 24;
@@ -110,8 +105,6 @@ function render() {
 
   emptyState.style.display = "none";
 
-  // Search filters the whole list, so a filtering change warrants a full
-  // rebuild. Otherwise the common path just appends newly-arrived lines.
   const needFullRebuild =
     filterText !== "" || truncated || renderedCount > allLines.length;
 
@@ -152,7 +145,6 @@ function render() {
   }
 }
 
-// Listen to log events from the main window's Aether process
 await listen<LogLine>("aether://log", (event) => {
   allLines.push(event.payload);
   if (allLines.length > MAX_LINES) {
@@ -162,7 +154,6 @@ await listen<LogLine>("aether://log", (event) => {
   render();
 });
 
-// Listen to status events for the badge
 await listen<{ state: string }>("aether://status", (event) => {
   const state = event.payload.state;
   statusBadge.textContent = state;

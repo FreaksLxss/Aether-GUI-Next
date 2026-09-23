@@ -16,8 +16,6 @@ const DESCRIPTIONS: Record<DnsMode, string> = {
     "Uses the system's default DNS resolver. Faster, but DNS queries are visible to the local network.",
 };
 
-/** Selects how DNS queries are resolved when TUN mode is active.
- * Locked outside Idle/Error since DNS mode can't change mid-session. */
 export function DnsModeSelect() {
   const status = useConnectionStore((s) => s.status);
   const dnsMode = useConnectionStore((s) => s.profile.dns_mode);

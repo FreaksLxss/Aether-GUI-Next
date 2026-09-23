@@ -3,10 +3,6 @@ import { Input } from "@/components/ui/input";
 import { useConnectionStore } from "@/state/connectionStore";
 import { validateWiwPeers } from "@/lib/validators";
 
-/** Aether ≥1.9.0: manual WARP-in-WARP hop endpoints for gool (--wiw-peers),
- * comma-separated "host:port". One hop alone is fine (the scan finds the
- * other); port is required. Empty input stores null so both hops are
- * scanned, Aether's default. */
 export function WiwPeersField({ id }: { id?: string }) {
   const wiwPeers = useConnectionStore((s) => s.profile.wiw_peers);
   const setWiwPeers = useConnectionStore((s) => s.setWiwPeers);

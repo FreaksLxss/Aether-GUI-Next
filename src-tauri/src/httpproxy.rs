@@ -1,19 +1,3 @@
-//! Loopback HTTP + SOCKS5 → engine SOCKS5 bridge.
-//!
-//! Aether only exposes a SOCKS5 listener, but the Windows system proxy is an
-//! HTTP proxy: writing `socks=host:port` into `ProxyServer` makes the Settings
-//! UI mangle the entry and causes Chrome/Edge/Store apps to ignore it entirely.
-//! Karing — and every other tunnel GUI — instead runs a small local proxy
-//! and points the OS at that.
-//!
-//! This module owns that bridge: a boot-time `127.0.0.1:0` listener plus every
-//! advertised door the product hands out (profile `bind_address`,
-//! `http_proxy_address`, arti's secondary bind, the IP-changer Tor port), each
-//! claimed via `claim`/`route_connect` and pinned to its real upstream so no
-//! config can bypass the counter. Both dialects share one port (first byte
-//! disambiguates HTTP/CONNECT vs SOCKS5), and every relayed byte is counted for
-//! the traffic monitor. Listeners run for the life of the app; enabling the
-//! system proxy merely decides whether the OS routes traffic into them.
 
 use std::io::{self, Read, Write};
 use std::net::{IpAddr, SocketAddr, TcpListener, TcpStream};
@@ -21,35 +5,19 @@ use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::Mutex;
 use std::time::Duration;
 
-/// The SOCKS5 upstream to bridge to. Kept as a string because the frontend
-/// passes `bind_address`, which may be `0.0.0.0:1819` in LAN mode — that gets
-/// normalized to loopback here (connecting to `0.0.0.0` directly would fail).
-/// `None` until `set_target` runs; `current_target` falls back to the default.
 static TARGET: Mutex<Option<String>> = Mutex::new(None);
-/// Bound address of the listener once started (remains `None` if bind failed).
 static LISTEN: Mutex<Option<SocketAddr>> = Mutex::new(None);
 static RUNNING: AtomicBool = AtomicBool::new(false);
-/// Advertised addresses this process has claimed for the bridge — they stay
-/// bound for the app's life so live client sockets aren't dropped on reconnect.
 static STOLEN: Mutex<Vec<SocketAddr>> = Mutex::new(Vec::new());
-/// The engine's private loopback port, allocated by `route_connect`.
 static ENGINE: Mutex<Option<SocketAddr>> = Mutex::new(None);
-/// The engine arti's private port when its secondary Tor door was claimed.
 static ENGINE_TOR: Mutex<Option<SocketAddr>> = Mutex::new(None);
-/// The engine Psiphon's private port when its secondary door was claimed.
 static ENGINE_PSIHON: Mutex<Option<SocketAddr>> = Mutex::new(None);
-/// Claimed door (advertised listen addr) → real upstream. Resolved at
-/// connection time so a target naming one of our own doors can never chain
-/// bridge→bridge and double-count the same bytes.
 static PINS: Mutex<Vec<(SocketAddr, SocketAddr)>> = Mutex::new(Vec::new());
 
 const MAX_HEAD: usize = 64 * 1024;
 const UPSTREAM_TIMEOUT: Duration = Duration::from_secs(5);
 const DEFAULT_SOCKS: &str = "127.0.0.1:1819";
 
-/// Normalize a bind address for use as SOCKS5 upstream. Aether serving on
-/// `0.0.0.0`/`::` still answers on loopback, and `TcpStream::connect` to an
-/// unspecified address fails on every OS.
 fn normalize_target(addr: &str) -> String {
     match addr.parse::<SocketAddr>() {
         Ok(mut sa) => {
@@ -62,17 +30,14 @@ fn normalize_target(addr: &str) -> String {
     }
 }
 
-/// Point the bridge at a new SOCKS5 upstream (the Aether bind address).
 pub fn set_target(addr: &str) {
     *TARGET.lock().unwrap() = Some(normalize_target(addr));
 }
 
-/// The loopback address the bridge is bound to, if it started successfully.
 pub fn local_addr() -> Option<SocketAddr> {
     *LISTEN.lock().unwrap()
 }
 
-/// The engine's private SOCKS upstream, or the default until first connect.
 pub fn engine_addr() -> SocketAddr {
     ENGINE
         .lock()
@@ -80,19 +45,14 @@ pub fn engine_addr() -> SocketAddr {
         .unwrap_or_else(|| DEFAULT_SOCKS.parse().expect("static default"))
 }
 
-/// The engine arti's private port when its secondary Tor door was claimed.
 pub fn engine_tor_addr() -> Option<SocketAddr> {
     *ENGINE_TOR.lock().unwrap()
 }
 
-/// The engine Psiphon's private port when its secondary door was claimed.
 pub fn engine_psiphon_addr() -> Option<SocketAddr> {
     *ENGINE_PSIHON.lock().unwrap()
 }
 
-/// Upstream a claimed door forwards to. A LAN bind (`0.0.0.0:p`) also matches
-/// the connection's concrete local IP (`192.168.x.y:p`), since an accepted
-/// socket reports the specific interface, not the wildcard it was bound on.
 fn pin_for(addr: SocketAddr) -> Option<SocketAddr> {
     let pins = PINS.lock().unwrap();
     pins.iter()
@@ -104,10 +64,6 @@ fn pin_for(addr: SocketAddr) -> Option<SocketAddr> {
         .map(|(_, up)| *up)
 }
 
-/// Upstream for an inbound connection on `door` (the accepted socket's local
-/// address), falling back to the global target for the boot-time ephemeral
-/// listener. A global target naming one of our own doors is chased through
-/// its pin once so we can never forward into ourselves.
 fn target_for(door: Option<SocketAddr>) -> Result<SocketAddr, String> {
     let base = match door.and_then(pin_for) {
         Some(up) => up,
@@ -116,16 +72,10 @@ fn target_for(door: Option<SocketAddr>) -> Result<SocketAddr, String> {
     Ok(pin_for(base).unwrap_or(base))
 }
 
-/// Is `addr` one of the doors this process has claimed?
 pub fn is_claimed(addr: &SocketAddr) -> bool {
     pin_for(*addr).is_some()
 }
 
-/// `n` distinct free loopback ports. All `n` listeners are held while
-/// allocating so the OS can't hand out the same one twice, then dropped for
-/// the child to bind.
-/// ponytail: drop-then-bind races a foreign process for the port; the
-/// connect retry budget covers a loss.
 pub fn free_loopback_ports(n: usize) -> Result<Vec<SocketAddr>, String> {
     let mut listeners = Vec::with_capacity(n);
     for _ in 0..n {
@@ -139,12 +89,6 @@ pub fn free_loopback_ports(n: usize) -> Result<Vec<SocketAddr>, String> {
     Ok(addrs)
 }
 
-/// Prepare proxy routing for a fresh connect: allocate the engine's private
-/// ports, point the global target at the main one, then claim the advertised
-/// doors (profile bind + optional arti secondary) for this counting listener
-/// so every existing config lands here instead of bypassing into the engine.
-/// `tor_door` is the secondary arti bind when the engine will expose one.
-/// Errors when a foreign process already holds an advertised port.
 pub fn route_connect(advertised: &str, tor_door: Option<SocketAddr>) -> Result<SocketAddr, String> {
     let sa: SocketAddr = advertised
         .parse()
@@ -152,8 +96,8 @@ pub fn route_connect(advertised: &str, tor_door: Option<SocketAddr>) -> Result<S
     let mut ports = free_loopback_ports(if tor_door.is_some() { 2 } else { 1 })?.into_iter();
     let engine = ports.next().expect("at least one port");
     *ENGINE.lock().unwrap() = Some(engine);
-    *ENGINE_TOR.lock().unwrap() = None; // stale from a previous Tor profile
-    *ENGINE_PSIHON.lock().unwrap() = None; // stale from a previous Psiphon profile
+    *ENGINE_TOR.lock().unwrap() = None;
+    *ENGINE_PSIHON.lock().unwrap() = None;
     set_target(&engine.to_string());
     if let (Some(door), Some(tor)) = (tor_door, ports.next()) {
         claim_sa(door, tor)?;
@@ -163,9 +107,6 @@ pub fn route_connect(advertised: &str, tor_door: Option<SocketAddr>) -> Result<S
     Ok(engine)
 }
 
-/// Claim a secondary advertised door (engine Psiphon chain/reverse) and
-/// return the private upstream the engine should bind behind it. Called
-/// after `route_connect` so its stale-port reset has already run.
 pub fn claim_psiphon_door(door: SocketAddr) -> Result<SocketAddr, String> {
     let private = free_loopback_ports(1)?.remove(0);
     *ENGINE_PSIHON.lock().unwrap() = Some(private);
@@ -173,10 +114,6 @@ pub fn claim_psiphon_door(door: SocketAddr) -> Result<SocketAddr, String> {
     Ok(private)
 }
 
-/// Private upstream for reverse mode's internal SOCKS, with no advertised
-/// door claimed. Reverse still binds `--psiphon-bind`/`--tor-bind`; without
-/// this the engine falls back to 1821/1820 — ports this process may already
-/// hold from a prior chain session (STOLEN lives for the app's life).
 fn reserve_private(slot: &Mutex<Option<SocketAddr>>) -> Result<SocketAddr, String> {
     let private = free_loopback_ports(1)?.remove(0);
     *slot.lock().unwrap() = Some(private);
@@ -191,8 +128,6 @@ pub fn reserve_engine_psiphon() -> Result<SocketAddr, String> {
     reserve_private(&ENGINE_PSIHON)
 }
 
-/// Claim an advertised address for the counting bridge, forwarding it to
-/// `upstream`. Idempotent per address — reconnects just re-pin.
 pub fn claim(addr: &str, upstream: SocketAddr) -> Result<SocketAddr, String> {
     let sa: SocketAddr = addr
         .parse()
@@ -201,8 +136,6 @@ pub fn claim(addr: &str, upstream: SocketAddr) -> Result<SocketAddr, String> {
     Ok(sa)
 }
 
-/// Pin then bind: the pin lands first so an accepted connection can never
-/// resolve to a target that points back at a door we own.
 fn claim_sa(sa: SocketAddr, upstream: SocketAddr) -> Result<(), String> {
     {
         let mut pins = PINS.lock().unwrap();
@@ -220,15 +153,10 @@ fn claim_sa(sa: SocketAddr, upstream: SocketAddr) -> Result<(), String> {
     Ok(())
 }
 
-/// Start the loopback HTTP → SOCKS5 bridge. Idempotent: a second call just
-/// returns the already-bound address.
 pub fn start() -> Result<SocketAddr, String> {
     if RUNNING.load(Ordering::SeqCst) {
         return local_addr().ok_or_else(|| "bridge listener has no bound address".to_string());
     }
-    // Bind an ephemeral loopback port so we never collide with Aether's SOCKS
-    // port or the user's chosen bind address. Whatever port we land on is what
-    // `local_addr()` reports and what gets written into ProxyServer.
     let listener = TcpListener::bind("127.0.0.1:0").map_err(|e| e.to_string())?;
     let addr = listener.local_addr().map_err(|e| e.to_string())?;
     *LISTEN.lock().unwrap() = Some(addr);
@@ -251,12 +179,8 @@ fn accept_loop(listener: TcpListener) {
     log::debug!("[httpproxy] accept loop ended");
 }
 
-// ─── Per-connection handling ────────────────────────────────────────────
 
 fn handle_client(mut client: TcpStream) {
-    // Sniff the first byte: SOCKS5 greets with 0x05, HTTP methods are ASCII
-    // letters. Both dialects share this listener so every product door (system
-    // proxy, PAC, copy-proxy) lands on the one counting relay.
     let door = client.local_addr().ok();
     let mut first = [0u8; 1];
     match client.read(&mut first) {
@@ -337,8 +261,6 @@ fn handle_plain_http(
 ) {
     let (host, port, strict_path) = split_request_target(target);
     if host.is_empty() {
-        // origin-form request ("GET /path HTTP/1.1") — the host (and optional
-        // :port) lives in the Host header we already forward untouched.
         let (hh, hp) = first_host_header(head);
         let connect_host = hh.unwrap_or_else(|| "127.0.0.1".to_string());
         let connect_port = hp.unwrap_or(port);
@@ -350,8 +272,6 @@ fn handle_plain_http(
                 return;
             }
         };
-        // No path rewrite needed — origin-form is already what the origin
-        // server expects.
         if upstream.write_all(head).is_err() {
             return;
         }
@@ -378,8 +298,6 @@ fn handle_plain_http(
         }
     };
 
-    // Snip the "http://host:port" prefix off the request line so the origin
-    // server gets a plain origin-form request, then forward head + body.
     let rewritten = rewrite_http(head, method, &strict_path);
     if upstream.write_all(&rewritten).is_err() {
         return;
@@ -395,28 +313,22 @@ fn handle_plain_http(
     relay(client, upstream);
 }
 
-/// Minimal SOCKS5 CONNECT server (no-auth) fronting the engine's SOCKS
-/// upstream. Shares `relay`/`pipe_counted` with the HTTP paths, so PAC and
-/// manual-SOCKS clients count in the traffic monitor instead of bypassing it.
 fn handle_socks5(mut client: TcpStream, door: Option<SocketAddr>) -> io::Result<()> {
-    // handle_client already sniffed the 0x05 version byte — greeting starts at nmethods.
     let mut nmethods = [0u8; 1];
     client.read_exact(&mut nmethods)?;
     let mut methods = vec![0u8; nmethods[0] as usize];
     client.read_exact(&mut methods)?;
-    client.write_all(&[0x05, 0x00])?; // no-auth
+    client.write_all(&[0x05, 0x00])?;
 
-    let mut req = [0u8; 4]; // [0x05, cmd, rsv, atyp]
+    let mut req = [0u8; 4];
     client.read_exact(&mut req)?;
     if req[0] != 0x05 || req[1] != 0x01 {
-        // 0x07 = command not supported
         let _ = client.write_all(&[0x05, 0x07, 0x00, 0x01, 0, 0, 0, 0, 0, 0]);
         return Ok(());
     }
     let body = match read_socks_addr_body(&mut client, req[3]) {
         Ok(b) => b,
         Err(_) => {
-            // 0x08 = address type not supported
             let _ = client.write_all(&[0x05, 0x08, 0x00, 0x01, 0, 0, 0, 0, 0, 0]);
             return Ok(());
         }
@@ -430,7 +342,6 @@ fn handle_socks5(mut client: TcpStream, door: Option<SocketAddr>) -> io::Result<
         Ok(s) => s,
         Err(e) => {
             log::debug!("[httpproxy] SOCKS5 upstream failed: {e}");
-            // 0x05 = connection refused
             let _ = client.write_all(&[0x05, 0x05, 0x00, 0x01, 0, 0, 0, 0, 0, 0]);
             return Ok(());
         }
@@ -440,13 +351,11 @@ fn handle_socks5(mut client: TcpStream, door: Option<SocketAddr>) -> io::Result<
     Ok(())
 }
 
-/// Read the ATYP-specific address body (including any length prefix / port).
 fn read_socks_addr_body(r: &mut impl Read, atyp: u8) -> io::Result<Vec<u8>> {
     let fixed = match atyp {
-        1 => 6,  // IPv4 + port
-        4 => 18, // IPv6 + port
+        1 => 6,
+        4 => 18,
         3 => {
-            // domain: [len][host][port]
             let mut n = [0u8; 1];
             r.read_exact(&mut n)?;
             let mut body = n.to_vec();
@@ -467,7 +376,6 @@ fn read_socks_addr_body(r: &mut impl Read, atyp: u8) -> io::Result<Vec<u8>> {
     Ok(body)
 }
 
-/// Decode a SOCKS5 address body (as produced by `read_socks_addr_body`).
 fn socks_dest(atyp: u8, body: &[u8]) -> Option<(String, u16)> {
     match atyp {
         1 => {
@@ -490,10 +398,6 @@ fn socks_dest(atyp: u8, body: &[u8]) -> Option<(String, u16)> {
     }
 }
 
-/// Echo bytes in both directions until one side closes. Counts every chunk
-/// immediately so `aether://traffic` ticks live instead of only at close.
-/// The loop handles keep-alive naturally: whatever the client writes next
-/// still flows across, and the response of the moment still flows back.
 fn relay(client: TcpStream, upstream: TcpStream) {
     let c1 = client.try_clone();
     let c2 = client.try_clone();
@@ -533,12 +437,7 @@ fn pipe_counted(mut src: TcpStream, mut dst: TcpStream, is_tx: bool) -> io::Resu
     Ok(total)
 }
 
-// ─── Request head reading / parsing ─────────────────────────────────────
 
-/// Read bytes until the blank line ending the request head. `seed` holds the
-/// first byte already sniffed by `handle_client`. Returns `(head, leftover)`
-/// where `leftover` is any body bytes that arrived in the same TCP segment
-/// (and must be forwarded right after the head).
 fn read_head(stream: &mut TcpStream, seed: Vec<u8>) -> io::Result<(Vec<u8>, Vec<u8>)> {
     let mut buffer = seed;
     let mut chunk = [0u8; 4096];
@@ -564,7 +463,6 @@ fn read_head(stream: &mut TcpStream, seed: Vec<u8>) -> io::Result<(Vec<u8>, Vec<
     }
 }
 
-/// Index just past the `\r\n\r\n` (or `\n\n`) that terminates a request head.
 fn head_end_index(buf: &[u8]) -> Option<usize> {
     buf.windows(4)
         .position(|w| w == b"\r\n\r\n")
@@ -581,9 +479,6 @@ fn request_line(head: &[u8]) -> Option<(String, String)> {
     Some((method, target))
 }
 
-/// Extract `Host` (and its optional `:port`) from the request head, for
-/// origin-form requests where the host lives in a header rather than the
-/// request line.
 fn first_host_header(head: &[u8]) -> (Option<String>, Option<u16>) {
     let text = match std::str::from_utf8(head) {
         Ok(t) => t,
@@ -603,7 +498,6 @@ fn first_host_header(head: &[u8]) -> (Option<String>, Option<u16>) {
     (None, None)
 }
 
-/// Parse an authority (`host`, `host:port`, `[v6]:port`, host excluding port).
 fn parse_authority(auth: &str, default_port: u16) -> (String, u16) {
     let auth = auth.trim();
     if let Some(rest) = auth.strip_prefix('[') {
@@ -626,9 +520,6 @@ fn parse_authority(auth: &str, default_port: u16) -> (String, u16) {
     (auth.to_string(), default_port)
 }
 
-/// Split a request target into `(host, port)` and the origin-form path to
-/// send upstream. For origin-form targets (already `"/…"`) host comes back
-/// empty and the caller falls back to the `Host` header.
 fn split_request_target(target: &str) -> (String, u16, String) {
     for scheme in ["http://", "https://"] {
         if let Some(rest) = target.trim().to_ascii_lowercase().strip_prefix(scheme) {
@@ -642,15 +533,10 @@ fn split_request_target(target: &str) -> (String, u16, String) {
         }
     }
     let origin = target.trim().to_string();
-    // origin-form or `*`; no absolute path derivation, forward as-is.
     (String::new(), 0, origin)
 }
 
-/// Rebuild the head with an origin-form request line so the origin server
-/// understands the request. Preserves the original line-terminator style
-/// (`\r\n` for HTTP/1.x, bare `\n` for any oddball client).
 fn rewrite_http(head: &[u8], method: &str, path: &str) -> Vec<u8> {
-    // Find the end of the first line.
     let end = head
         .windows(2)
         .position(|w| w == b"\r\n")
@@ -658,7 +544,6 @@ fn rewrite_http(head: &[u8], method: &str, path: &str) -> Vec<u8> {
         .or_else(|| head.iter().position(|&b| b == b'\n').map(|i| i + 1))
         .unwrap_or(head.len());
 
-    // The remaining headers start right after the request line.
     let tail = &head[end..];
 
     let mut out = Vec::with_capacity(tail.len() + 64);
@@ -671,7 +556,6 @@ fn write_simple(stream: &mut TcpStream, bytes: &[u8]) -> io::Result<()> {
     stream.write_all(bytes)
 }
 
-// ── SOCKS5 client ───────────────────────────────────────────────────────
 
 fn current_target() -> Result<SocketAddr, String> {
     TARGET
@@ -683,14 +567,11 @@ fn current_target() -> Result<SocketAddr, String> {
         .map_err(|e| format!("invalid SOCKS target: {e}"))
 }
 
-/// Open a SOCKS5 connection to `host:port` through the configured upstream,
-/// supporting IPv4, IPv6, and domain destinations.
 fn socks_connect(host: &str, port: u16, upstream: &SocketAddr) -> Result<TcpStream, String> {
     let mut stream = TcpStream::connect_timeout(upstream, UPSTREAM_TIMEOUT)
         .map_err(|e| format!("connect upstream: {e}"))?;
     let _ = stream.set_nodelay(true);
 
-    // No-auth greeting.
     stream
         .write_all(&[0x05, 0x01, 0x00])
         .map_err(|e| format!("write greeting: {e}"))?;
@@ -702,7 +583,6 @@ fn socks_connect(host: &str, port: u16, upstream: &SocketAddr) -> Result<TcpStre
         return Err(format!("SOCKS greeting rejected: {resp:02x?}"));
     }
 
-    // CONNECT request with the correct address type.
     let mut req = vec![0x05, 0x01, 0x00];
     match host.parse::<std::net::IpAddr>() {
         Ok(ip) => match ip {
@@ -730,7 +610,6 @@ fn socks_connect(host: &str, port: u16, upstream: &SocketAddr) -> Result<TcpStre
         .write_all(&req)
         .map_err(|e| format!("write CONNECT: {e}"))?;
 
-    // Read [ver, rep, rsv, atyp] then skip the rest of the reply.
     let mut reply = [0u8; 4];
     stream
         .read_exact(&mut reply)
@@ -826,7 +705,6 @@ mod tests {
 
     #[test]
     fn route_connect_claims_doors_and_never_chains_into_itself() {
-        // Free advertised port: bind then drop so `route_connect` can take it.
         let tmp = TcpListener::bind("127.0.0.1:0").unwrap();
         let advertised = tmp.local_addr().unwrap();
         drop(tmp);
@@ -835,19 +713,15 @@ mod tests {
         assert_ne!(engine, advertised);
         assert_eq!(current_target().expect("target"), engine);
 
-        // A second claimed door forwards to the same engine…
         let tmp2 = TcpListener::bind("127.0.0.1:0").unwrap();
         let http_door = tmp2.local_addr().unwrap();
         drop(tmp2);
         claim(&http_door.to_string(), engine).expect("claim");
         assert_eq!(target_for(Some(http_door)), Ok(engine));
 
-        // …and a global target naming a claimed door chases to the upstream
-        // instead of chaining bridge→bridge (double-counting bytes).
         set_target(&advertised.to_string());
         assert_eq!(target_for(None), Ok(engine));
 
-        // Reconnect: the advertised port is already ours — must re-pin, not fail.
         let engine2 = route_connect(&advertised.to_string(), None).expect("re-route");
         assert_ne!(engine2, advertised);
         assert_eq!(current_target().expect("target2"), engine2);
@@ -856,13 +730,12 @@ mod tests {
 
     #[test]
     fn socks5_handshake_survives_first_byte_sniff() {
-        // Fake engine: no-auth SOCKS5 that accepts any CONNECT and echoes bytes.
         let engine_listener = TcpListener::bind("127.0.0.1:0").unwrap();
         let engine_addr = engine_listener.local_addr().unwrap();
         std::thread::spawn(move || {
             let (mut s, _) = engine_listener.accept().unwrap();
             let mut g = [0u8; 3];
-            s.read_exact(&mut g).unwrap(); // 05 01 00
+            s.read_exact(&mut g).unwrap();
             assert_eq!(g[0], 0x05);
             s.write_all(&[0x05, 0x00]).unwrap();
             let mut req = [0u8; 4];
@@ -890,14 +763,11 @@ mod tests {
             s.write_all(&echo).unwrap();
         });
 
-        // Claim an advertised door pinned to the fake engine (bypass route_connect's
-        // port allocation — we already bound engine_addr ourselves).
         let tmp = TcpListener::bind("127.0.0.1:0").unwrap();
         let door = tmp.local_addr().unwrap();
         drop(tmp);
         claim(&door.to_string(), engine_addr).expect("claim");
 
-        // Client: SOCKS5 greeting through the claimed door.
         let mut c = TcpStream::connect(door).unwrap();
         c.write_all(&[0x05, 0x01, 0x00]).unwrap();
         let mut r = [0u8; 2];
@@ -907,13 +777,11 @@ mod tests {
             [0x05, 0x00],
             "greeting must survive the first-byte sniff"
         );
-        // CONNECT 1.2.3.4:443
         c.write_all(&[0x05, 0x01, 0x00, 0x01, 1, 2, 3, 4, 0x01, 0xbb])
             .unwrap();
         let mut rep = [0u8; 10];
         c.read_exact(&mut rep).unwrap();
         assert_eq!(rep[1], 0x00, "CONNECT reply: {rep:02x?}");
-        // Payload must round-trip through bridge → engine.
         c.write_all(b"ping").unwrap();
         let mut back = [0u8; 4];
         c.read_exact(&mut back).unwrap();
@@ -937,10 +805,10 @@ mod tests {
             Some(("example.com".into(), 443))
         );
         let mut v6 = vec![0u8; 16];
-        v6[15] = 1; // ::1
+        v6[15] = 1;
         v6.extend_from_slice(&443u16.to_be_bytes());
         assert_eq!(socks_dest(4, &v6), Some(("::1".into(), 443)));
         assert!(socks_dest(5, &[0; 6]).is_none());
-        assert!(socks_dest(1, &[0; 3]).is_none()); // truncated
+        assert!(socks_dest(1, &[0; 3]).is_none());
     }
 }

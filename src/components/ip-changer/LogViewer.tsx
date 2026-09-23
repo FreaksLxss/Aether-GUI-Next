@@ -10,7 +10,6 @@ const TIME_FMT = new Intl.DateTimeFormat(undefined, {
   second: "2-digit",
 });
 
-/** Scrollable, auto-following log of the Tor subprocess. */
 export function LogViewer() {
   const logs = useIpChangerStore((s) => s.logs);
   const clearLogs = useIpChangerStore((s) => s.clearLogs);

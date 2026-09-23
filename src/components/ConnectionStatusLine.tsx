@@ -29,7 +29,6 @@ function useElapsed(sinceMs: number | null): { formatted: string; totalSeconds: 
   return { formatted: `${h}:${m}:${s}`, totalSeconds: total };
 }
 
-/** Determinate progress toward Aether's scan budget, or indeterminate sweep. */
 function ScanProgressBar({ percent }: { percent: number | null }) {
   const focused = useWindowFocused();
   return (
@@ -59,7 +58,6 @@ export function ConnectionStatusLine({ onTryVerified }: { onTryVerified?: () => 
     if (status.state === "Launching") setAttemptStartedAt(Date.now());
     else if (status.state === "Idle") setAttemptStartedAt(null);
   }, [status.state]);
-  /* eslint-enable react-hooks/set-state-in-effect */
   const isAttempting = status.state === "Launching" || status.state === "Connecting";
   const { formatted: attemptElapsed, totalSeconds: attemptSeconds } = useElapsed(
     isAttempting ? attemptStartedAt : null,
@@ -106,12 +104,6 @@ export function ConnectionStatusLine({ onTryVerified }: { onTryVerified?: () => 
       break;
   }
 
-  /**
-   * Live announcements are scoped to the primary line only. The secondary
-   * line (e.g. the "Still searching · 0:12" elapsed timer) re-renders every
-   * second, so putting it inside a live region would spam screen readers —
-   * announcing only discrete state transitions keeps it dependable.
-   */
   return (
     <div className="flex flex-col items-center gap-2 text-center">
       <AnimatePresence mode="wait">

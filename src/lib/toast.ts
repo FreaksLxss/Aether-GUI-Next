@@ -1,13 +1,6 @@
 import { toast as sonner } from "sonner";
 import { cue } from "@/lib/sound";
 
-/**
- * Sonner's `toast` with the outcome cues wired in once.
- *
- * Import this instead of `sonner` anywhere a toast is raised, so every
- * success/error is heard. `info`/`warning` stay silent — they are neither the
- * "you caused this" success nor a failure, which is what the palette encodes.
- */
 export const toast = Object.assign(
   (...args: Parameters<typeof sonner>) => sonner(...args),
   {

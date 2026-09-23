@@ -15,14 +15,6 @@ const OPTIONS: { value: Protocol; label: string; desc: string }[] = [
   { value: "gool", label: "WARP-in-WARP", desc: "Double tunnel, maximum security" },
 ];
 
-/**
- * Defaults to "Auto" rather than a bare protocol choice: Aether's own
- * scan-mode already performs multi-route discovery internally (confirmed by
- * running the real binary), so protocol selection is a fallback/advanced
- * option here, not the primary decision a user makes every session.
- * Disabled outside Idle/Error since Aether can't switch protocol mid-session
- * — changing it requires a full disconnect/reconnect.
- */
 export function ProtocolSelect({ id }: { id?: string }) {
   const status = useConnectionStore((s) => s.status);
   const protocol = useConnectionStore((s) => s.profile.protocol);

@@ -1,16 +1,3 @@
-//! Android backend for running aether: a plain piped subprocess instead of a
-//! PTY. Android has no terminal session for the app to own (and portable-pty
-//! is not compiled for this target), and aether needs none: the GUI already
-//! passes the whole profile as flags/env (see pty.rs's spawn for the desktop
-//! equivalent with real terminal semantics).
-//!
-//! Consequences, by design:
-//! - `prompts_done` is instantly true — with piped stdin aether never shows
-//!   its interactive menus, so there is nothing to answer; a required
-//!   one-time code is still typed by the user through `send_line`.
-//! - `send_ctrl_c` is a no-op — the ETX byte only means SIGINT inside a real
-//!   terminal. Shutdown always falls through to `kill()` after the grace
-//!   period (see status::GRACEFUL_SHUTDOWN_GRACE).
 
 use super::profiles::{ConnectionProfile, PROXY_ENV_KEYS};
 use super::pty_output::{drain_lines, strip_ansi};
@@ -39,7 +26,6 @@ impl PtySession {
     }
 
     pub fn try_wait(&mut self) -> Option<i32> {
-        // Same contract as pty.rs: None = still running, never fake it.
         self.child
             .try_wait()
             .ok()
@@ -47,12 +33,8 @@ impl PtySession {
             .and_then(|st| st.code())
     }
 
-    /// No-op on Android: a piped stdin carries no terminal signals. See the
-    /// module doc — the monitor's kill() fallback handles shutdown.
     pub fn send_ctrl_c(&self) {}
 
-    /// Writes a user-typed line (e.g. the Zero Trust one-time code, which
-    /// Aether ≥1.6.0 reads from stdin) to the child's stdin.
     pub fn send_line(&self, line: &str) {
         if let Ok(mut w) = self.stdin.lock() {
             let _ = w.write_all(line.as_bytes());
@@ -66,10 +48,6 @@ impl PtySession {
     }
 }
 
-/// Spawns Aether as a subprocess with piped stdio and forwards every output
-/// line on either stream to the frontend's log panel. `cwd` stays the app's
-/// data dir so the provisioned identity persists across launches (same
-/// invariant as the desktop PTY spawn).
 pub fn spawn(
     binary: &Path,
     cwd: &Path,
@@ -84,8 +62,6 @@ pub fn spawn(
     for arg in profile.as_args() {
         cmd.arg(arg);
     }
-    // Same shared env construction as the desktop PTY spawn — see
-    // ConnectionProfile::environment for why this must not fork per platform.
     for (key, value) in profile.environment() {
         cmd.env(key, value);
     }
@@ -112,9 +88,6 @@ pub fn spawn(
         .take()
         .ok_or_else(|| AetherError::SpawnFailed("no stderr pipe".into()))?;
 
-    // Flags/env cover every interactive prompt on a piped stdin, so nothing
-    // to answer; the monitor thread only needs this to move Launching →
-    // Connecting before the SOCKS port goes live.
     let prompts_done = Arc::new(AtomicBool::new(true));
 
     let log_tx_stdout = log_tx.clone();
@@ -133,7 +106,7 @@ fn pipe_loop<R: Read + Send + 'static>(mut reader: R, log_tx: Sender<LogEvent>) 
     let mut byte_buf = [0u8; 4096];
     loop {
         let n = match reader.read(&mut byte_buf) {
-            Ok(0) => break, // EOF: process exited or pipe closed
+            Ok(0) => break,
             Ok(n) => n,
             Err(_) => break,
         };

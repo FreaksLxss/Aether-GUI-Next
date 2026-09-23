@@ -36,7 +36,6 @@ export function EngineTorPanel() {
   const setEngineTorRelayPorts = useConnectionStore((s) => s.setEngineTorRelayPorts);
 
   const enabled = profile.engine_tor_mode !== "disabled";
-  // Tor-only uses the primary bind (1819) and never has a separate Tor listener.
   const showTorBind = enabled && profile.engine_tor_mode !== "tor-only";
   const reverseConflict = profile.engine_tor_mode === "tor-reverse" && (profile.protocol === "wireguard" || profile.protocol === "gool");
 
@@ -44,9 +43,6 @@ export function EngineTorPanel() {
   const [countryErr, setCountryErr] = useState<string | null>(null);
   const timerRef = useRef<ReturnType<typeof setTimeout>>(null);
 
-  // Manual bridge lines keep the exact draft (newlines/spaces) while editing so
-  // typing a new line is never swallowed; blank lines only drop out when the
-  // value is actually sent to the engine.
   const manualDraft = profile.engine_tor_bridges.join("\n");
   const setManualDraft = (text: string) => {
     setEngineTorNoBridges(false);
@@ -81,8 +77,7 @@ export function EngineTorPanel() {
         </Select>
       </FieldRow>
 
-      {/* Same non-blink gate as PsiphonPanel: mode + live session, not the
-          event flag that a VPN retry resets to default. */}
+      {}
       {profile.engine_tor_mode === "tor"
         && status.state !== "Idle" && status.state !== "Error" && (
         <p role="status" className="text-[11px] text-muted-foreground">

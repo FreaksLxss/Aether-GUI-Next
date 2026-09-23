@@ -4,11 +4,6 @@ import { Button } from "@/components/ui/button";
 import { useConnectionStore } from "@/state/connectionStore";
 import { SPRING_FAST } from "@/lib/motion";
 
-/**
- * The loudest event the window can produce: the tunnel is up but the exit IP
- * matches the real IP, so the user is visible. Full-surface red banner with
- * one clear action — disconnect now. Rendered by App only while connected.
- */
 export function LeakBanner() {
   const disconnect = useConnectionStore((s) => s.disconnect);
   const runPublicIpCheck = useConnectionStore((s) => s.runPublicIpCheck);

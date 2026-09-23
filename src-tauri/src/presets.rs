@@ -33,7 +33,6 @@ pub fn save_preset(app: &AppHandle, name: &str, profile: &ConnectionProfile) -> 
         .and_then(|v| serde_json::from_value(v).ok())
         .unwrap_or_default();
 
-    // Replace existing with same name, or add new
     presets.retain(|p| p.name != name);
     presets.insert(
         0,

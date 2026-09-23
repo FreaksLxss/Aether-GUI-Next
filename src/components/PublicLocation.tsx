@@ -8,7 +8,6 @@ import { SPRING } from "@/lib/motion";
 import { countryName } from "@/lib/location";
 import { CountryFlag } from "@/components/CountryFlag";
 
-/** Compact egress-location + leak-status pill shown while connected. */
 export function PublicLocation() {
   const status = useConnectionStore((s) => s.status);
   const publicIp = useConnectionStore((s) => s.publicIp);
@@ -34,9 +33,6 @@ export function PublicLocation() {
   const connected = status.state === "Connected";
   const ownIp = !connected;
 
-  // On censored networks the direct-IP lookup can fail; don't whisper a
-  // permanent "Location unavailable" at idle — the pill only earns space
-  // when there is data to show or a tunnel to prove.
   if (!connected && !publicIp) return null;
 
   const place =

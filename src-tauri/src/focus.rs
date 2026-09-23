@@ -1,15 +1,5 @@
 use tauri::{AppHandle, Emitter};
 
-/// Emits `app://focused` (bool) whenever the app gains or loses the
-/// foreground. Exists because neither signal the webview can see is
-/// trustworthy on Windows: tao's focus events fire inconsistently, its
-/// `is_focused` false-negatives while the WebView2 child holds Win32 focus,
-/// and the page's `document.hasFocus()` stays true even minimized. The
-/// frontend pauses every animation on this event — a wrong value here means
-/// either burning CPU in the background forever or a permanently frozen UI.
-/// GetForegroundWindow is the OS's own ground truth. Polled at 1s and only
-/// emitted on change; the first iteration always emits, which also fixes the
-/// frontend's initial guess when the app starts in the background.
 pub fn spawn_watcher(app: AppHandle) {
     #[cfg(windows)]
     std::thread::spawn(move || {
@@ -37,8 +27,6 @@ pub fn spawn_watcher(app: AppHandle) {
         }
     });
 
-    // ponytail: non-Windows keeps the JS-side tauri focus events only —
-    // revisit if Linux/macOS users report the same background-CPU issue.
     #[cfg(not(windows))]
     let _ = app;
 }

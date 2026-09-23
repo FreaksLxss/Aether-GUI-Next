@@ -1,6 +1,5 @@
 import type { ConnectionProfile } from "@/types/connection";
 
-/** Mirrors ConnectionProfile::default; never merge a preset with the active profile. */
 export function defaultConnectionProfile(): ConnectionProfile {
   return {
     protocol: "auto", scan_mode: "turbo", ip_version: "v4",
@@ -22,7 +21,6 @@ export function defaultConnectionProfile(): ConnectionProfile {
   };
 }
 
-/** Desktop webviews report their OS; unknown platforms fail closed for SO_MARK. */
 export function supportsFirewallMark(): boolean {
   return typeof navigator !== "undefined"
     && (/linux/i.test(navigator.platform) || /android/i.test(navigator.userAgent));

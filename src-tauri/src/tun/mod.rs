@@ -1,10 +1,4 @@
-//! TUN (wintun) support. **Windows-only** — the wintun/raw-packet crates it
-//! depends on exist only under `[target.'cfg(windows)'.dependencies]`, so the
-//! whole adapter/forwarder layer is gated to Windows. On other platforms a
-//! no-op `TunManager` is exported so `state`, `aether`, and the IPC commands
-//! compile unchanged.
 
-/// Raw wintun internals — only compiled (and dependencies resolved) on Windows.
 #[cfg(target_os = "windows")]
 pub mod adapter;
 #[cfg(target_os = "windows")]
@@ -51,9 +45,6 @@ mod manager {
     use std::sync::Arc;
     use std::thread::{self, JoinHandle};
 
-    /// Manages the lifecycle of a wintun TUN adapter, route manipulation,
-    /// and the packet forwarder. Activated after Aether's SOCKS5 proxy is
-    /// confirmed live; deactivated before Ctrl-C is sent to Aether.
     pub struct TunManager {
         adapter: Option<Arc<adapter::TunAdapter>>,
         route_manager: Option<route::RouteManager>,
@@ -69,10 +60,6 @@ mod manager {
             }
         }
 
-        /// Activate TUN mode: create adapter, set up routes, start forwarder.
-        /// Must be called AFTER the SOCKS5 proxy is confirmed live.
-        /// `resource_dir` is the Tauri resource directory for finding bundles
-        /// DLLs.
         pub fn activate(
             &mut self,
             socks_addr: &str,
@@ -87,14 +74,12 @@ mod manager {
                 .parse()
                 .map_err(|e| TunError::Internal(format!("invalid SOCKS5 address: {e}")))?;
 
-            // Create the wintun adapter
             let tun_name = "Aether";
             let tun_addr = &profile.tun_address;
             let tun_adapter = adapter::TunAdapter::create(tun_name, tun_addr, resource_dir)
                 .map_err(TunError::AdapterCreate)?;
             let tun_adapter = Arc::new(tun_adapter);
 
-            // Set up routes
             let mut route_mgr =
                 route::RouteManager::save_current_state().map_err(TunError::RouteError)?;
 
@@ -102,7 +87,6 @@ mod manager {
                 .redirect_default_through_tun(&tun_adapter)
                 .map_err(TunError::RouteError)?;
 
-            // Start the packet forwarder thread
             let forwarder_adapter = Arc::clone(&tun_adapter);
             let dns_mode = profile.dns_mode.clone();
             let forwarder_socks = addr;
@@ -121,25 +105,19 @@ mod manager {
             Ok(())
         }
 
-        /// Deactivate TUN mode: stop forwarder, restore routes, destroy
-        /// adapter. Must be called BEFORE sending Ctrl-C to Aether.
         pub fn deactivate(&mut self) -> Result<(), TunError> {
-            // Shutdown the adapter (unblocks the forwarder's receive_blocking)
             if let Some(adapter) = self.adapter.as_ref() {
                 adapter.shutdown();
             }
 
-            // Wait for forwarder thread to finish
             if let Some(handle) = self.forwarder_handle.take() {
                 let _ = handle.join();
             }
 
-            // Restore original routes
             if let Some(mut route_mgr) = self.route_manager.take() {
                 route_mgr.restore().map_err(TunError::RouteError)?;
             }
 
-            // Drop the adapter
             self.adapter.take();
             Ok(())
         }
@@ -156,8 +134,6 @@ mod manager {
     }
 }
 
-/// No-op fallback so the rest of the app (state, aether, commands) compiles on
-/// every platform even though TUN mode is Windows-only.
 #[cfg(not(target_os = "windows"))]
 mod manager {
     use super::*;

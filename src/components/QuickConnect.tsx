@@ -47,8 +47,6 @@ const PRESETS: QuickPreset[] = [
   },
 ];
 
-/** Maps every scan mode onto one of the quick presets so there is always an
- * active indicator, even for modes only reachable via the advanced panel. */
 const ACTIVE_PRESET: Record<string, string> = {
   turbo: "Fast",
   balanced: "Balanced",
@@ -57,9 +55,6 @@ const ACTIVE_PRESET: Record<string, string> = {
   ironclad: "Secure",
 };
 
-/** Tuning — underline indicator: no fill, just a sliding 2px orange
- * underline + bolder type + tinted badge for the active chip. Keeps
- * Protocol as the only pill in the pair — hierarchy without twinned fills. */
 export function QuickConnect({ onMoreOptions }: { onMoreOptions: () => void }) {
   const profile = useConnectionStore((s) => s.profile);
   const setScanMode = useConnectionStore((s) => s.setScanMode);
@@ -113,7 +108,7 @@ export function QuickConnect({ onMoreOptions }: { onMoreOptions: () => void }) {
                     <span className="relative min-w-0 truncate tracking-wide text-center">
                       {p.label}
                     </span>
-                    {/* sliding underline — only motion on the rail */}
+                    {}
                     {active && (
                       <motion.span
                         layoutId="quick-connect-underline"

@@ -4,12 +4,7 @@ const LOG_WINDOW_LABEL = "log-window";
 
 let logWindow: WebviewWindow | null = null;
 
-/**
- * Opens the live log window, or focuses it if it's already open.
- * The window subscribes to the same aether://log events as the main window.
- */
 export async function openLogWindow(): Promise<void> {
-  // Check if the window already exists and is still open
   if (logWindow) {
     try {
       const exists = await logWindow.isVisible();
@@ -18,7 +13,6 @@ export async function openLogWindow(): Promise<void> {
         return;
       }
     } catch {
-      // Window was closed externally; create a new one
       logWindow = null;
     }
   }

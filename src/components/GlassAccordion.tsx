@@ -16,18 +16,10 @@ interface GlassAccordionProps {
   open: boolean;
   onToggle: () => void;
   count?: number;
-  /** Render a small leading badge next to the label (e.g. the preset count). */
   badge?: ReactNode;
-  /** Row content shown under the trigger when open. */
   children: ReactNode;
 }
 
-/**
- * Frosted-glass accordion section used by every collapsible panel
- * (Advanced / Presets / History / Settings). Encapsulates the Apple-style
- * material (translucent blur, top sheen, soft shadow) and the spring-driven
- * chevron + content reveal so all panels stay in sync.
- */
 export function GlassAccordion({
   icon: Icon,
   label,

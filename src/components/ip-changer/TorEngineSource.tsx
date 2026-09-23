@@ -3,10 +3,6 @@ import { Package, PackageCheck } from "lucide-react";
 import { Switch } from "@/components/ui/switch";
 import { useIpChangerStore } from "@/stores/ipChangerStore";
 
-/** Tor engine picker: run the app's bundled Tor, or the `tor` package the
- * OS itself provides (useful on Linux distros, where the app's copy can hit
- * filesystem quirks like AppImage mounts stripping the exec bit). Hidden on
- * machines where no system Tor is installed; takes effect on next start. */
 export function TorEngineSource() {
   const running = useIpChangerStore((s) => s.status === "running");
   const engine = useIpChangerStore((s) => s.torEngine);

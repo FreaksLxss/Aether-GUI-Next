@@ -33,7 +33,6 @@ function HighlightedLine({ line, query }: { line: string; query: string }) {
 }
 
 function levelClass(line: string) {
-  // word-boundary or bracket aware to avoid "terror" false positive
   const l = line;
   if (/\b(fatal|error)\b/i.test(l) || /\[error\]/i.test(l)) return "text-red-400";
   if (/\bwarn\b/i.test(l) || /\[warn\]/i.test(l)) return "text-amber-400";
@@ -55,7 +54,7 @@ export function VirtualLogList({
   const parentRef = useRef<HTMLDivElement>(null);
   const baseTs = logs.length ? logs[0]!.timestamp : 0;
 
-  const deferredFilter = filter; // caller already defers via useDeferredValue
+  const deferredFilter = filter;
 
   const rowVirtualizer = useVirtualizer({
     count: logs.length,
@@ -68,7 +67,6 @@ export function VirtualLogList({
         : undefined,
   });
 
-  // auto-scroll to bottom when new batch arrives and user hasn't scrolled up
   const prevLenRef = useRef(logs.length);
   useEffect(() => {
     if (!autoScroll) {
@@ -78,7 +76,6 @@ export function VirtualLogList({
     if (logs.length === prevLenRef.current) return;
     prevLenRef.current = logs.length;
     if (logs.length === 0) return;
-    // defer to next frame so virtualizer has measured new totalSize
     requestAnimationFrame(() => {
       rowVirtualizer.scrollToIndex(logs.length - 1, { align: "end" });
     });
@@ -123,7 +120,7 @@ export function VirtualLogList({
 
   return (
     <div className="flex flex-col gap-1.5">
-      {/* export bar */}
+      {}
       <div className="flex justify-end">
         <Button
           variant="ghost"

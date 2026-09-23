@@ -4,7 +4,6 @@ import { Switch } from "@/components/ui/switch";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { cn } from "@/lib/utils";
 
-// Shared row label + tooltip used in Advanced and other panels
 export function FieldRow({
   label,
   htmlFor,
@@ -34,7 +33,6 @@ export function FieldRow({
   );
 }
 
-// Floating card section: pill heading + solid card, used in Advanced/Settings/IP Changer
 export function Section({
   title,
   icon: Icon,

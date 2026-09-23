@@ -1,6 +1,3 @@
-/** International (flag) to display name for the leak-check panel. Kept as a
- * curated common set — anything unknown falls back to showing the ISO code,
- * which is what the ipinfo API actually guarantees. */
 const COUNTRY_NAMES: Record<string, string> = {
   AD: "Andorra", AE: "United Arab Emirates", AF: "Afghanistan", AL: "Albania",
   AM: "Armenia", AR: "Argentina", AT: "Austria", AU: "Australia",

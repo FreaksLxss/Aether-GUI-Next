@@ -42,7 +42,6 @@ function schedulePersist() {
       const profile = useConnectionStore.getState().profile;
       await invoke("set_default_profile", { profile });
     } catch {
-      // Debounced best-effort persist; the next edit retries.
     }
   }, 500);
 }
@@ -64,7 +63,6 @@ async function sendNotification(title: string, body: string) {
       sendNotification({ title, body });
     }
   } catch {
-    // Notification plugin not available — silently ignore
   }
 }
 
@@ -75,28 +73,14 @@ interface ConnectionState {
   profile: ConnectionProfile;
   logs: LogLine[];
   sidecarError: string | null;
-  /** Aether's own route-probe budget in seconds, parsed live out of its log
-   * stream (its prober logs e.g. "...budget=120s" once scanning starts) —
-   * lets the UI show real progress instead of an indefinite spinner. Reset
-   * on every fresh attempt since it can differ by protocol/scan mode. */
   scanBudgetSecs: number | null;
   history: ConnectionHistoryEntry[];
-  /** Egress IP/location seen *through* the tunnel (Aether's exit). null until
-   * the last check ran or it failed. */
   publicIp: PublicInfo | null;
-  /** The machine's raw ISP IP, fetched without the proxy — the comparison
-   * baseline for the leak check. */
   directIp: PublicInfo | null;
   publicIpLoading: boolean;
-  /** Milliseconds the last public-IP probe took (tunnel path when connected, else direct). */
   publicIpLatencyMs: number | null;
-  /** Last up to 20 probe latencies for a future sparkline. */
   publicIpHistory: number[];
-  /** Result of comparing exit IP vs direct IP while connected:
-   * "none" (tunnel is masking), "leak" (exit IP == direct IP), or
-   * "unavailable" when no comparison was possible. */
   leakStatus: "none" | "leak" | "unavailable";
-  /** In-memory traffic totals + live rates; never persisted. Null until first snapshot. */
   traffic: TrafficStats | null;
   activeConns: ActiveConn[];
   connect: () => Promise<void>;
@@ -151,7 +135,6 @@ interface ConnectionState {
   setExitLocSecs: (exit_loc_secs: number | null) => void;
   setStats: (stats: boolean) => void;
   setStatsSecs: (stats_secs: number | null) => void;
-  /** Atomically replace all fields with a normalized, validated profile. */
   applyProfile: (profile: unknown) => void;
   setEngineTorPt: (engine_tor_pt: string | null) => void;
   setEngineTorPtDir: (engine_tor_pt_dir: string | null) => void;
@@ -165,13 +148,8 @@ interface ConnectionState {
   retryAfterSidecarError: () => void;
   loadHistory: () => Promise<void>;
   clearHistory: () => Promise<void>;
-  /** Fetches both the tunnel-exit and direct public IPs in parallel and works
-   * out the leak status. Safe to call any time; leak comparison only applies
-   * while connected. */
   runPublicIpCheck: () => Promise<void>;
   refreshActiveConns: () => Promise<void>;
-  /** Re-read the persisted default profile into the store (e.g. after the
-   * user imports settings from a file that changed the saved profile). */
   reloadProfile: () => Promise<void>;
 }
 
@@ -216,17 +194,10 @@ export const useConnectionStore = create<ConnectionState>((set, get) => {
       }
       await invoke("connect", { profileOverride: profile });
     } catch (e) {
-      // TODO(F2): replace String(e) with typed AppError {code,message}
       const message = String(e);
-      // "Binary not found" (src-tauri/src/aether/mod.rs::resolve_binary) means
-      // the tunnel engine itself can't run at all — structurally different
-      // from a normal connection failure, so it routes to the full-screen
-      // SidecarErrorScreen instead of the button's own error state.
       if (/binary not found|engine incompatible|engine_incompatible/i.test(message)) {
         set({ sidecarError: message });
       } else if (/already running/i.test(message)) {
-        // Backend still owns the attempt — its aether://status event will
-        // catch the UI up; don't flip to Error while it's Launching.
       } else {
         set({ status: { state: "Error", message, phase: "launching" } });
       }
@@ -237,9 +208,6 @@ export const useConnectionStore = create<ConnectionState>((set, get) => {
     try {
       await invoke("disconnect");
     } catch {
-      // TODO(F2): typed error handling — surface typed disconnect errors when backend provides them
-      // Backend rejects disconnect() when there's nothing to stop (already
-      // Idle) — nothing for the UI to do since status already reflects that.
     }
   },
 
@@ -371,9 +339,6 @@ export const useConnectionStore = create<ConnectionState>((set, get) => {
   setTcpKeepaliveSecs: (tcp_keepalive_secs) => { set((s) => ({ profile: { ...s.profile, tcp_keepalive_secs } })); schedulePersist(); },
   setTcpConnectSecs: (tcp_connect_secs) => { set((s) => ({ profile: { ...s.profile, tcp_connect_secs } })); schedulePersist(); },
 
-  // Clears the fallback screen so the user can attempt Connect again (e.g.
-  // after fixing a broken install) — the next connect() call will re-set
-  // sidecarError if the binary is still missing.
   retryAfterSidecarError: () => set({ sidecarError: null }),
 
   loadHistory: async () => {
@@ -428,7 +393,6 @@ export const useConnectionStore = create<ConnectionState>((set, get) => {
       const conns = await invoke<ActiveConn[]>("get_active_connections");
       set({ activeConns: conns });
     } catch {
-      // Polling is advisory; keep the previous snapshot.
     }
   },
 
@@ -443,22 +407,14 @@ export const useConnectionStore = create<ConnectionState>((set, get) => {
   };
 });
 
-// Dev-only: lets the 3D backdrop's per-state moods be driven from the WebView2
-// devtools console without a live tunnel, e.g.
-//   __conn.setState({ status: { state: "Connecting" } })
-// Tree-shaken out of production builds by the import.meta.env.DEV guard.
 if (import.meta.env.DEV) {
   (window as unknown as { __conn?: typeof useConnectionStore }).__conn = useConnectionStore;
 }
 
 const BUDGET_RE = /budget=(\d+)s/;
 
-/** Call once from App's top-level effect; returns a cleanup function. */
 export async function initConnectionListeners(): Promise<() => void> {
   if (!isTauriEnvStore()) return () => {};
-  // Log lines arrive fast during route scanning; flushing to the store per
-  // line would mean an O(logs) array copy + a re-render each. Coalesce into
-  // one store write per ~100ms instead.
   let pendingLogs: LogLine[] = [];
   let flushTimer: ReturnType<typeof setTimeout> | null = null;
   const flushLogs = () => {
@@ -476,8 +432,6 @@ export async function initConnectionListeners(): Promise<() => void> {
     }));
   };
 
-  // Notification state tracking — seed with current state so the initial
-  // emit (Idle) on startup doesn't fire a spurious notification.
   let lastNotifiedState: string | null = useConnectionStore.getState().status.state;
 
   let torStatusReceived = false;
@@ -487,12 +441,10 @@ export async function initConnectionListeners(): Promise<() => void> {
       const newState = e.payload.state;
       useConnectionStore.setState({
         status: e.payload,
-        // Fresh attempt — last attempt's budget no longer applies.
         ...(e.payload.state === "Launching" ? { scanBudgetSecs: null, traffic: null, activeConns: [] } : {}),
         ...(e.payload.state === "Idle" || e.payload.state === "Error" ? { traffic: null, activeConns: [] } : {}),
       });
 
-      // Send notifications on significant state changes (frontend-only)
       if (newState !== lastNotifiedState) {
         lastNotifiedState = newState;
         if (newState === "Connected") {
@@ -524,10 +476,6 @@ export async function initConnectionListeners(): Promise<() => void> {
     }),
   ]);
 
-  // Reconcile state in case the window reopened mid-session, and load the
-  // last-successful profile so the protocol selector reflects it. Neither
-  // command touches the Aether binary, so a failure here is an IPC-layer
-  // bug, not a sidecar problem — logged rather than shown as sidecarError.
   try {
     const [status, profile, traffic, engineTorStatus, enginePsiphonStatus] = await Promise.all([
       invoke<ConnectionStatus>("get_status"),

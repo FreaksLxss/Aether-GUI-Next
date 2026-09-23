@@ -42,9 +42,6 @@ const OPTIONS: QuickProtocolOption[] = [
   },
 ];
 
-/** Quick protocol switcher — elevated segment: secondary to Tuning, but
- *  tactile. Glass rail; active segment lifts as a light card (not a flat
- *  tint) so selection is instant even at a glance. */
 export function QuickProtocol() {
   const protocol = useConnectionStore((s) => s.profile.protocol);
   const setProtocol = useConnectionStore((s) => s.setProtocol);

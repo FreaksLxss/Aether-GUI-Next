@@ -1,22 +1,3 @@
-//! Cross-platform system proxy manager.
-//!
-//! Every OS only ever gets pointed at our loopback HTTP→SOCKS5 bridge (the
-//! same `httpproxy` module the Windows path uses), so the *shape* of the
-//! config is identical everywhere — only the mechanism for telling the OS
-//! "use 127.0.0.1:port as your proxy" differs:
-//!
-//! - Windows: writes `ProxyEnable`/`ProxyServer` in `HKCU\...\Internet
-//!   Settings` and broadcasts `WM_SETTINGCHANGE` (the WinINet/SHACLE path
-//!   legitimate apps use, which also avoids AV heuristics flagging the write).
-//! - Linux: `gsettings` on `org.gnome.system.proxy` (GNOME/GTK desktops —
-//!   what Settings, Chromium, Firefox-native and most GTK apps read).
-//! - macOS: `networksetup -setwebproxy/-setsecurewebproxy` on each network
-//!   service.
-//!
-//! Because both the main tunnel and the IP-changer share one OS-level proxy
-//! key, the module tracks an *owner* (`SOURCE_MAIN` vs `SOURCE_IP_CHANGER`)
-//! plus the upstream SOCKS port, so the two toggles can't silently clobber
-//! each other and the navbar can show *which* proxy is live.
 
 #[cfg(not(target_os = "windows"))]
 use std::process::Command;
@@ -24,14 +5,11 @@ use std::sync::atomic::{AtomicBool, AtomicU16, AtomicU8, Ordering};
 
 static PROXY_ENABLED: AtomicBool = AtomicBool::new(false);
 
-/// Who set the current system proxy.
 pub const SOURCE_NONE: u8 = 0;
 pub const SOURCE_MAIN: u8 = 1;
 pub const SOURCE_IP_CHANGER: u8 = 2;
 
 static PROXY_SOURCE: AtomicU8 = AtomicU8::new(SOURCE_NONE);
-/// SOCKS port behind the live proxy (e.g. 1819 main / 9050 Tor), used by the
-/// navbar indicator to show *which* proxy is on.
 static PROXY_SOCKS_PORT: AtomicU16 = AtomicU16::new(0);
 
 pub fn source() -> u8 {
@@ -42,13 +20,10 @@ pub fn socks_port() -> u16 {
     PROXY_SOCKS_PORT.load(Ordering::Relaxed)
 }
 
-/// Check if we currently have the system proxy set.
 pub fn is_enabled() -> bool {
     PROXY_ENABLED.load(Ordering::Relaxed)
 }
 
-/// Refuse to take over the system proxy from a *different* owner. Same-owner
-/// re-enables (e.g. the main toggle re-pointing after a profile change) pass.
 pub fn ensure_free(source: u8) -> Result<(), String> {
     if PROXY_ENABLED.load(Ordering::Relaxed) && PROXY_SOURCE.load(Ordering::Relaxed) != source {
         Err("A system proxy is already set — turn it off first before switching".to_string())
@@ -57,21 +32,13 @@ pub fn ensure_free(source: u8) -> Result<(), String> {
     }
 }
 
-/// Tear down the proxy on tunnel stop/disconnect, but only when the main
-/// tunnel *owns* it — never clobber an IP-changer's proxy while it's live.
 pub fn disable_if_main() {
     if PROXY_SOURCE.load(Ordering::Relaxed) == SOURCE_MAIN {
         let _ = disable();
     }
 }
 
-/// Enable the system proxy, pointing the OS at the loopback HTTP bridge whose
-/// upstream is Aether's SOCKS5 listener at `addr`. Works on every platform;
-/// see the module docs for how each OS applies the bridge address.
 pub fn enable(addr: &str, source: u8) -> Result<(), String> {
-    // Plain storage: if `addr` names a door the bridge itself claims (1819,
-    // 9050, …), `target_for` chases the pin at connection time so we can
-    // never chain bridge→bridge.
     crate::httpproxy::set_target(addr);
     let listen = crate::httpproxy::local_addr()
         .ok_or_else(|| "HTTP proxy bridge is not running".to_string())?;
@@ -97,7 +64,6 @@ pub fn enable(addr: &str, source: u8) -> Result<(), String> {
     Ok(())
 }
 
-/// Disable the system proxy on the current OS.
 pub fn disable() -> Result<(), String> {
     #[cfg(target_os = "windows")]
     clear_proxy_windows()?;
@@ -114,11 +80,7 @@ pub fn disable() -> Result<(), String> {
     Ok(())
 }
 
-// ─── Windows ────────────────────────────────────────────────────────────
 
-/// Notify Windows (WinINet + shell) that the proxy settings changed, the way
-/// legitimate apps do — writing the registry keys alone without this broadcast
-/// is the exact OS pattern AV heuristics flag as proxy hijacking.
 #[cfg(target_os = "windows")]
 fn notify_proxy_changed() {
     use windows_sys::Win32::Networking::WinInet::{
@@ -172,9 +134,6 @@ fn set_proxy_windows(port: u16) -> Result<(), String> {
         .set_value("ProxyEnable", &1u32)
         .map_err(|e| format!("Failed to set ProxyEnable: {e}"))?;
 
-    // Plain HTTP proxy pointing at our loopback bridge. No scheme prefix —
-    // that is what Windows Settings renders as "proxy ip address:port" and
-    // what every app (Chrome, Edge, Store, WinHTTP) honors.
     let proxy_value = format!("127.0.0.1:{port}");
     internet
         .set_value("ProxyServer", &proxy_value)
@@ -211,10 +170,7 @@ fn clear_proxy_windows() -> Result<(), String> {
     Ok(())
 }
 
-// ─── Linux ──────────────────────────────────────────────────────────────
 
-/// Run a command, returning a friendly error naming the tool if it is
-/// missing or exits non-zero.
 #[cfg(any(target_os = "linux", target_os = "macos"))]
 fn run_cmd(cmd: &str, args: &[&str]) -> Result<(), String> {
     let out = Command::new(cmd).args(args).output().map_err(|e| {
@@ -233,8 +189,6 @@ fn run_cmd(cmd: &str, args: &[&str]) -> Result<(), String> {
 
 #[cfg(target_os = "linux")]
 fn set_proxy_linux(port: u16) -> Result<(), String> {
-    // GNOME/GTK desktops read these GSettings keys, and `gsettings` is what
-    // their Settings app writes through, so apps (and `Environment`) honor it.
     let schema = "org.gnome.system.proxy";
     run_cmd("gsettings", &["set", schema, "mode", "manual"])?;
     for sub in ["http", "https"] {
@@ -258,9 +212,7 @@ fn clear_proxy_linux() -> Result<(), String> {
     )
 }
 
-// ─── macOS ──────────────────────────────────────────────────────────────
 
-/// The user-facing network services (Wi-Fi, Ethernet, …) known to the system.
 #[cfg(target_os = "macos")]
 fn network_services() -> Result<Vec<String>, String> {
     let out = Command::new("networksetup")
@@ -276,7 +228,6 @@ fn network_services() -> Result<Vec<String>, String> {
     let text = String::from_utf8_lossy(&out.stdout);
     Ok(text
         .lines()
-        // `networksetup` glibly embeds an "An asterisk (*) denotes..." line.
         .filter(|l| !l.starts_with('*') && !l.trim().is_empty())
         .map(|s| s.trim().to_string())
         .collect())

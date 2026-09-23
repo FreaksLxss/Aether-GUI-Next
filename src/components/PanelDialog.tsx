@@ -27,19 +27,18 @@ export function PanelDialog({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogPrimitive.Portal>
         <DialogOverlay />
-        {/* Full-screen content so the ScrollArea viewport covers the whole window —
-            wheel anywhere scrolls natively (no JS forwarding = no jank). */}
+        {}
         <DialogPrimitive.Content
           data-slot="dialog-content"
           aria-describedby={undefined}
           className="fixed inset-0 z-50 flex flex-col overflow-hidden border-0 bg-transparent p-0 shadow-none outline-none duration-100 data-open:animate-in data-open:fade-in-0 data-closed:animate-out data-closed:fade-out-0"
         >
-          {/* Vertical panels must shrink with the window, not Radix's intrinsic table width. */}
+          {}
           <ScrollArea
             viewportRef={viewportRef}
             className="flex min-h-0 min-w-0 max-w-full flex-1 flex-col [&_[data-slot=scroll-area-viewport]>div]:block!"
           >
-            {/* outer flex centers the column; clicking the empty gutter closes */}
+            {}
             <div
               className="flex min-h-full flex-col items-center gap-3 px-4 pt-6 pb-6"
               onClick={(e) => {

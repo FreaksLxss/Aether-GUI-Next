@@ -4,9 +4,6 @@ import { Switch } from "@/components/ui/switch";
 import { useIpChangerStore } from "@/stores/ipChangerStore";
 import { cn } from "@/lib/utils";
 
-/** Copyable SOCKS endpoint (respects `0.0.0.0` when LAN access is enabled)
- * plus the LAN-binding toggle. A LAN bind only takes effect on next start,
- * so the toggle stays live even while stopped. */
 export function ProxyEndpointSettings() {
   const running = useIpChangerStore((s) => s.status === "running");
   const socksAddr = useIpChangerStore((s) => s.socksAddr);

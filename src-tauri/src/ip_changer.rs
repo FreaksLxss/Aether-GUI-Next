@@ -1,23 +1,3 @@
-//! Tor "IP Changer" — an independent, optional Tor client that rotates the
-//! user's public egress IP on demand.
-//!
-//! This is fully separate from Aether (SOCKS 1819) and from Aether's
-//! built-in engine Tor `arti` (SOCKS 1820, `ConnectionProfile::engine_tor_*`)
-//! — three isolates sharing no binary, dir, port, or store.
-//! Tor runs as a plain bundled subprocess on its own ports (SOCKS 9050,
-//! control 9051) and is managed through:
-//!   * command-line flags (no torrc file to ship or locate),
-//!   * the control protocol over TCP (`SIGNAL NEWNYM` / `SIGNAL SHUTDOWN`)
-//!     with cookie authentication,
-//!   * `reqwest` over a `socks5h` proxy to fetch the live exit IP, reusing
-//!     `crate::net`'s endpoints and parser so it behaves like the leak-check.
-//!
-//! Process lifetime is owned by a single `TorManager` shared through
-//! `AppState`, exactly like `AetherManager`. Because polling the control port
-//! during startup can take up to a couple of minutes on a cold boot, `start`
-//! runs synchronously on Tauri's command worker thread (it never touches the
-//! UI thread) while background reader/monitor/auto-rotate threads push
-//! `ip-changer://log` and `ip-changer://status` events to the frontend.
 
 use crate::error::AetherError;
 use crate::events::{now_millis, LogEvent, TOR_LOG_EVENT, TOR_STATUS_EVENT};
@@ -32,34 +12,19 @@ use std::sync::{Arc, Mutex};
 use std::time::{Duration, Instant};
 use tauri::{AppHandle, Emitter, Manager, State};
 
-/// Tor's SOCKS5 listener (where the app's own HTTP client reaches the exit).
 pub const DEFAULT_SOCKS_PORT: u16 = 9050;
-/// Tor's control socket (used for NEWNYM / SHUTDOWN).
 pub const DEFAULT_CONTROL_PORT: u16 = 9051;
 
-/// How long we'll wait for Tor to open its control port & cookie before
-/// giving up. A cold Tor that's fetching a fresh consensus comfortably fits.
 const BOOTSTRAP_TIMEOUT: Duration = Duration::from_secs(120);
-/// Grace period after `SIGNAL SHUTDOWN` before the process is force-killed.
 const SHUTDOWN_GRACE: Duration = Duration::from_secs(10);
-/// Additional grace after the force-kill before giving up on reaping.
 const KILL_GRACE: Duration = Duration::from_secs(3);
 
-/// Auto-rotation is deliberately clamped: Hammering NEWNYM spins the Tor
-/// network's guard/exit circuit selection and burns bandwidth for everyone.
-/// 60s is an aggressive floor; anything below it is rejected.
 const MIN_AUTO_INTERVAL_SECS: u64 = 60;
-const MAX_AUTO_INTERVAL_SECS: u64 = 86_400; // 24h
+const MAX_AUTO_INTERVAL_SECS: u64 = 86_400;
 
 const IP_REQUEST_TIMEOUT: Duration = Duration::from_secs(8);
 const IP_USER_AGENT: &str = concat!("aether-gui/", env!("CARGO_PKG_VERSION"), " ip-changer");
 
-/// Tagged over-the-wire status; mirrored in `src/types/ipChanger.ts`.
-///
-/// `Stopping` exists so the UI can show a disabled in-flight state while the
-/// (possibly slow, control-port-driven) shutdown is happening — the frontend
-/// only entered the section after a explicit user action, so a transient
-/// state here is visible.
 #[derive(Serialize, Clone, Debug, PartialEq, Eq)]
 #[serde(tag = "state")]
 pub enum TorStatus {
@@ -76,51 +41,28 @@ impl TorStatus {
     }
 }
 
-/// Mirror of the tunable knobs held in `TorManager::auto`.
 #[derive(Serialize, Clone, Debug)]
 pub struct AutoRotateConfig {
     pub enabled: bool,
-    /// Interval in seconds between automatic NEWNYM rotations.
     pub interval_secs: u64,
 }
 
-/// Everything the app knows about its Tor child + control session.
-///
-/// The whole struct lives behind `Arc<Mutex<...>>` in `AppState`. Locks are
-/// held only for short, non-blocking spans (a control exchange also holds it
-/// briefly — localhost TCP, a few ms) so commands and background threads
-/// never stall on each other for long.
 pub struct TorManager {
     child: Option<Child>,
     status: TorStatus,
-    /// Runtime data directory (holds `control_auth_cookie` + Tor's cached
-    /// consensus). Re-created under the app data dir so it's always writable.
     data_dir: Option<PathBuf>,
-    /// Cookie bytes read from `<data_dir>/control_auth_cookie` after a
-    /// successful handshake; used for every later control command.
     cookie: Option<Vec<u8>>,
-    /// True while a `stop` is in flight so the watchdog thread doesn't turn
-    /// the expected exit into an "unexpected" `Error`.
     user_stop: bool,
     socks_port: u16,
     control_port: u16,
-    /// Bind the SOCKS listener to `0.0.0.0` so other machines on the LAN can
-    /// use it; loopback only otherwise. Also persists the choice.
     lan_bind: bool,
-    /// Launch the OS-installed `tor` package (found on PATH / the usual Linux
-    /// dirs) instead of the app's bundled Tor. A Linux-oriented escape hatch
-    /// for when the bundled binary can't execute (e.g. AppImage mounts that
-    /// drop the exec bit). Only consulted at start time.
     use_system_tor: bool,
     auto_enabled: bool,
     auto_interval_secs: u64,
-    /// ms since epoch of the last NEWIP, so the auto-rotate loop can pace
-    /// itself without keeping a timer thread (it polls every second).
     auto_last_ms: u64,
 }
 
 impl TorManager {
-    /// The SOCKS port the Tor listener is (or will be) bound to.
     pub fn socks_port(&self) -> u16 {
         self.socks_port
     }
@@ -150,8 +92,6 @@ impl Default for TorManager {
 }
 
 impl TorManager {
-    /// `try_wait` on the live child (none → not started). `std` wraps the
-    /// status in an `io::Result` we have no use for, so this flattens it.
     fn child_exited(&mut self) -> Option<std::process::ExitStatus> {
         self.child
             .as_mut()
@@ -160,14 +100,7 @@ impl TorManager {
     }
 }
 
-// ---------------------------------------------------------------------------
-// Bundled-binary resolution
-// ---------------------------------------------------------------------------
 
-/// Where inside `binaries/` the current platform's Tor lives. Windows ships a
-/// single `windows/x86_64` dir holding the i686 (32-bit) build of the expert
-/// bundle, which is what we're stuck with from the pre-downloaded sets and is
-/// fully supported on 64-bit Windows via WOW64.
 fn bundled_rel_dir() -> Result<&'static str, AetherError> {
     match (std::env::consts::OS, std::env::consts::ARCH) {
         ("windows", "x86" | "x86_64") => Ok("windows/x86_64"),
@@ -190,9 +123,6 @@ fn fix_exec_bit(path: &Path) {
 #[cfg(not(unix))]
 fn fix_exec_bit(_path: &Path) {}
 
-/// Returns the full path to the bundled, executable for the current platform,
-/// honoring the same trio Aether's resolver checks (resource dir → app data
-/// dir → the crate's own `binaries/` for dev runs / unit tests).
 pub fn tor_binary_path(app: &AppHandle) -> Result<PathBuf, AetherError> {
     let dir = bundled_rel_dir()?;
     let name = if cfg!(windows) { "tor.exe" } else { "tor" };
@@ -230,10 +160,6 @@ pub fn tor_binary_path(app: &AppHandle) -> Result<PathBuf, AetherError> {
     )))
 }
 
-/// Locates the OS-installed `tor`, i.e. the distro/package-provided binary
-/// (e.g. `/usr/bin/tor` on Linux). Used when the user opts out of the app's
-/// bundled Tor — a robust escape hatch when the bundled copy can't execute,
-/// most notably inside AppImage mounts that strip the exec bit.
 pub fn system_tor_binary() -> Option<PathBuf> {
     let name = if cfg!(windows) { "tor.exe" } else { "tor" };
 
@@ -245,10 +171,6 @@ pub fn system_tor_binary() -> Option<PathBuf> {
             }
         }
     }
-    // Desktop-launch environments often start the app with a minimal PATH
-    // that omits the standard distro bin dirs where Tor is installed. The
-    // Debian/Ubuntu `tor` package lands in /usr/bin regardless, so fall
-    // through to the well-known locations on Linux.
     if cfg!(target_os = "linux") {
         for dir in ["/usr/bin", "/usr/local/bin", "/bin"] {
             let cand = PathBuf::from(dir).join(name);
@@ -260,24 +182,13 @@ pub fn system_tor_binary() -> Option<PathBuf> {
     None
 }
 
-/// Which Tor engine the IP-changer will run next `start`: the app-bundled
-/// binary or the OS-installed package.
 #[derive(PartialEq, Clone, Copy, Debug)]
 enum TorEngine {
     Bundled,
     System,
 }
 
-// ---------------------------------------------------------------------------
-// Control-port protocol (cookie auth) — no external dependency needed.
-// ---------------------------------------------------------------------------
 
-/// Opens a fresh control connection, authenticates with the cookie bytes, and
-/// sends `command`. Returns the reply (asserted to start with `250`).
-///
-/// A new connection is created per call rather than reused because control
-/// sessions are cheap on loopback and this keeps every caller independent of
-/// long-lived socket ownership.
 fn control_exchange(port: u16, cookie: &[u8], command: &str) -> Result<(), AetherError> {
     let addr = SocketAddr::from(([127, 0, 0, 1], port));
     let mut stream = TcpStream::connect_timeout(&addr, Duration::from_secs(3))
@@ -297,9 +208,6 @@ fn control_exchange(port: u16, cookie: &[u8], command: &str) -> Result<(), Aethe
     Ok(())
 }
 
-/// Reads one control reply line and validates it. `250` starts both the
-/// single-line `250 OK` replies we expect and the `250-` continuation lines
-/// (`GETINFO version`), so a prefix check is sufficient.
 fn read_reply(stream: &mut TcpStream) -> Result<(), AetherError> {
     let mut reader = BufReader::new(stream);
     let mut line = String::new();
@@ -318,9 +226,6 @@ fn hex(bytes: &[u8]) -> String {
     bytes.iter().map(|b| format!("{b:02x}")).collect::<String>()
 }
 
-// ---------------------------------------------------------------------------
-// Process scaffolding
-// ---------------------------------------------------------------------------
 
 fn set_status(app: &AppHandle, manager: &Arc<Mutex<TorManager>>, status: TorStatus) {
     manager.lock().unwrap().status = status.clone();
@@ -344,8 +249,6 @@ fn app_tor_run_dir(app: &AppHandle) -> PathBuf {
         .join("tor-run")
 }
 
-/// Reads a line-delimited pipe and forwards every non-empty line to the log
-/// event. One thread per stream (stdout + stderr).
 fn spawn_log_reader(app: AppHandle, reader: impl Read + Send + 'static) {
     std::thread::spawn(move || {
         let mut reader = BufReader::new(reader);
@@ -366,9 +269,6 @@ fn spawn_log_reader(app: AppHandle, reader: impl Read + Send + 'static) {
     });
 }
 
-/// Watches the child from birth to death. The whole state machine hinging on
-/// "the process is gone" lives here: an unexpected exit becomes an Error; a
-/// user-requested stop already set `user_stop`, so this just reflects Stopped.
 fn spawn_monitor(app: AppHandle, manager: Arc<Mutex<TorManager>>) {
     std::thread::spawn(move || loop {
         std::thread::sleep(Duration::from_millis(500));
@@ -405,9 +305,6 @@ fn spawn_monitor(app: AppHandle, manager: Arc<Mutex<TorManager>>) {
     });
 }
 
-// ---------------------------------------------------------------------------
-// Public management operations (called from the Tauri commands)
-// ---------------------------------------------------------------------------
 
 pub fn start(app: &AppHandle, manager: &Arc<Mutex<TorManager>>) -> Result<(), AetherError> {
     {
@@ -427,10 +324,6 @@ pub fn start(app: &AppHandle, manager: &Arc<Mutex<TorManager>>) -> Result<(), Ae
     match do_start(app, manager) {
         Ok(()) => Ok(()),
         Err(e) => {
-            // Nothing may dangle behind the state machine: an Error status
-            // implies "no process". Only a child that never passed the
-            // control-port handshake can still be here (the wait loop reaps
-            // its own failures), so a background kill is sufficient.
             {
                 let mut m = manager.lock().unwrap();
                 if let Some(mut child) = m.child.take() {
@@ -476,9 +369,6 @@ fn do_start(app: &AppHandle, manager: &Arc<Mutex<TorManager>>) -> Result<(), Aet
         },
     );
 
-    // Pre-flight: refuse to clobber an unrelated process already bound to
-    // either of our ports. Without this Tor would just silently pick a
-    // different control cookie/behave unpredictably and the user gets zilch.
     {
         let (socks, control) = {
             let m = manager.lock().unwrap();
@@ -486,7 +376,6 @@ fn do_start(app: &AppHandle, manager: &Arc<Mutex<TorManager>>) -> Result<(), Aet
         };
         for port in [socks, control] {
             let addr = SocketAddr::from(([127, 0, 0, 1], port));
-            // Our own claimed bridge door is not a conflict — it's ours to keep.
             if crate::aether::status::port_is_live(&addr) && !crate::httpproxy::is_claimed(&addr) {
                 return Err(AetherError::PortInUse(port));
             }
@@ -499,8 +388,6 @@ fn do_start(app: &AppHandle, manager: &Arc<Mutex<TorManager>>) -> Result<(), Aet
             "failed to create Tor data dir: {e}"
         )));
     }
-    // The cookie rotates every start; a stale one from a prior run that we
-    // can't authenticate against would make the startup probe spin forever.
     let cookie_path = run_dir.join("control_auth_cookie");
     let _ = std::fs::remove_file(&cookie_path);
 
@@ -508,12 +395,8 @@ fn do_start(app: &AppHandle, manager: &Arc<Mutex<TorManager>>) -> Result<(), Aet
         let m = manager.lock().unwrap();
         (m.socks_port, m.control_port, m.lan_bind)
     };
-    // Loopback keeps the proxy private to this machine; LAN opens it to the
-    // network (useful for routing other devices through this exit).
     let socks_host = if lan_bind { "0.0.0.0" } else { "127.0.0.1" };
 
-    // Steal the advertised SOCKS door for the counting bridge; Tor binds a
-    // private loopback port behind it — same arrangement as the main engine.
     let tor_upstream = crate::httpproxy::free_loopback_ports(1)
         .map_err(AetherError::Internal)?
         .into_iter()
@@ -523,7 +406,7 @@ fn do_start(app: &AppHandle, manager: &Arc<Mutex<TorManager>>) -> Result<(), Aet
         .map_err(|e| AetherError::Internal(format!("claim {socks_host}:{socks_port}: {e}")))?;
 
     let mut cmd = Command::new(&binary);
-    crate::childproc::hidden(&mut cmd); // no console flash on Windows
+    crate::childproc::hidden(&mut cmd);
     cmd.arg("--SocksPort")
         .arg(tor_upstream.to_string())
         .arg("--ControlPort")
@@ -536,8 +419,6 @@ fn do_start(app: &AppHandle, manager: &Arc<Mutex<TorManager>>) -> Result<(), Aet
         .arg("1")
         .arg("--Log")
         .arg("notice stdout");
-    // Best-effort geoip so node-selection logs carry country names; absent
-    // files (unusual for a proper bundle) must not prevent Tor from starting.
     if let Some(parent) = binary.parent() {
         let geoip = parent.join("data").join("geoip");
         let geoip6 = parent.join("data").join("geoip6");
@@ -577,10 +458,6 @@ fn do_start(app: &AppHandle, manager: &Arc<Mutex<TorManager>>) -> Result<(), Aet
         format!("[tor] waiting for control port {control_port} (cookie auth)…"),
     );
 
-    // Wait (blocking on this command thread) for the control port to come up
-    // and the freshly-written cookie to authenticate. Tor's own boot process —
-    // load geoip, open ports, start bootstrapping — is fast; the boundary is
-    // cold network bootstrap which shouldn't gate a *control* connection.
     let deadline = Instant::now() + BOOTSTRAP_TIMEOUT;
     loop {
         {
@@ -597,8 +474,6 @@ fn do_start(app: &AppHandle, manager: &Arc<Mutex<TorManager>>) -> Result<(), Aet
             && cookie_path.exists()
         {
             if let Ok(cookie) = std::fs::read(&cookie_path) {
-                // A `GETINFO version` is the idempotent auth probe; a wrong
-                // cookie would get a `515` and we keep waiting for a fresh one.
                 if control_exchange(control_port, &cookie, "GETINFO version").is_ok() {
                     let mut m = manager.lock().unwrap();
                     m.cookie = Some(cookie);
@@ -642,9 +517,6 @@ pub fn stop(app: &AppHandle, manager: &Arc<Mutex<TorManager>>) -> Result<(), Aet
     set_status(app, manager, TorStatus::Stopping);
     logline(app, "[tor] stopping Tor…");
 
-    // Graceful shutdown, then hard kill after SHUTDOWN_GRACE. Tor saves its
-    // state on a clean SHUTDOWN; the fallback kill is what the aether flow
-    // does too.
     let (control_port, cookie) = {
         let m = manager.lock().unwrap();
         (m.control_port, m.cookie.clone())
@@ -692,8 +564,6 @@ pub fn stop(app: &AppHandle, manager: &Arc<Mutex<TorManager>>) -> Result<(), Aet
         m.cookie = None;
         m.user_stop = false;
     }
-    // Tor's SOCKS is gone — if the IP-changer's system proxy was on, drop it
-    // rather than leave every browser pointing at a dead 127.0.0.1:9050.
     if crate::sysproxy::source() == crate::sysproxy::SOURCE_IP_CHANGER {
         let _ = crate::sysproxy::disable();
     }
@@ -721,9 +591,6 @@ pub fn rotate(app: &AppHandle, manager: &Arc<Mutex<TorManager>>) -> Result<(), A
     Ok(())
 }
 
-/// Live exit IP through Tor's SOCKS5 port. `None` → not running (or the probe
-/// is mid-bootstrap); the frontend renders dashes while that's the case and
-/// keeps polling at a slow interval. No message spam for transient failures.
 pub async fn current_ip(manager: &Arc<Mutex<TorManager>>) -> Option<PublicInfo> {
     let (running, socks_port) = {
         let m = manager.lock().unwrap();
@@ -778,7 +645,6 @@ pub fn apply_auto_rotate(
     m.auto_enabled = enabled;
     m.auto_interval_secs = interval_secs;
     if enabled {
-        // Start the countdown from now so enabling doesn't rotate instantly.
         m.auto_last_ms = now_millis();
     }
     Ok(())
@@ -792,9 +658,6 @@ pub fn auto_rotate_config(manager: &Arc<Mutex<TorManager>>) -> AutoRotateConfig 
     }
 }
 
-/// One-shot background loop (spawned once from `setup`): every second, if
-/// auto-rotation is enabled and the per-interval window has elapsed since the
-/// last NEWNYM, rotate again. Keeps working even while the panel is closed.
 pub fn spawn_auto_rotate(app: AppHandle, manager: Arc<Mutex<TorManager>>) {
     std::thread::spawn(move || loop {
         std::thread::sleep(Duration::from_secs(1));
@@ -828,11 +691,9 @@ pub fn spawn_auto_rotate(app: AppHandle, manager: Arc<Mutex<TorManager>>) {
     });
 }
 
-/// Called from `RunEvent::Exit` — no events, just make sure nothing survives.
 pub fn shutdown_blocking(manager: &Mutex<TorManager>) {
     let mut m = manager.lock().unwrap();
     if let Some(child) = m.child.as_mut() {
-        // Hard exit — no time for a graceful control-port SHUTDOWN.
         let _ = child.kill();
         let deadline = Instant::now() + KILL_GRACE;
         while m.child_exited().is_none() && Instant::now() < deadline {
@@ -842,9 +703,6 @@ pub fn shutdown_blocking(manager: &Mutex<TorManager>) {
     m.child = None;
 }
 
-// ---------------------------------------------------------------------------
-// Tauri commands
-// ---------------------------------------------------------------------------
 
 #[tauri::command]
 pub fn start_tor(app: AppHandle, state: State<'_, AppState>) -> Result<(), AetherError> {
@@ -890,15 +748,11 @@ pub fn tor_binary_exists(app: AppHandle) -> bool {
     tor_binary_path(&app).is_ok()
 }
 
-/// Whether we currently run the OS-installed `tor` instead of the app's
-/// bundled one, plus which copies are available — so the frontend can offer
-/// the engine switch on Linux without guessing.
 #[derive(Serialize, Clone, Debug)]
 pub struct TorSourceInfo {
     pub using_system: bool,
     pub bundled_available: bool,
     pub system_available: bool,
-    /// Path of the detected system Tor (for display in the UI), if any.
     pub system_path: Option<String>,
 }
 
@@ -935,8 +789,6 @@ pub fn set_use_system_tor(
     Ok(())
 }
 
-/// Effective SOCKS host the proxy is (or will be) bound to, plus its port —
-/// lets the frontend render a copyable `127.0.0.1:9050` / `0.0.0.0:9050` chip.
 #[derive(Serialize, Clone, Debug)]
 pub struct TorSocksAddr {
     pub host: String,

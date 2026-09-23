@@ -16,9 +16,6 @@ const DESCRIPTIONS: Record<Transport, string> = {
     "TCP — looks like ordinary HTTPS. Use when UDP/QUIC is blocked or throttled by the network.",
 };
 
-/** Aether ≥1.2.0's MASQUE-only transport choice. Locked outside Idle/Error
- * like every other profile control, and additionally disabled when the
- * selected protocol can't use it (WireGuard / gool). */
 export function MasqueTransportToggle() {
   const status = useConnectionStore((s) => s.status);
   const protocol = useConnectionStore((s) => s.profile.protocol);

@@ -3,9 +3,6 @@ import { Input } from "@/components/ui/input";
 import { useConnectionStore } from "@/state/connectionStore";
 import { validateRouteRules } from "@/lib/validators";
 
-/** Aether ≥1.5.0: one of the routing-rule lists (block/direct) as a
- * comma-or-newline separated field. Entries are stored as an array and joined
- * back into a single string for editing; an empty string clears the list. */
 export function RouteRulesField({ id, kind }: { id?: string; kind: "block" | "direct" }) {
   const block = useConnectionStore((s) => s.profile.route_block);
   const direct = useConnectionStore((s) => s.profile.route_direct);

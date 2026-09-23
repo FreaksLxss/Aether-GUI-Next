@@ -28,7 +28,6 @@ function phaseOf(status: ConnectionStatus): Phase {
   }
 }
 
-/** Read the current accent color from CSS variables. */
 function getAccentColor(): string {
   const raw = getComputedStyle(document.documentElement)
     .getPropertyValue("--primary")
@@ -36,7 +35,6 @@ function getAccentColor(): string {
   return raw || "#f2711c";
 }
 
-/** Lighten a hex color by mixing it toward white. */
 function lightenHex(hex: string, amount: number): string {
   const h = hex.replace("#", "");
   const r = parseInt(h.slice(0, 2), 16);
@@ -48,7 +46,6 @@ function lightenHex(hex: string, amount: number): string {
   return `#${lr.toString(16).padStart(2, "0")}${lg.toString(16).padStart(2, "0")}${lb.toString(16).padStart(2, "0")}`;
 }
 
-/** Motion handles ONLY one-shots here (error shake, tap). */
 const SHAKE_VARIANTS: Variants = {
   rest: { x: 0 },
   error: { x: [0, -6, 6, -4, 4, 0], transition: { x: { duration: 0.4, ease: "easeInOut" } } },
@@ -82,8 +79,6 @@ export function ConnectButton() {
   const [winSize, setWinSize] = useState({ w: window.innerWidth, h: window.innerHeight });
   const [accent, setAccent] = useState({ primary: "#f2711c", secondary: "#fbbf24" });
 
-  // Center is state but updated only on mount, resize/orientation (rAF-throttled),
-  // and once when phase enters "connecting" — no per-frame rAF loop.
   useEffect(() => {
     const el = wrapRef.current;
     if (!el) return;
@@ -112,7 +107,6 @@ export function ConnectButton() {
     };
   }, []);
 
-  // Accent + center snapshot once when entering connecting (not each frame).
   useEffect(() => {
     if (phase !== "connecting") return;
     const el = wrapRef.current;
@@ -188,7 +182,7 @@ export function ConnectButton() {
           variants={SHAKE_VARIANTS}
           className="corner-round group relative z-10 flex size-40 cursor-pointer items-center justify-center rounded-full outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background motion-reduce:transition-none"
         >
-          {/* Disc material — opaque tonal surface, hairline ring; glass only via subtle inner highlight */}
+          {}
           <span
             aria-hidden
             className="corner-round absolute inset-0 rounded-full bg-surface-2 ring-1 ring-border"
@@ -197,7 +191,7 @@ export function ConnectButton() {
             aria-hidden
             className="corner-round absolute inset-0 rounded-full bg-gradient-to-b from-white/[0.04] to-transparent pointer-events-none"
           />
-          {/* Inner status tint — restrained, never full glow at idle */}
+          {}
           <span
             aria-hidden
             className={cn(
@@ -211,7 +205,7 @@ export function ConnectButton() {
                     : "bg-transparent",
             )}
           />
-          {/* Status ring — hairline, not halo */}
+          {}
           <span
             aria-hidden
             className={cn(

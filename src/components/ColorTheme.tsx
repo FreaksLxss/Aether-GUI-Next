@@ -18,8 +18,6 @@ import {
   initThemeColors,
 } from "@/lib/theme";
 
-/** Presets for the secondary (surface) accent — neutral-to-tinted dark tones
- *  that complement whatever primary hue is chosen. */
 const SECONDARY_COLORS: [string, string][] = [
   ["#242424", "Graphite"],
   ["#1c1c1c", "Charcoal"],
@@ -95,8 +93,6 @@ export function ColorTheme() {
   const pickPrimary = (hex: string) => {
     setPrimary(hex);
     localStorage.setItem(PRIMARY_KEY, hex);
-    // read the other accent directly from storage/state snapshot to avoid
-    // stale closure when both pickers are used in the same tick
     const other = localStorage.getItem(SECONDARY_KEY) ?? secondary ?? SECONDARY_DEFAULT;
     applyColors(hex, other);
   };

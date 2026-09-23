@@ -18,9 +18,6 @@ pub enum AetherError {
     Internal(String),
 }
 
-// Tauri v2 command errors must be Serialize; Aether-GUI has no need to
-// distinguish error variants on the frontend beyond the message text, so
-// this serializes to a plain string rather than a tagged enum.
 impl serde::Serialize for AetherError {
     fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
     where

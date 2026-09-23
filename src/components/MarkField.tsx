@@ -9,7 +9,6 @@ export function MarkField({ id }: { id?: string }) {
   const setFwMark = useConnectionStore((s) => s.setFwMark);
   const status = useConnectionStore((s) => s.status);
   const locked = status.state !== "Idle" && status.state !== "Error";
-  // SO_MARK exists on Linux/Android only; unknown platforms fail closed.
   const markSupported = supportsFirewallMark();
   const disabled = locked || !markSupported;
   const [err, setErr] = useState<string | null>(null);

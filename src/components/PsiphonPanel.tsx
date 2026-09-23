@@ -31,7 +31,6 @@ export function PsiphonPanel() {
   const enginePsiphonStatus = useConnectionStore((s) => s.enginePsiphonStatus);
 
   const enabled = profile.engine_psiphon_mode !== "disabled";
-  // Psiphon-only uses the primary bind (1819) and never has a second listener.
   const showBind = enabled && profile.engine_psiphon_mode !== "psiphon-only";
   const reverseConflict = profile.engine_psiphon_mode === "psiphon-reverse"
     && (profile.protocol === "wireguard" || profile.protocol === "gool");
@@ -70,10 +69,7 @@ export function PsiphonPanel() {
         </Select>
       </FieldRow>
 
-      {/* Gate on mode + non-idle state, not the event's `enabled` flag: a
-          VPN-induced retry resets status to default and used to unmount this
-          line mid-session (the blink). Address falls back to the bind so a
-          reset status doesn't drop the host:port either. */}
+      {}
       {profile.engine_psiphon_mode === "psiphon"
         && status.state !== "Idle" && status.state !== "Error" && (
         <p role="status" className="text-[11px] text-muted-foreground">

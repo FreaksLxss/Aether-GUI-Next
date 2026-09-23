@@ -20,7 +20,6 @@ const IP_LABELS: Record<IpVersion, string> = {
   both: "IPv4+6",
 };
 
-/** Premium single card merging traffic stats + connection info. */
 export function TrafficStats({ onOpenActive }: { onOpenActive?: () => void }) {
   const traffic = useConnectionStore((s) => s.traffic);
   const status = useConnectionStore((s) => s.status);
@@ -57,7 +56,7 @@ export function TrafficStats({ onOpenActive }: { onOpenActive?: () => void }) {
           : "Network statistics — not connected"
       }
     >
-      {/* ── Stats row ── */}
+      {}
       <div className="flex items-center gap-4 font-mono text-[11px] tabular-nums">
         <span className="inline-flex items-center gap-1.5 text-muted-foreground">
           <ArrowUp size={10} className="shrink-0" aria-hidden />
@@ -75,7 +74,7 @@ export function TrafficStats({ onOpenActive }: { onOpenActive?: () => void }) {
 
       {isConnected ? (
         <>
-          {/* ── Connection row ── */}
+          {}
           <div className="flex flex-wrap items-center gap-2.5 font-mono text-[11px]">
             <span className="flex shrink-0 items-center gap-1.5 text-primary">
               <Activity size={9} className="shrink-0" aria-hidden />
@@ -96,7 +95,7 @@ export function TrafficStats({ onOpenActive }: { onOpenActive?: () => void }) {
             )}
           </div>
 
-          {/* ── Metadata + action row ── */}
+          {}
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2 font-mono text-[11px] text-muted-foreground/50">
               <span>{firewallLabel}</span>

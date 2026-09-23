@@ -27,7 +27,6 @@ export function UpdateChecker() {
         if (info.available) setUpdate(info);
       })
       .catch(() => {
-        // Silent — network might be down
       });
   }, []);
 
@@ -37,7 +36,6 @@ export function UpdateChecker() {
       const info = await invoke<UpdateInfo>("check_update");
       if (info.available) setUpdate(info);
     } catch {
-      // Silent — network might be down
     }
     setChecking(false);
   };

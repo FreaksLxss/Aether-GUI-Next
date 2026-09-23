@@ -6,8 +6,6 @@ import { cn } from "@/lib/utils";
 
 const MINUTE_OPTIONS = [1, 2, 5, 10, 15, 30, 60];
 
-/** Auto-rotation toggle + interval picker. Interval lives server-side in
- * seconds (min 60); the UI edits it in minutes and converts on the way. */
 export function AutoRotateSettings() {
   const status = useIpChangerStore((s) => s.status);
   const enabled = useIpChangerStore((s) => s.autoRotateEnabled);

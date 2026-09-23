@@ -33,8 +33,6 @@ pub fn disconnect(app: AppHandle, state: State<AppState>) -> Result<(), AetherEr
     aether::request_disconnect(&app, &state.manager)
 }
 
-/// Forwards a user-typed line to the live Aether PTY — used for the Zero
-/// Trust one-time-code prompt (Aether ≥1.6.0 answers it on stdin).
 #[tauri::command]
 pub fn send_input(app: AppHandle, state: State<AppState>, line: String) -> Result<(), AetherError> {
     aether::send_input(&app, &state.manager, line)
@@ -87,7 +85,6 @@ pub fn set_always_on_top(app: AppHandle, enabled: bool) -> Result<(), AetherErro
     Ok(())
 }
 
-/// Android windows are always full-screen — nothing to pin on top of.
 #[cfg(target_os = "android")]
 #[tauri::command]
 pub fn set_always_on_top(_app: AppHandle, _enabled: bool) -> Result<(), AetherError> {
@@ -107,14 +104,12 @@ pub fn get_always_on_top(app: AppHandle) -> bool {
         .and_then(|v| v.as_bool())
         .unwrap_or(false);
     ALWAYS_ON_TOP.store(enabled, Ordering::Relaxed);
-    // Apply to window on load
     if let Some(window) = app.get_webview_window("main") {
         let _ = window.set_always_on_top(enabled);
     }
     enabled
 }
 
-/// Android windows are always full-screen — nothing to pin on top of.
 #[cfg(target_os = "android")]
 #[tauri::command]
 pub fn get_always_on_top(_app: AppHandle) -> bool {
@@ -156,8 +151,6 @@ pub fn set_system_proxy(enable: bool) -> Result<(), AetherError> {
         if sysproxy::is_enabled() && sysproxy::source() != sysproxy::SOURCE_MAIN {
             return Err(AetherError::ProxyConflict);
         }
-        // Use default SOCKS5 address — the profile's bind_address may not be
-        // connected yet, so we read from the last-known profile.
         sysproxy::enable("127.0.0.1:1819", sysproxy::SOURCE_MAIN).map_err(AetherError::Internal)
     } else {
         sysproxy::disable().map_err(AetherError::Internal)
@@ -181,8 +174,6 @@ pub fn get_system_proxy() -> bool {
     sysproxy::is_enabled()
 }
 
-/// Who currently owns the system proxy and the SOCKS port behind it, so the
-/// navbar can show *which* proxy is on. `owner` is "none" | "main" | "ip_changer".
 #[derive(Serialize, Clone, Debug)]
 pub struct SystemProxyState {
     pub enabled: bool,
@@ -203,9 +194,6 @@ pub fn get_system_proxy_state() -> SystemProxyState {
     }
 }
 
-/// Enable the system proxy for the IP-changer's Tor SOCKS listener. Refuses if
-/// any other proxy (main tunnel included) is already set, so the two toggles
-/// never silently clobber each other.
 #[tauri::command]
 pub fn set_ip_proxy(state: State<AppState>, enabled: bool) -> Result<(), AetherError> {
     if enabled {
@@ -281,7 +269,7 @@ pub fn save_preset(
     if let Err(msg) = aether::profiles::validate(&profile) {
         return Err(AetherError::Internal(msg));
     }
-    presets::save_preset(&app, &name, &profile).map_err(AetherError::Internal) // preset
+    presets::save_preset(&app, &name, &profile).map_err(AetherError::Internal)
 }
 
 #[tauri::command]
@@ -333,7 +321,6 @@ pub async fn download_aether(app: AppHandle) -> Result<String, AetherError> {
         }
         *installing = true;
     }
-    // Drop also clears the flag if this async operation is cancelled.
     struct InstallationGuard;
     impl Drop for InstallationGuard {
         fn drop(&mut self) {
@@ -430,9 +417,6 @@ pub fn get_tun_active(state: State<AppState>) -> bool {
     state.tun_manager.lock().unwrap().is_active()
 }
 
-/// Fetches the public egress IP — through the tunnel (via its SOCKS5 proxy)
-/// when `through_tunnel` is true, otherwise straight from the machine.
-/// Returns `None` on any failure so the frontend can degrade gracefully.
 #[tauri::command]
 pub async fn get_public_ip(app: AppHandle, through_tunnel: bool) -> Option<crate::net::PublicInfo> {
     let profile = aether::profiles::load(&app);

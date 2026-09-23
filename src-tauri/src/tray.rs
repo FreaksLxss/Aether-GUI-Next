@@ -8,10 +8,6 @@ use tauri::{
     Manager,
 };
 
-/// Global flag — toggled from the frontend via the `set_close_to_tray` command
-/// and persisted to disk via `tauri-plugin-store`. Using an atomic here instead
-/// of the store directly because the `on_window_event` callback fires on every
-/// close and reading the store there would be wasteful.
 static CLOSE_TO_TRAY: AtomicBool = AtomicBool::new(false);
 
 const STORE_FILE: &str = "settings.json";
@@ -23,7 +19,6 @@ pub fn get_close_to_tray() -> bool {
 
 pub fn set_close_to_tray(app: &AppHandle, enabled: bool) {
     CLOSE_TO_TRAY.store(enabled, Ordering::Relaxed);
-    // Persist so it survives restarts.
     use tauri_plugin_store::StoreExt;
     if let Ok(store) = app.store(STORE_FILE) {
         store.set(STORE_KEY, serde_json::Value::Bool(enabled));
@@ -31,7 +26,6 @@ pub fn set_close_to_tray(app: &AppHandle, enabled: bool) {
     }
 }
 
-/// Load persisted preference and sync the atomic.
 fn load_preference(app: &AppHandle) {
     use tauri_plugin_store::StoreExt;
     let enabled = app
@@ -43,9 +37,6 @@ fn load_preference(app: &AppHandle) {
     CLOSE_TO_TRAY.store(enabled, Ordering::Relaxed);
 }
 
-/// Create the system-tray icon, menu, and event handlers. Call from `setup`.
-/// No tray exists on Android — the preference is still loaded/persisted so
-/// the rest of the app behaves the same.
 #[cfg(not(target_os = "android"))]
 pub fn init(app: &mut tauri::App) -> Result<(), Box<dyn std::error::Error>> {
     load_preference(app.handle());

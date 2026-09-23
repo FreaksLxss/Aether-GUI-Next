@@ -8,9 +8,6 @@ interface Props {
   onRetry: () => void;
 }
 
-/** Full-screen fallback shown when the bundled Aether binary itself can't
- * run — structurally different from a normal connection error, since the
- * connect button would be meaningless to show at all in this state. */
 export function SidecarErrorScreen({ message, onRetry }: Props) {
   const repairable = /binary not found|engine incompatible/i.test(message);
   const [downloading, setDownloading] = useState(false);

@@ -3,9 +3,6 @@ import { Input } from "@/components/ui/input";
 import { useConnectionStore } from "@/state/connectionStore";
 import { validateRouteSniffMs } from "@/lib/validators";
 
-/** Aether ≥1.7.0: how long the core waits to sniff a flow's domain name
- * (TLS SNI / HTTP Host) before applying route rules (AETHER_ROUTE_SNIFF_MS).
- * Empty input stores null so the env var is omitted (Aether's default). */
 export function RouteSniffMsField({ id }: { id?: string }) {
   const ms = useConnectionStore((s) => s.profile.route_sniff_ms);
   const setMs = useConnectionStore((s) => s.setRouteSniffMs);

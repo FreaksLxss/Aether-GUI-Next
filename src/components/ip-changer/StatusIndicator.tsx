@@ -9,8 +9,6 @@ const DOT: Record<string, { label: string; cls: string; pulse?: boolean }> = {
   error: { label: "Error", cls: "bg-status-error" },
 };
 
-/** Small status dot + label for the Tor subprocess, with a soft pulse while
- * a lifecycle transition is in flight. */
 export function StatusIndicator() {
   const status = useIpChangerStore((s) => s.status);
   const meta = DOT[status] ?? DOT.stopped;

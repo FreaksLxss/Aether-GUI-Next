@@ -56,7 +56,6 @@ export function IpChangerContent() {
   );
 }
 
-// Back-compat shim
 export function IpChangerPanel(props: { open: boolean; onToggle: () => void }) {
   void props;
   return <IpChangerContent />;

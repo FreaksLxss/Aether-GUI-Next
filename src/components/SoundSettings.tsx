@@ -2,10 +2,6 @@ import { SwitchRow } from "@/components/ui/panel-section";
 import { Slider } from "@/components/ui/slider";
 import { cue, setSoundEnabled, setSoundVolume, useSoundPrefs } from "@/lib/sound";
 
-/**
- * Mute + volume for cuelume playback. Prefs live in localStorage (see
- * `src/lib/sound.ts`) and apply before the first user gesture.
- */
 export function SoundSettings() {
   const { enabled, volume } = useSoundPrefs();
 
@@ -33,7 +29,6 @@ export function SoundSettings() {
           disabled={!enabled}
           aria-label="Sound volume"
           onValueChange={([v]) => setSoundVolume(v)}
-          // Commit, not change: auditioning on every drag frame would machine-gun.
           onValueCommit={() => cue("release")}
         />
       </div>

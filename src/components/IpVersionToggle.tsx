@@ -9,7 +9,6 @@ const LABELS: Record<IpVersion, string> = {
   both: "Both",
 };
 
-/** Locked outside Idle/Error, mirroring ProtocolSelect. */
 export function IpVersionToggle() {
   const status = useConnectionStore((s) => s.status);
   const ipVersion = useConnectionStore((s) => s.profile.ip_version);

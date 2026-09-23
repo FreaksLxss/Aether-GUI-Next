@@ -1,9 +1,5 @@
 use serde::{Deserialize, Serialize};
 
-/// Parent (VPN/system) proxy vars that must never reach the engine: reverse
-/// and psiphon-only bootstrap dial direct, and HTTP_PROXY pointing at the OS
-/// proxy (or our not-yet-ready bridge) deadlocks psiphon-tunnel-core.
-/// Stripped in both pty.rs and pty_android.rs after `environment()`.
 pub const PROXY_ENV_KEYS: &[&str] = &[
     "HTTP_PROXY",
     "HTTPS_PROXY",
@@ -15,10 +11,6 @@ pub const PROXY_ENV_KEYS: &[&str] = &[
     "ftp_proxy",
 ];
 
-/// How network traffic is captured and routed through the tunnel.
-/// `Proxy` is the original behavior (Windows system proxy via registry).
-/// `Tun` uses a wintun adapter to capture all IP-layer traffic.
-/// `Both` enables system proxy and TUN simultaneously.
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, Eq)]
 #[serde(rename_all = "snake_case")]
 pub enum CaptureMode {
@@ -27,9 +19,6 @@ pub enum CaptureMode {
     Both,
 }
 
-/// How DNS queries are resolved when TUN mode is active.
-/// `Forward` routes DNS through the SOCKS5 proxy (UDP ASSOCIATE or TCP DNS).
-/// `Direct` uses the system's default DNS resolver, bypassing the proxy.
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, Eq)]
 #[serde(rename_all = "snake_case")]
 pub enum DnsMode {
@@ -37,10 +26,6 @@ pub enum DnsMode {
     Direct,
 }
 
-/// `Auto` resolves to Aether's own default (MASQUE). Aether's own `scan_mode`
-/// already performs multi-route discovery internally (confirmed by manually
-/// running the real binary), so Aether-GUI does not implement a client-side
-/// protocol-fallback retry loop on top of this.
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, Eq)]
 #[serde(rename_all = "lowercase")]
 pub enum Protocol {
@@ -51,7 +36,6 @@ pub enum Protocol {
 }
 
 impl Protocol {
-    /// The literal menu choice Aether expects at its "Protocol:" prompt.
     pub fn as_menu_choice(&self) -> &'static str {
         match self {
             Protocol::Auto | Protocol::Masque => "1",
@@ -67,9 +51,6 @@ pub enum ScanMode {
     Turbo,
     Balanced,
     Thorough,
-    /// Aether ≥2.1.0 renamed Stealth → Verified (the engine still accepts
-    /// `--scan stealth` and maps it to verified; the alias keeps profiles
-    /// saved by older GUI versions loading).
     #[serde(alias = "stealth")]
     Verified,
     Ironclad,
@@ -105,10 +86,6 @@ impl IpVersion {
     }
 }
 
-/// Obfuscation profile for MASQUE connections. The profile shapes how much
-/// junk/padding Aether injects to disguise the handshake from DPI.
-/// `Light` is Aether ≥1.6.0: a gentler profile for networks that only need a
-/// nudge.
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, Eq)]
 #[serde(rename_all = "lowercase")]
 pub enum MasqueNoize {
@@ -129,7 +106,6 @@ impl MasqueNoize {
     }
 }
 
-/// Obfuscation profile for WireGuard and gool connections.
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, Eq)]
 #[serde(rename_all = "lowercase")]
 pub enum WgNoize {
@@ -150,9 +126,6 @@ impl WgNoize {
     }
 }
 
-/// Aether ≥1.4.0: log verbosity level passed via `--log-level`. Replaces the
-/// old all-or-nothing `--verbose` flag. `--verbose` still works as a shortcut
-/// for debug.
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, Eq)]
 #[serde(rename_all = "lowercase")]
 pub enum LogLevel {
@@ -175,8 +148,6 @@ impl LogLevel {
     }
 }
 
-/// Aether ≥1.4.0: resource scaling override passed via `--perf`. When omitted,
-/// Aether auto-detects CPU/RAM at startup and scales accordingly.
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, Eq)]
 #[serde(rename_all = "lowercase")]
 pub enum PerfLevel {
@@ -195,13 +166,6 @@ impl PerfLevel {
     }
 }
 
-/// Aether ≥2.0.0: built-in Tor (arti) mode. `Disabled` omits all `--tor*` flags.
-/// Engine listens on 127.0.0.1:1819 (WARP) + 127.0.0.1:1820 (Tor) when chained —
-///
-/// **Isolation invariant:** this is the engine's arti Tor (port 1820, aether://* events,
-/// profile.json) and is completely separate from `src-tauri/src/ip_changer.rs`
-/// `TorManager` (ports 9050/9051, ip-changer://* events, settings.json). Never
-/// import one into the other's module.
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, Eq, Default)]
 #[serde(rename_all = "snake_case")]
 pub enum EngineTorMode {
@@ -225,14 +189,6 @@ impl EngineTorMode {
     }
 }
 
-/// Aether ≥2.1.0: built-in Psiphon mode. `Disabled` omits all `--psiphon*`
-/// flags. Chain listens on 127.0.0.1:1821 by default (WARP stays on 1819).
-///
-/// **Isolation invariant:** same as EngineTorMode — engine Psiphon (port
-/// 1821, aether://psiphon-status) never mixes with engine arti Tor (1820)
-/// or `ip_changer.rs` TorManager (9050/9051). `psiphon-only` XOR any Tor
-/// mode: both claim the primary bind. Reverse modes need MASQUE (H2), and
-/// tor-reverse + psiphon-reverse can't both own the outer tunnel.
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, Eq, Default)]
 #[serde(rename_all = "snake_case")]
 pub enum EnginePsiphonMode {
@@ -256,8 +212,6 @@ impl EnginePsiphonMode {
     }
 }
 
-/// `--psiphon-mode <shape>`: CDN-fronted vs direct Psiphon transport.
-/// `Auto` omits the flag (engine default).
 #[derive(Serialize, Deserialize, Clone, Copy, Debug, PartialEq, Eq, Default)]
 #[serde(rename_all = "lowercase")]
 pub enum PsiphonShape {
@@ -282,142 +236,66 @@ pub struct ConnectionProfile {
     pub protocol: Protocol,
     pub scan_mode: ScanMode,
     pub ip_version: IpVersion,
-    /// Aether ≥1.1.1: reuse the last known-working gateway with a quick
-    /// recheck instead of a full scan. `serde(default)` keeps profiles saved
-    /// by older versions of this app loading cleanly.
     #[serde(default = "default_true")]
     pub quick_reconnect: bool,
-    /// Aether ≥1.2.0: run the MASQUE tunnel over HTTP/2 (TCP) instead of the
-    /// default HTTP/3 (QUIC) — for networks that block or throttle UDP.
-    /// Passed as AETHER_MASQUE_HTTP2 in both directions to suppress prompts.
-    /// Reverse Tor uses effective H2 without changing this saved preference.
     #[serde(default)]
     pub masque_http2: bool,
-    /// Obfuscation profile for MASQUE (firewall/gfw/off). Passed as
-    /// `--noize <value>`. Only sent when the active protocol is MASQUE-based.
     #[serde(default = "default_masque_noize")]
     pub masque_noize: MasqueNoize,
-    /// Obfuscation profile for WireGuard/gool (balanced/aggressive/light/off).
-    /// Only sent when the active protocol is WireGuard or gool.
     #[serde(default = "default_wg_noize")]
     pub wg_noize: WgNoize,
-    /// Local SOCKS5 listen address (`--bind`). Aether defaults to
-    /// 127.0.0.1:1819; users can change the port or bind to 0.0.0.0 for LAN.
     #[serde(default = "default_bind_address")]
     pub bind_address: String,
-    /// Aether ≥1.6.0: local HTTP CONNECT proxy listen address, exposed next
-    /// to the SOCKS5 one for clients that can't speak SOCKS. Served by the
-    /// counting bridge (claimed at connect), never the engine's native
-    /// `--http-proxy`. `None` disables the door.
     #[serde(default)]
     pub http_proxy_address: Option<String>,
-    /// Aether ≥1.7.0: dial out through another proxy already on the machine
-    /// (`--upstream`), chaining Aether behind e.g. a VPN or proxy app.
-    /// Accepts socks5://host:port, http://host:port, or bare host:port
-    /// (SOCKS5), with optional user:pass@ credentials. A SOCKS5 upstream
-    /// with UDP associate carries every transport; an HTTP upstream only
-    /// carries the MASQUE HTTP/2 carrier. `None`/empty omits the flag.
     #[serde(default)]
     pub upstream_proxy: Option<String>,
-    /// Aether ≥1.9.0: manual WARP-in-WARP hop endpoints for gool
-    /// (`--wiw-peers "outer:port,inner:port"`). Giving one hop lets the
-    /// scan find the other; the port is required. `None`/empty omits the
-    /// flag so both hops are scanned, which stays Aether's default. Only
-    /// forwarded when the protocol is gool and every entry parses as a
-    /// full host:port.
     #[serde(default)]
     pub wiw_peers: Option<String>,
-    /// Aether ≥1.4.0: log verbosity. Passed as `--log-level <value>`.
-    /// `info` stays quiet; `debug` adds tunnel internals; `trace` adds full
-    /// per-packet detail. When `None`, the flag is omitted (Aether defaults
-    /// to info).
     #[serde(default)]
     pub log_level: Option<LogLevel>,
-    /// Aether ≥1.4.0: resource scaling override. Passed as `--perf <value>`.
-    /// When `None`, Aether auto-detects CPU/RAM at startup and scales
-    /// scan concurrency, socket buffers, and queue sizes accordingly.
     #[serde(default)]
     pub perf: Option<PerfLevel>,
-    /// How traffic is captured: system proxy only, TUN adapter only, or both.
     #[serde(default = "default_capture_mode")]
     pub capture_mode: CaptureMode,
-    /// How DNS is resolved when TUN mode is active.
     #[serde(default = "default_dns_mode")]
     pub dns_mode: DnsMode,
-    /// TUN adapter IP address in CIDR notation (e.g. "10.0.0.2/24").
     #[serde(default = "default_tun_address")]
     pub tun_address: String,
-    /// DNS server to use when TUN mode is active (e.g. "8.8.8.8").
     #[serde(default = "default_tun_dns")]
     pub tun_dns: String,
-    /// Aether ≥1.5.0: resolvers used inside the tunnel (`--dns`), e.g.
-    /// "1.1.1.1,1.0.0.1". When `None`, the flag is omitted (Aether defaults to
-    /// 1.1.1.1,1.0.0.1).
     #[serde(default)]
     pub dns_servers: Option<String>,
-    /// Aether ≥1.5.0: destinations refused outright (`--route-block`). An
-    /// empty list omits the flag so the tunnel handles everything.
     #[serde(default)]
     pub route_block: Vec<String>,
-    /// Aether ≥1.5.0: destinations sent straight out, bypassing the tunnel
-    /// (`--route-direct`). An empty list omits the flag.
     #[serde(default)]
     pub route_direct: Vec<String>,
-    /// Aether ≥1.7.0: sniff the TLS SNI / HTTP Host of each flow's first
-    /// bytes so domain-based --route-block/--route-direct rules also match
-    /// behind a TUN front end (which otherwise resolves names itself and
-    /// hands the core only an address). Default on; `false` sets
-    /// AETHER_ROUTE_SNIFF=0.
     #[serde(default = "default_true")]
     pub route_sniff: bool,
-    /// Aether ≥1.7.0: how long to wait for the sniffed name, in ms
-    /// (AETHER_ROUTE_SNIFF_MS). `None` omits the env var (Aether's default).
     #[serde(default)]
     pub route_sniff_ms: Option<u32>,
-    /// Aether ≥1.7.0: when Cloudflare refuses the saved identity at startup,
-    /// say so and register a fresh device automatically. Only an account-API
-    /// rejection counts — being offline or rate-limited never discards a good
-    /// identity. Default on; `false` sets AETHER_REPROVISION=0 (report only).
     #[serde(default = "default_true")]
     pub auto_reprovision: bool,
-    /// Aether ≥1.5.0: Zero Trust organization team name (`--team`). When
-    /// `None`, no Zero Trust enrolment is attempted.
     #[serde(default)]
     pub zt_team: Option<String>,
-    /// Aether ≥1.5.0: Zero Trust enrolment email (`--access-email`) — Aether
-    /// emails a one-time code and prompts for it.
     #[serde(default)]
     pub zt_access_email: Option<String>,
-    /// Aether ≥1.5.0: Zero Trust service-token client id (`--access-id`) for
-    /// headless enrolment.
     #[serde(default)]
     pub zt_access_id: Option<String>,
-    /// Aether ≥1.5.0: Zero Trust service-token client secret
-    /// (`--access-secret`) for headless enrolment.
     #[serde(default)]
     pub zt_access_secret: Option<String>,
-    /// Aether ≥1.5.0: an enrolment token already obtained from
-    /// https://<team>.cloudflareaccess.com/warp (`--access-token`).
     #[serde(default)]
     pub zt_access_token: Option<String>,
-    /// Aether ≥1.5.0: route HTTP/HTTPS through the organization's Gateway
-    /// proxy (`--gateway`).
     #[serde(default)]
     pub zt_gateway: bool,
-    // ── Aether ≥2.0.0 ──────────────────────────────────────────────
-    /// Two MASQUE hops (like gool for MASQUE). `--mim` flag, gated to Auto/Masque.
     #[serde(default)]
     pub mim: bool,
-    /// `--mim-peers outer:port,inner:port` or `auto`. One hop alone OK (scan finds other).
     #[serde(default)]
     pub mim_peers: Option<String>,
-    /// QUIC v2 opener probe before HTTP/3. Default on; false emits `--no-quic-v2` / AETHER_QUIC_V2=0. Ignored when MASQUE uses H2.
     #[serde(default = "default_true")]
     pub quic_v2: bool,
-    /// Firewall mark (`--mark`/`AETHER_MARK`) — Linux/Android only, SO_MARK, needs CAP_NET_ADMIN. Decimal or 0x hex.
     #[serde(default)]
     pub fw_mark: Option<String>,
-    /// Built-in Tor (arti) mode. Disabled omits all --tor* flags. See EngineTorMode doc.
     #[serde(default)]
     pub engine_tor_mode: EngineTorMode,
     #[serde(default)]
@@ -426,12 +304,8 @@ pub struct ConnectionProfile {
     pub engine_tor_dir: Option<String>,
     #[serde(default)]
     pub engine_tor_bridges: Vec<String>,
-    /// Force automatic bridges immediately (`--tor-bridges`, no value).
     #[serde(default)]
     pub engine_tor_force_bridges: bool,
-    /// Aether ≥2.1.0: obfs4 bridge lines from a file (`--tor-bridge-file`).
-    /// Read by the engine itself; the GUI never opens it. Counts as a manual
-    /// bridge source for policy conflicts.
     #[serde(default)]
     pub engine_tor_bridges_file: Option<String>,
     #[serde(default)]
@@ -446,39 +320,26 @@ pub struct ConnectionProfile {
     pub engine_tor_direct_secs: Option<u32>,
     #[serde(default)]
     pub engine_tor_stall_secs: Option<u32>,
-    // ── Aether ≥2.1.0 ──────────────────────────────────────────────
-    /// Built-in Psiphon mode. Disabled omits all --psiphon* flags. See EnginePsiphonMode doc.
     #[serde(default)]
     pub engine_psiphon_mode: EnginePsiphonMode,
-    /// Chain/reverse secondary bind (`--psiphon-bind`). `None` → default 127.0.0.1:1821.
     #[serde(default)]
     pub engine_psiphon_bind: Option<String>,
-    /// `--psiphon-mode <shape>` transport; `PsiphonShape::Auto` omits the flag.
     #[serde(default)]
     pub psiphon_shape: PsiphonShape,
-    /// Two-letter exit country (`--psiphon-region`).
     #[serde(default)]
     pub psiphon_region: Option<String>,
-    /// Tor relay set (`--tor-relays`): auto | only | off | <count>.
     #[serde(default)]
     pub engine_tor_relays: Option<String>,
-    /// Tor relay ports (`--tor-relay-ports`): web | any. `None` = engine default (web).
     #[serde(default)]
     pub engine_tor_relay_ports: Option<String>,
-    /// Pin the bridge/WARP exit country (`--exit-loc`), comma-separated
-    /// two-letter codes with optional leading `!` (e.g. "DE,SE,!IR").
     #[serde(default)]
     pub exit_loc: Option<String>,
-    /// Recheck interval for --exit-loc (`--exit-loc-secs`).
     #[serde(default)]
     pub exit_loc_secs: Option<u32>,
-    /// Periodic stats logging (`--stats`).
     #[serde(default)]
     pub stats: bool,
-    /// Stats interval (`--stats-secs`).
     #[serde(default)]
     pub stats_secs: Option<u32>,
-    // Env-only proxy tuning (no flag)
     #[serde(default)]
     pub max_clients: Option<u32>,
     #[serde(default)]
@@ -522,12 +383,6 @@ fn default_tun_dns() -> String {
 }
 
 impl ConnectionProfile {
-    /// CLI flags for Aether ≥1.1.1 — the whole profile is passed up front so
-    /// the interactive prompts never appear (the PTY prompt-answering in
-    /// pty.rs stays as a fallback). One of the two quick-reconnect flags is
-    /// ALWAYS passed: without either, 1.1.1 asks its own interactive
-    /// "reconnect with last gateway?" question, which the GUI must never
-    /// leave unanswered.
     pub fn as_args(&self) -> Vec<String> {
         let mut args = Vec::with_capacity(24);
         match self.protocol {
@@ -553,7 +408,6 @@ impl ConnectionProfile {
         } else {
             "--no-quick-reconnect".into()
         });
-        // Noize profile — pick the value matching the active protocol family.
         args.push("--noize".into());
         args.push(
             match self.protocol {
@@ -562,21 +416,12 @@ impl ConnectionProfile {
             }
             .into(),
         );
-        // Only forward --bind when non-default and parseable.
         if self.bind_address.trim() != default_bind_address()
             && socket_address(&self.bind_address, "bind_address").is_ok()
         {
             args.push("--bind".into());
             args.push(self.bind_address.trim().into());
         }
-        // http_proxy_address is deliberately NOT forwarded as --http-proxy:
-        // that bind is claimed by the counting bridge at connect (the bridge
-        // already speaks HTTP CONNECT), so engine-native listeners can't
-        // swallow bytes uncounted.
-        // Aether ≥1.7.0: upstream proxy chaining. The value is scheme+URL
-        // shaped (socks5://user:pass@host:port, http://host:port, host:port),
-        // so unlike --bind it can't be SocketAddr-validated — only forwarded
-        // when non-whitespace.
         if let Some(ref up) = self.upstream_proxy {
             let up = up.trim();
             if !up.is_empty() {
@@ -584,10 +429,6 @@ impl ConnectionProfile {
                 args.push(up.into());
             }
         }
-        // Aether ≥1.9.0: manual WARP-in-WARP endpoints, gool only. One hop
-        // may be given alone (the scan finds the other); every entry must
-        // carry a port (SocketAddr parsing enforces it) or the flag is
-        // dropped whole, mirroring the --bind guardrail.
         if self.protocol == Protocol::Gool {
             if let Some(ref wiw) = self.wiw_peers {
                 let entries: Vec<&str> = wiw
@@ -601,26 +442,20 @@ impl ConnectionProfile {
                 }
             }
         }
-        // Aether ≥1.4.0: log level override.
         if let Some(ref level) = self.log_level {
             args.push("--log-level".into());
             args.push(level.as_flag().into());
         }
-        // Aether ≥1.4.0: resource scaling override.
         if let Some(ref perf) = self.perf {
             args.push("--perf".into());
             args.push(perf.as_flag().into());
         }
-        // Aether ≥1.5.0: in-tunnel DNS resolvers.
         if let Some(ref dns) = self.dns_servers {
             if !dns.trim().is_empty() {
                 args.push("--dns".into());
                 args.push(dns.trim().into());
             }
         }
-        // Aether ≥1.5.0: routing rules. Entries are joined with commas, which
-        // is the same list syntax Aether's --route-block/--route-direct accept
-        // (comma or newline separated).
         if !self.route_block.is_empty() {
             args.push("--route-block".into());
             args.push(self.route_block.join(","));
@@ -629,7 +464,6 @@ impl ConnectionProfile {
             args.push("--route-direct".into());
             args.push(self.route_direct.join(","));
         }
-        // Aether ≥1.5.0: Zero Trust (WARP for organizations) enrolment.
         if let Some(ref team) = self.zt_team {
             if !team.trim().is_empty() {
                 args.push("--team".into());
@@ -663,8 +497,6 @@ impl ConnectionProfile {
         if self.zt_gateway {
             args.push("--gateway".into());
         }
-        // ── Aether ≥2.0.0 ─────────────────────────────────────
-        // MASQUE-in-MASQUE: gated to Auto/Masque, like wiw_peers is gool-only.
         if self.mim && matches!(self.protocol, Protocol::Auto | Protocol::Masque) {
             args.push("--mim".into());
             if let Some(ref peers) = self.mim_peers {
@@ -687,7 +519,6 @@ impl ConnectionProfile {
                 }
             }
         }
-        // QUIC v2: default on, omitted when true; false emits --no-quic-v2. Skipped when H2 (TCP) active.
         if !self.quic_v2
             && !self.masque_http2
             && matches!(self.protocol, Protocol::Auto | Protocol::Masque)
@@ -702,7 +533,6 @@ impl ConnectionProfile {
         {
             args.push("--no-quic-v2".into());
         }
-        // Aether ≥2.1.0: exit-country pin + periodic stats logging.
         if let Some(ref loc) = self.exit_loc {
             let t = loc.trim();
             if !t.is_empty() && exit_loc_tokens_ok(t) {
@@ -721,7 +551,6 @@ impl ConnectionProfile {
                 args.push(n.to_string());
             }
         }
-        // --mark: Linux/Android only.
         #[cfg(any(target_os = "linux", target_os = "android"))]
         {
             if let Some(ref m) = self.fw_mark {
@@ -732,7 +561,6 @@ impl ConnectionProfile {
                 }
             }
         }
-        // Built-in Tor (arti) — isolated from ip_changer Tor (9050).
         if let Some(flag) = self.engine_tor_mode.as_flag() {
             args.push(flag.into());
             if let Some(ref b) = self.engine_tor_bind {
@@ -779,7 +607,6 @@ impl ConnectionProfile {
                     args.push(t.into());
                 }
             }
-            // Aether ≥2.1.0: relay set/ports + bridge file.
             if let Some(ref r) = self.engine_tor_relays {
                 let t = r.trim().to_ascii_lowercase();
                 if t == "auto" || t == "only" || t == "off" || t.parse::<u32>().is_ok() {
@@ -801,7 +628,6 @@ impl ConnectionProfile {
                 }
             }
         }
-        // Aether ≥2.1.0: built-in Psiphon — isolated like EngineTorMode.
         if let Some(flag) = self.engine_psiphon_mode.as_flag() {
             args.push(flag.into());
             if self.engine_psiphon_mode != EnginePsiphonMode::PsiphonOnly {
@@ -828,9 +654,6 @@ impl ConnectionProfile {
         args
     }
 
-    /// Environment variables shared by the desktop PTY spawn and the Android
-    /// pipe spawn — one source of truth so the two platforms can't drift.
-    /// Absent keys mean "use Aether's default" for every variable here.
     pub fn environment(&self) -> Vec<(String, String)> {
         let mut env: Vec<(String, String)> = Vec::new();
         let mut set = |k: &str, v: String| {
@@ -838,13 +661,10 @@ impl ConnectionProfile {
                 env.push((k.to_string(), v));
             }
         };
-        // Aether ≥1.2.0 "MASQUE transport" prompt suppressor; truthy = HTTP/2.
         set(
             "AETHER_MASQUE_HTTP2",
             if self.masque_http2 { "1" } else { "0" }.to_string(),
         );
-        // Aether ≥1.7.0 opt-outs — only set when the user turned the behavior
-        // off or overrode its timing.
         if !self.route_sniff {
             set("AETHER_ROUTE_SNIFF", "0".into());
         }
@@ -854,7 +674,6 @@ impl ConnectionProfile {
         if !self.auto_reprovision {
             set("AETHER_REPROVISION", "0".into());
         }
-        // Aether ≥2.0.0 — QUIC v2, fw mark, proxy tuning, engine Tor tuning.
         if !self.quic_v2 {
             set("AETHER_QUIC_V2", "0".into());
         }
@@ -910,11 +729,8 @@ fn validate_mark(s: &str) -> Result<u32, String> {
 
 impl Default for ConnectionProfile {
     fn default() -> Self {
-        // Mirrors Aether's own defaults.
         Self {
             protocol: Protocol::Auto,
-            // GUI default: fast first-connect (Aether's own default is
-            // Balanced; users can pick a slower, stealthier mode anytime).
             scan_mode: ScanMode::Turbo,
             ip_version: IpVersion::V4,
             quick_reconnect: true,
@@ -980,10 +796,6 @@ impl Default for ConnectionProfile {
 const STORE_FILE: &str = "profile.json";
 const STORE_KEY: &str = "last_successful_profile";
 
-/// Loads the last profile that reached `Connected`, or the hardcoded default
-/// on first run. Only ever written by `save()` at the moment a connection
-/// actually succeeds (see aether/mod.rs) — never on a mere attempt, so a bad
-/// guess can't poison future one-click connects.
 pub fn load(app: &tauri::AppHandle) -> ConnectionProfile {
     use tauri_plugin_store::StoreExt;
     app.store(STORE_FILE)
@@ -998,7 +810,6 @@ fn socket_address(value: &str, field: &str) -> Result<std::net::SocketAddr, Stri
         .trim()
         .parse::<std::net::SocketAddr>()
         .map_err(|_| format!("{field}: use a numeric IP:port (bracket IPv6), port 1–65535"))?;
-    // Zone IDs are not accepted by the frontend numeric-address contract.
     if addr.port() == 0 || value.contains('%') {
         return Err(format!(
             "{field}: use a numeric IP:port (bracket IPv6), port 1–65535"
@@ -1032,13 +843,10 @@ fn listeners_collide(a: std::net::SocketAddr, b: std::net::SocketAddr) -> bool {
     a.port() == b.port()
         && (a_ip == b_ip
         || (a_ip.is_ipv4() == b_ip.is_ipv4() && (a_ip.is_unspecified() || b_ip.is_unspecified()))
-        // IPv6 wildcard listeners may also claim IPv4 on dual-stack systems.
         || a.ip() == std::net::Ipv6Addr::UNSPECIFIED
         || b.ip() == std::net::Ipv6Addr::UNSPECIFIED)
 }
 
-/// Every comma-separated --exit-loc token is a two-letter country code with
-/// an optional leading `!` (negation), per Aether ≥2.1.0.
 fn exit_loc_tokens_ok(value: &str) -> bool {
     !value.trim().is_empty()
         && value.split(',').all(|raw| {
@@ -1113,8 +921,6 @@ pub fn validate(p: &ConnectionProfile) -> Result<(), String> {
                 .into(),
         );
     }
-    // Primary-listener exclusivity: only-modes and any-Tor/any-Psiphon mix
-    // that would double-claim it (reverse+reverse also fights over MASQUE).
     if p.engine_psiphon_mode == EnginePsiphonMode::PsiphonOnly
         && p.engine_tor_mode != EngineTorMode::Disabled
     {
@@ -1180,7 +986,6 @@ pub fn validate(p: &ConnectionProfile) -> Result<(), String> {
         validate_mark(mark)?;
     }
     if p.engine_tor_mode != EngineTorMode::Disabled {
-        // A non-empty bridges file counts as a manual bridge source.
         let manual = p.engine_tor_bridges.iter().any(|s| !s.trim().is_empty())
             || p.engine_tor_bridges_file
                 .as_deref()
@@ -1242,8 +1047,6 @@ pub fn validate(p: &ConnectionProfile) -> Result<(), String> {
             );
         }
     }
-    // All tuning fields deserialize as u32: fractional, negative and overflowing
-    // JSON values are rejected by serde. Zero remains valid (upstream accepts it).
     Ok(())
 }
 
@@ -1326,12 +1129,10 @@ mod tests {
         let p: ConnectionProfile = serde_json::from_str(json).unwrap();
         assert_eq!(p.bind_address, "127.0.0.1:1819");
         assert_eq!(p.masque_noize, MasqueNoize::Firewall);
-        // New TUN fields get defaults when absent from old profiles
         assert_eq!(p.capture_mode, CaptureMode::Proxy);
         assert_eq!(p.dns_mode, DnsMode::Forward);
         assert_eq!(p.tun_address, "10.0.0.2/24");
         assert_eq!(p.tun_dns, "8.8.8.8");
-        // Aether ≥1.7.0 opt-outs default to the core's own behavior
         assert!(p.route_sniff);
         assert!(p.auto_reprovision);
         assert_eq!(p.route_sniff_ms, None);
@@ -1402,8 +1203,6 @@ mod tests {
 
     #[test]
     fn http_proxy_never_reaches_engine() {
-        // The bind is claimed by the counting bridge — the engine must never
-        // get a native listener that would swallow those bytes uncounted.
         for addr in ["127.0.0.1:1818", "0.0.0.0:1818"] {
             let p = ConnectionProfile {
                 http_proxy_address: Some(addr.into()),
@@ -1528,7 +1327,6 @@ mod tests {
         assert!(!p.as_args().iter().any(|a| a == "--wiw-peers"));
     }
 
-    // ── Aether ≥2.0.0 ──────────────────────────────────────────
     #[test]
     fn default_omits_new_flags() {
         let args = ConnectionProfile::default().as_args();
@@ -1551,7 +1349,6 @@ mod tests {
             mim: true,
             ..ConnectionProfile::default()
         };
-        // Auto/Masque emit
         assert!(p.as_args().iter().any(|a| a == "--mim"));
         p.protocol = Protocol::Masque;
         assert!(p.as_args().iter().any(|a| a == "--mim"));
@@ -1586,7 +1383,6 @@ mod tests {
         assert_eq!(args[i + 1], "162.159.192.1:2408,188.114.96.1:2408");
         p.mim_peers = Some("162.159.192.1:2408".into());
         assert!(p.as_args().iter().any(|a| a == "--mim-peers"));
-        // without port dropped
         p.mim_peers = Some("162.159.192.1".into());
         assert!(!p.as_args().iter().any(|a| a == "--mim-peers"));
     }
@@ -1605,7 +1401,6 @@ mod tests {
             ..ConnectionProfile::default()
         };
         assert!(p.as_args().iter().any(|a| a == "--no-quic-v2"));
-        // when H2 active, probe is irrelevant — no flag
         p.masque_http2 = true;
         assert!(!p.as_args().iter().any(|a| a == "--no-quic-v2"));
     }
@@ -1724,7 +1519,6 @@ mod tests {
 
     #[test]
     fn bridge_file_is_forwarded_and_policies_still_conflict() {
-        // Aether ≥2.1.0 --tor-bridge-file: real field, engine reads it.
         let mut p = ConnectionProfile {
             engine_tor_bridges_file: Some("C:/bridges.txt".into()),
             engine_tor_mode: EngineTorMode::Tor,
@@ -1737,7 +1531,6 @@ mod tests {
         p.engine_tor_bridges_file = Some("  ".into());
         assert!(validate(&p).is_ok());
         assert!(!p.as_args().contains(&"--tor-bridge-file".into()));
-        // File counts as a manual bridge source for policy conflicts.
         p.engine_tor_bridges_file = Some("C:/bridges.txt".into());
         p.engine_tor_no_bridges = true;
         assert!(validate(&p).is_err());
@@ -1755,11 +1548,9 @@ mod tests {
         assert!(validate(&p).is_ok());
         let args = p.as_args();
         assert!(args.contains(&"--psiphon".into()));
-        // Chain/reverse secondary bind joins the listener-collision list.
         p.engine_psiphon_bind = Some("127.0.0.1:1819".into());
         assert!(validate(&p).is_err());
         p.engine_psiphon_bind = None;
-        // Reverse needs MASQUE, and can't double with tor-reverse.
         p.engine_psiphon_mode = EnginePsiphonMode::PsiphonReverse;
         p.protocol = Protocol::Wireguard;
         assert!(validate(&p).is_err());
@@ -1767,7 +1558,6 @@ mod tests {
         assert!(validate(&p).is_ok());
         p.engine_tor_mode = EngineTorMode::TorReverse;
         assert!(validate(&p).is_err());
-        // Only-modes XOR: each claims the primary listener.
         p.engine_tor_mode = EngineTorMode::Disabled;
         p.engine_psiphon_mode = EnginePsiphonMode::PsiphonOnly;
         assert!(validate(&p).is_ok());

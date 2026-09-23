@@ -1,12 +1,10 @@
 import { Globe } from "lucide-react";
 
-// Local SVG URLs keep flags independent of OS fonts without bundling every flag as React code.
 const flags = import.meta.glob<string>(
   "/node_modules/country-flag-icons/3x2/*.svg",
   { eager: true, query: "?url&no-inline", import: "default" },
 );
 
-/** Decorative flag: the adjacent location text supplies the country name. */
 export function CountryFlag({ code }: { code: string | null | undefined }) {
   const normalized = code?.trim().toUpperCase();
   const src = normalized && /^[A-Z]{2}$/.test(normalized)

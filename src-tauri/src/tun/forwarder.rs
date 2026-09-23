@@ -15,7 +15,6 @@ use super::dns;
 use crate::aether::profiles::DnsMode;
 use crate::traffic;
 
-// ─── Flow tracking ────────────────────────────────────────────────────
 
 #[derive(Hash, Eq, PartialEq, Clone, Debug)]
 struct FlowKey {
@@ -27,18 +26,17 @@ struct FlowKey {
 
 #[derive(Clone, Copy, Debug, PartialEq)]
 enum TcpState {
-    SynReceived, // We sent SYN-ACK, waiting for client ACK
-    Established, // Handshake done, data flowing
-    CloseWait,   // Remote (SOCKS5) sent FIN
+    SynReceived,
+    Established,
+    CloseWait,
     Closed,
 }
 
 struct Flow {
     stream: TcpStream,
     state: TcpState,
-    // Sequence numbers from the client's perspective
-    client_seq: u32, // Last seq we received from client
-    server_seq: u32, // Next seq we send to client
+    client_seq: u32,
+    server_seq: u32,
 }
 
 struct ForwarderState {
@@ -48,10 +46,8 @@ struct ForwarderState {
     tun_ip: [u8; 4],
 }
 
-// ─── Main forwarder loop ──────────────────────────────────────────────
 
 pub fn run_forwarder(adapter: Arc<TunAdapter>, socks_addr: SocketAddr, dns_mode: DnsMode) {
-    // Default TUN IP - matches what we configured
     let tun_ip = parse_tun_ip();
 
     let state = Arc::new(Mutex::new(ForwarderState {
@@ -121,7 +117,6 @@ pub fn run_forwarder(adapter: Arc<TunAdapter>, socks_addr: SocketAddr, dns_mode:
         }
     }
 
-    // Cleanup
     let st = state.lock();
     for flow in st.flows.values() {
         let mut f = flow.lock();
@@ -130,7 +125,6 @@ pub fn run_forwarder(adapter: Arc<TunAdapter>, socks_addr: SocketAddr, dns_mode:
     }
 }
 
-// ─── TCP packet handling ──────────────────────────────────────────────
 
 fn handle_tcp_packet(
     adapter: &Arc<TunAdapter>,
@@ -153,7 +147,6 @@ fn handle_tcp_packet(
         dst_port: tcp.get_destination(),
     };
 
-    // ── RST: kill the flow ──
     if is_rst {
         let mut st = state.lock();
         if let Some(flow) = st.flows.remove(&key) {
@@ -165,11 +158,10 @@ fn handle_tcp_packet(
         return;
     }
 
-    // ── SYN (new connection) ──
     if is_syn && !is_ack {
         let st = state.lock();
         if st.flows.contains_key(&key) {
-            return; // Duplicate SYN
+            return;
         }
         drop(st);
 
@@ -186,12 +178,10 @@ fn handle_tcp_packet(
         return;
     }
 
-    // ── ACK / DATA on existing flow ──
     let st = state.lock();
     let flow = match st.flows.get(&key) {
         Some(f) => Arc::clone(f),
         None => {
-            // No flow for this packet - might be a late ACK for a closed flow
             return;
         }
     };
@@ -199,7 +189,6 @@ fn handle_tcp_packet(
 
     let mut f = flow.lock();
 
-    // Update client sequence number
     let payload_len = tcp.payload().len() as u32;
     if payload_len > 0 {
         f.client_seq = tcp.get_sequence().wrapping_add(payload_len);
@@ -207,7 +196,6 @@ fn handle_tcp_packet(
 
     match f.state {
         TcpState::SynReceived => {
-            // Client ACK'd our SYN-ACK → connection established
             if is_ack && !is_fin {
                 f.state = TcpState::Established;
                 f.client_seq = tcp.get_sequence();
@@ -218,7 +206,6 @@ fn handle_tcp_packet(
                 );
                 drop(f);
 
-                // Start relaying data from SOCKS5 → TUN
                 let state_clone = Arc::clone(state);
                 let adapter_clone = Arc::clone(adapter);
                 let key2 = key.clone();
@@ -228,7 +215,6 @@ fn handle_tcp_packet(
             }
         }
         TcpState::Established => {
-            // Forward data from TUN → SOCKS5
             if payload_len > 0 && !is_fin {
                 let data = tcp.payload().to_vec();
                 let _ = f.stream.write_all(&data);
@@ -236,13 +222,11 @@ fn handle_tcp_packet(
                 traffic::record_tx(data.len() as u64);
             }
 
-            // FIN from client
             if is_fin {
                 f.state = TcpState::CloseWait;
                 let seq = f.server_seq;
                 let ack_num = f.client_seq;
                 drop(f);
-                // Send FIN-ACK to client
                 let tun_ip = state.lock().tun_ip;
                 send_tcp_packet(
                     adapter,
@@ -252,9 +236,8 @@ fn handle_tcp_packet(
                     key.src_port,
                     seq,
                     ack_num,
-                    0x10, // ACK
+                    0x10,
                 );
-                // Close the SOCKS5 stream
                 let st = state.lock();
                 if let Some(fl) = st.flows.get(&key) {
                     let fl2 = fl.lock();
@@ -266,7 +249,6 @@ fn handle_tcp_packet(
     }
 }
 
-// ─── SYN handler (new connection) ─────────────────────────────────────
 
 fn handle_syn(
     adapter: Arc<TunAdapter>,
@@ -279,7 +261,6 @@ fn handle_syn(
     let dst_port = key.dst_port;
     let socks_addr = state.lock().socks_addr;
 
-    // Connect to SOCKS5 proxy
     let mut stream = match TcpStream::connect_timeout(&socks_addr, Duration::from_secs(5)) {
         Ok(s) => s,
         Err(e) => {
@@ -296,7 +277,6 @@ fn handle_syn(
         }
     };
 
-    // SOCKS5 handshake
     if let Err(e) = socks5_connect(&mut stream, &key) {
         log::warn!("[tun] SOCKS5 handshake failed for {dst_ip}:{dst_port}: {e}");
         send_rst(
@@ -310,11 +290,8 @@ fn handle_syn(
         return;
     }
 
-    // Connection established through SOCKS5
-    // Now complete the TCP handshake with the TUN client
-    let server_seq = 1000u32; // Our starting sequence number
+    let server_seq = 1000u32;
 
-    // Send SYN-ACK to client
     send_tcp_packet(
         &adapter,
         &tun_ip,
@@ -323,7 +300,7 @@ fn handle_syn(
         key.src_port,
         server_seq,
         client_seq.wrapping_add(1),
-        0x12, // SYN + ACK
+        0x12,
     );
 
     log::debug!(
@@ -332,12 +309,11 @@ fn handle_syn(
         key.src_port
     );
 
-    // Store the flow
     let flow = Arc::new(Mutex::new(Flow {
         stream,
         state: TcpState::SynReceived,
         client_seq,
-        server_seq: server_seq.wrapping_add(1), // Next seq after SYN-ACK
+        server_seq: server_seq.wrapping_add(1),
     }));
 
     {
@@ -346,13 +322,11 @@ fn handle_syn(
     }
 }
 
-// ─── SOCKS5 → TUN relay ──────────────────────────────────────────────
 
 fn relay_socks_to_tun(state: Arc<Mutex<ForwarderState>>, key: FlowKey, adapter: &Arc<TunAdapter>) {
     let mut buf = [0u8; 16384];
 
     loop {
-        // Get the flow
         let flow = {
             let st = state.lock();
             match st.flows.get(&key) {
@@ -371,7 +345,6 @@ fn relay_socks_to_tun(state: Arc<Mutex<ForwarderState>>, key: FlowKey, adapter: 
                 .ok();
             match f.stream.read(&mut buf) {
                 Ok(0) => {
-                    // Remote closed → send FIN to client
                     f.state = TcpState::CloseWait;
                     let server_seq = f.server_seq;
                     drop(f);
@@ -388,9 +361,8 @@ fn relay_socks_to_tun(state: Arc<Mutex<ForwarderState>>, key: FlowKey, adapter: 
                             .get(&key)
                             .map(|fl| fl.lock().client_seq)
                             .unwrap_or(0),
-                        0x11, // FIN + ACK
+                        0x11,
                     );
-                    // Update our seq
                     {
                         let st = state.lock();
                         if let Some(fl) = st.flows.get(&key) {
@@ -423,7 +395,6 @@ fn relay_socks_to_tun(state: Arc<Mutex<ForwarderState>>, key: FlowKey, adapter: 
             }
         };
 
-        // Send data to TUN client
         traffic::record_rx(n as u64);
         let data = &buf[..n];
         let (server_seq, client_seq) = {
@@ -451,10 +422,7 @@ fn relay_socks_to_tun(state: Arc<Mutex<ForwarderState>>, key: FlowKey, adapter: 
     }
 }
 
-// ─── Packet construction ──────────────────────────────────────────────
 
-/// Build and inject a TCP packet into the TUN adapter.
-// Keep the wire-header fields explicit and parallel in both packet builders.
 #[allow(clippy::too_many_arguments)]
 fn send_tcp_packet(
     adapter: &Arc<TunAdapter>,
@@ -472,19 +440,17 @@ fn send_tcp_packet(
 
     let mut packet = vec![0u8; total_len as usize];
 
-    // Build TCP header
     {
         let mut tcp_pkt = MutableTcpPacket::new(&mut packet[20..]).unwrap();
         tcp_pkt.set_source(src_port);
         tcp_pkt.set_destination(dst_port);
         tcp_pkt.set_sequence(seq);
         tcp_pkt.set_acknowledgement(ack);
-        tcp_pkt.set_data_offset(5); // 5 * 4 = 20 bytes
+        tcp_pkt.set_data_offset(5);
         tcp_pkt.set_flags(flags);
         tcp_pkt.set_window(65535);
         tcp_pkt.set_checksum(0);
 
-        // Calculate TCP checksum using the pseudo-header
         let tcp_checksum = pnet_packet::tcp::ipv4_checksum(
             &tcp_pkt.to_immutable(),
             &std::net::Ipv4Addr::from(*src_ip),
@@ -493,7 +459,6 @@ fn send_tcp_packet(
         tcp_pkt.set_checksum(tcp_checksum);
     }
 
-    // Build IP header
     {
         let mut ip_pkt = MutableIpv4Packet::new(&mut packet).unwrap();
         ip_pkt.set_version(4);
@@ -504,7 +469,6 @@ fn send_tcp_packet(
         ip_pkt.set_source(std::net::Ipv4Addr::from(*src_ip));
         ip_pkt.set_destination(std::net::Ipv4Addr::from(*dst_ip));
 
-        // Calculate IP checksum
         let ip_checksum = ipv4::checksum(&ip_pkt.to_immutable());
         ip_pkt.set_checksum(ip_checksum);
     }
@@ -514,8 +478,6 @@ fn send_tcp_packet(
     }
 }
 
-/// Build and inject a TCP data packet (with payload) into the TUN adapter.
-// Keep the wire-header fields explicit and parallel in both packet builders.
 #[allow(clippy::too_many_arguments)]
 fn send_tcp_data(
     adapter: &Arc<TunAdapter>,
@@ -533,10 +495,8 @@ fn send_tcp_data(
 
     let mut packet = vec![0u8; total_len as usize];
 
-    // Copy data payload
     packet[(ip_header_len + tcp_header_len) as usize..].copy_from_slice(data);
 
-    // Build TCP header
     {
         let mut tcp_pkt = MutableTcpPacket::new(&mut packet[20..]).unwrap();
         tcp_pkt.set_source(src_port);
@@ -544,7 +504,7 @@ fn send_tcp_data(
         tcp_pkt.set_sequence(seq);
         tcp_pkt.set_acknowledgement(ack);
         tcp_pkt.set_data_offset(5);
-        tcp_pkt.set_flags(0x18); // PSH + ACK
+        tcp_pkt.set_flags(0x18);
         tcp_pkt.set_window(65535);
         tcp_pkt.set_checksum(0);
 
@@ -556,7 +516,6 @@ fn send_tcp_data(
         tcp_pkt.set_checksum(tcp_checksum);
     }
 
-    // Build IP header
     {
         let mut ip_pkt = MutableIpv4Packet::new(&mut packet).unwrap();
         ip_pkt.set_version(4);
@@ -576,7 +535,6 @@ fn send_tcp_data(
     }
 }
 
-/// Send RST to tear down a connection.
 fn send_rst(
     adapter: &Arc<TunAdapter>,
     src_ip: &[u8; 4],
@@ -585,10 +543,9 @@ fn send_rst(
     dst_port: u16,
     seq: u32,
 ) {
-    send_tcp_packet(adapter, src_ip, dst_ip, src_port, dst_port, seq, 0, 0x04); // RST
+    send_tcp_packet(adapter, src_ip, dst_ip, src_port, dst_port, seq, 0, 0x04);
 }
 
-// ─── SOCKS5 helper ────────────────────────────────────────────────────
 
 fn socks5_connect(stream: &mut TcpStream, key: &FlowKey) -> Result<(), String> {
     stream
@@ -620,7 +577,6 @@ fn socks5_connect(stream: &mut TcpStream, key: &FlowKey) -> Result<(), String> {
     Ok(())
 }
 
-// ─── DNS ──────────────────────────────────────────────────────────────
 
 fn handle_dns_packet(state: Arc<Mutex<ForwarderState>>, payload: &[u8], dst: SocketAddr) {
     let dns_mode = state.lock().dns_mode.clone();
@@ -638,7 +594,6 @@ fn handle_dns_packet(state: Arc<Mutex<ForwarderState>>, payload: &[u8], dst: Soc
     }
 }
 
-// ─── Utilities ────────────────────────────────────────────────────────
 
 fn tcp_flags(tcp: &TcpPacket) -> u8 {
     if tcp.packet().len() > 13 {
@@ -658,6 +613,5 @@ impl FlowKey {
 }
 
 fn parse_tun_ip() -> [u8; 4] {
-    // Must match the tun_address in the profile default ("10.0.0.2/24")
     [10, 0, 0, 2]
 }

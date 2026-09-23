@@ -24,8 +24,6 @@ const DESCRIPTIONS: Record<ScanMode, string> = {
     "Opens a real tunnel through each candidate and sends a real HTTP request before trusting it. Slowest, but guarantees the gateway actually works.",
 };
 
-/** Locked outside Idle/Error, mirroring ProtocolSelect — scan mode can't
- * change mid-session either. */
 export function ScanModeToggle() {
   const status = useConnectionStore((s) => s.status);
   const scanMode = useConnectionStore((s) => s.profile.scan_mode);

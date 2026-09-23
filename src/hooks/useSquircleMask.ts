@@ -1,12 +1,5 @@
 import { useEffect, useRef } from "react";
 
-/**
- * iOS corners are a genuine "squircle" (superellipse), not a plain circular
- * border-radius — the curve pulls toward the corner midpoint so it looks softer
- * and more continuous than a plain radius. This hook clips the host element to
- * an SVG-style squircle path that re-fits on resize. Where the browser already
- * speaks `corner-shape: squircle`, we let CSS handle it and skip the clipPath.
- */
 
 const IOS_R1 = 0.0586;
 const IOS_R2 = 0.332;
@@ -52,12 +45,10 @@ function parsePx(v: string, fallback: number): number {
 
 function readCSSCornerRadii(el: HTMLElement): CornerRadii {
   const cs = getComputedStyle(el);
-  // Prefer per-corner vars, fall back to shared --window-radius
   const tl = parsePx(cs.getPropertyValue("--window-radius-tl"), parsePx(cs.getPropertyValue("--window-radius"), 18));
   const tr = parsePx(cs.getPropertyValue("--window-radius-tr"), parsePx(cs.getPropertyValue("--window-radius"), 18));
   const br = parsePx(cs.getPropertyValue("--window-radius-br"), 30);
   const bl = parsePx(cs.getPropertyValue("--window-radius-bl"), 30);
-  // If any is 0/missing, fall back to sensible defaults
   return {
     tl: tl || 18,
     tr: tr || 18,
@@ -89,16 +80,12 @@ export function useSquircleClip(radius?: number | CornerRadii) {
       return radius;
     };
 
-    // Feature-detect native corner-shape; if available just set it and keep CSS radii.
     try {
       const supports =
         typeof CSS !== "undefined" &&
         (CSS.supports("corner-shape", "squircle") || CSS.supports("corner-shape: squircle"));
       if (supports) {
         const rr = getRadii();
-        // Keep the CSS per-corner vars as the source of truth — just enable squircle
-        // and ensure border-radius reflects the intended per-corner radii when a
-        // numeric override was passed. Otherwise leave CSS alone.
         if (radius != null) {
           if (typeof radius === "number") {
             el.style.borderRadius = `${radius}px`;
@@ -111,7 +98,6 @@ export function useSquircleClip(radius?: number | CornerRadii) {
         return;
       }
     } catch {
-      // Fall back to the SVG clip path when native corner support cannot be used.
     }
 
     const apply = () => {
@@ -125,7 +111,6 @@ export function useSquircleClip(radius?: number | CornerRadii) {
         br: Math.min(rr.br, max),
         bl: Math.min(rr.bl, max),
       };
-      // Preserve existing matchRadius logic for single-value case
       if (typeof radius === "number") {
         const r = matchRadius(radius, rect.width, rect.height);
         const d = buildSquirclePath(Math.ceil(rect.width), Math.ceil(rect.height), r);

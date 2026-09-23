@@ -37,31 +37,21 @@ pub fn run() {
         .setup(|app| {
             let data_dir = app.handle().path().app_data_dir()?;
             std::fs::create_dir_all(&data_dir)?;
-            // Reap any Aether process left running from a prior crash before
-            // the user can click Connect and spawn a second one onto the
-            // same port.
             aether::orphan::reap_orphan(&data_dir);
             #[cfg(target_os = "windows")]
             tun::cleanup::reap_orphan_tun(&data_dir);
             focus::spawn_watcher(app.handle().clone());
             tray::init(app)?;
-            // Loopback HTTP→SOCKS5 bridge. The Windows system proxy is an HTTP
-            // proxy; aether only speaks SOCKS5, so the OS points at this bridge
-            // and it forwards every request through aether. Started here so the
-            // bound port is stable for the whole session.
             httpproxy::start().map_err(|e| {
                 log::error!("failed to start HTTP proxy bridge: {e}");
                 Box::new(tauri::Error::Io(std::io::Error::other(format!(
                     "failed to start HTTP proxy bridge: {e}"
                 ))))
             })?;
-            // IP Changer's auto-rotate loop: controls its own scheduling and
-            // only acts while the (separate) Tor process is running.
             {
                 let state = app.state::<AppState>();
                 ip_changer::spawn_auto_rotate(app.handle().clone(), state.tor_manager.clone());
             }
-            // Live traffic feed — emits aether://traffic ~1 Hz while connected.
             {
                 let handle = app.handle().clone();
                 std::thread::spawn(move || loop {
@@ -78,8 +68,6 @@ pub fn run() {
                     let _ = handle.emit(events::TRAFFIC_EVENT, &stats);
                 });
             }
-            // Restore the IP-changer's Tor engine choice (bundled vs system)
-            // so the preference survives restarts.
             {
                 use tauri_plugin_store::StoreExt;
                 let use_system_tor = app
@@ -96,10 +84,6 @@ pub fn run() {
                     .unwrap()
                     .set_use_system_tor(use_system_tor);
             }
-            // Start minimized if the user opted in (paired with close-to-tray
-            // and launch-at-startup so the app quietly sits in the tray).
-            // Only applies when close_to_tray is also enabled — otherwise
-            // there would be no way to bring the window back.
             {
                 use tauri_plugin_store::StoreExt;
                 let start_minimized = app
@@ -124,7 +108,6 @@ pub fn run() {
                     }
                 }
             }
-            // Restore window position from last session
             {
                 use tauri_plugin_store::StoreExt;
                 if let Some((x, y, w, h)) = app
@@ -140,7 +123,6 @@ pub fn run() {
                         Some((x, y, w, h))
                     })
                 {
-                    // Ignore obviously invalid positions (off-screen, zero-size)
                     let valid = w > 100.0
                         && h > 100.0
                         && x > -10_000.0
@@ -223,7 +205,6 @@ pub fn run() {
                     let _ = window.hide();
                 }
             }
-            // Save window position on move/resize
             if let WindowEvent::Moved(_) | WindowEvent::Resized(_) = event {
                 if let Ok(pos) = window.outer_position() {
                     if let Ok(size) = window.outer_size() {

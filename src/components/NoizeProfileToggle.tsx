@@ -36,8 +36,6 @@ const WG_DESCRIPTIONS: Record<WgNoize, string> = {
   off: "No obfuscation. Only for open networks or testing.",
 };
 
-/** Shows MASQUE or WireGuard/gool obfuscation profiles based on the selected
- * protocol. Locked outside Idle/Error like every other profile control. */
 export function NoizeProfileToggle() {
   const status = useConnectionStore((s) => s.status);
   const protocol = useConnectionStore((s) => s.profile.protocol);

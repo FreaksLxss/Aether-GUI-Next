@@ -2,7 +2,6 @@ import { AlertTriangle, Loader2, Power, Shuffle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useIpChangerStore } from "@/stores/ipChangerStore";
 
-/** Start/stop + rotate buttons for the Tor subprocess. */
 export function RotationControls() {
   const status = useIpChangerStore((s) => s.status);
   const transitioning = useIpChangerStore((s) => s.transitioning);

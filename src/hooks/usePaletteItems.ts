@@ -65,7 +65,6 @@ export function recordPaletteRecent(id: string) {
     cur.unshift(id);
     localStorage.setItem(RECENT_KEY, JSON.stringify(cur.slice(0, 3)));
   } catch {
-    // Recent actions are optional when local storage is unavailable.
   }
 }
 function getPinnedIds(): Set<string> {
@@ -129,7 +128,6 @@ export function usePaletteItems(setPanel: Setter): PaletteItem[] {
       if (fieldId) scrollToField(fieldId);
     };
 
-    // ── Panels (top-level nav) ────────────────────────────────────────────
     items.push(
       {
         id: "panel-advanced",
@@ -178,7 +176,6 @@ export function usePaletteItems(setPanel: Setter): PaletteItem[] {
       },
     );
 
-    // ── Primary actions ───────────────────────────────────────────────────
     if (connected || status.state === "Connecting" || status.state === "Reconnecting" || status.state === "Launching") {
       items.push({
         id: "action-disconnect",
@@ -249,7 +246,6 @@ export function usePaletteItems(setPanel: Setter): PaletteItem[] {
       },
     );
 
-    // ── Tuning / Protocol (quick) ─────────────────────────────────────────
     const tunings: { id: string; label: string; mode: "turbo" | "balanced" | "thorough" | "verified"; icon: typeof Zap; hint: string }[] = [
       { id: "turbo", label: "Tuning: Fast", mode: "turbo", icon: Zap, hint: "Scan mode Turbo" },
       { id: "balanced", label: "Tuning: Balanced", mode: "balanced", icon: Gauge, hint: "Scan mode Balanced" },
@@ -268,7 +264,6 @@ export function usePaletteItems(setPanel: Setter): PaletteItem[] {
         run: () => void setScanMode(t.mode),
       });
     }
-    // Include Ironclad as verified-adjacent tuning
     if (profile.scan_mode === "ironclad") {
       items.push({
         id: "tuning-ironclad",
@@ -300,7 +295,6 @@ export function usePaletteItems(setPanel: Setter): PaletteItem[] {
       });
     }
 
-    // ── Advanced: granular ────────────────────────────────────────────────
     const ipVersions: { v: "v4" | "v6" | "both"; label: string }[] = [
       { v: "v4", label: "IP version: IPv4" },
       { v: "v6", label: "IP version: IPv6" },
@@ -476,7 +470,6 @@ export function usePaletteItems(setPanel: Setter): PaletteItem[] {
       },
     );
 
-    // Zero Trust email/token fields as jumps
     items.push(
       {
         id: "field-zt-email",
@@ -552,7 +545,6 @@ export function usePaletteItems(setPanel: Setter): PaletteItem[] {
       });
     }
 
-    // ── Settings ─────────────────────────────────────────────────────────
     const captureModes: { v: "proxy" | "tun" | "both"; label: string }[] = [
       { v: "proxy", label: "Capture: Proxy" },
       { v: "tun", label: "Capture: TUN" },
@@ -638,7 +630,6 @@ export function usePaletteItems(setPanel: Setter): PaletteItem[] {
         icon: SunMoon,
         run: () => {
           openSettings();
-          // Also toggle immediately for power users
           const key = "aether-theme";
           const cur = localStorage.getItem(key);
           const next = cur === "light" ? "dark" : "light";
@@ -691,7 +682,6 @@ export function usePaletteItems(setPanel: Setter): PaletteItem[] {
       },
     );
 
-    // ── IP Changer ────────────────────────────────────────────────────────
     if (torRunning) {
       items.push(
         {
@@ -747,7 +737,6 @@ export function usePaletteItems(setPanel: Setter): PaletteItem[] {
       },
     );
 
-    // Recents & pinned: surface last-used at top
     try {
       const pinned = getPinnedIds();
       const recents = getRecentIds();
@@ -760,26 +749,20 @@ export function usePaletteItems(setPanel: Setter): PaletteItem[] {
           else if (recents.includes(it.id)) recentItems.push({ ...it, group: "Recent" });
           else rest.push(it);
         }
-        // keep original order inside each bucket; recents ordered by recency
         recentItems.sort((a, b) => recents.indexOf(a.id) - recents.indexOf(b.id));
-        // wrap runs to record recents
         const wrap = (arr: typeof items) => arr.map((it) => ({ ...it, run: wrapRun(it.id, it.run) }));
         const wrappedRest = wrap(rest);
         const wrappedRecent = wrap(recentItems);
         const wrappedPinned = wrap(pinnedItems);
         return [...wrappedPinned, ...wrappedRecent, ...wrappedRest];
       }
-      // even without pinned/recents, wrap runs to record
       for (const it of items) {
         const orig = it.run;
         it.run = wrapRun(it.id, orig);
       }
     } catch {
-      // Keep the default items when stored pins or recents cannot be applied.
     }
 
-    // Sorting: Panels + Actions first, then the rest alphabetically by group.
-    // Filtering already handles keyword matching; order here is the default view.
     return items;
   }, [
     status,

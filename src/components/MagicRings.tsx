@@ -116,9 +116,6 @@ export default function MagicRings({
   const hoverAmountRef = useRef(0);
   const isHoveredRef = useRef(false);
   const burstRef = useRef(0);
-  // The whole app gates its looping work on window focus (see windowFocus.ts)
-  // so it sits at ~0% CPU in the background. This WebGL loop is the one
-  // casualty otherwise — pause the shader when the window isn't focused.
   const focusedRef = useRef(true);
   const focused = useWindowFocused();
   useEffect(() => {
@@ -226,9 +223,6 @@ export default function MagicRings({
     let frameId: number;
     const animate = (t: number) => {
       frameId = requestAnimationFrame(animate);
-      // Don't burn a full-shader render while the window is unfocused; the
-      // scheduled frame costs almost nothing and the next focused frame will
-      // resume the visuals immediately.
       if (!focusedRef.current) return;
       const p = propsRef.current!;
 

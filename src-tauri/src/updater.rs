@@ -4,9 +4,6 @@ use std::path::{Path, PathBuf};
 
 const GUI_REPO: &str = "FreaksLxss/Aether-GUI-Remake";
 
-/// The single authoritative supported engine release, shared with
-/// `src-tauri/binaries/fetch-aether.py` and CI. Never resolve the engine from
-/// `releases/latest`; the pin here is the version the GUI is built for.
 #[derive(serde::Deserialize)]
 struct EngineRelease {
     version: String,
@@ -28,9 +25,6 @@ fn engine_release() -> &'static EngineRelease {
     })
 }
 
-/// Version of the engine this GUI build expects (e.g. "2.0.0"). Used for the
-/// versioned app-data install directory (`binaries/engine-2.0.0`) and for
-/// compatibility checks.
 pub fn expected_version() -> &'static str {
     &engine_release().version
 }
@@ -43,9 +37,6 @@ pub struct UpdateInfo {
     pub download_url: String,
 }
 
-/// Check GitHub releases for a newer version of Aether-GUI itself. On Android
-/// the GUI ships via APK (no auto-update path here), so this reports nothing
-/// available rather than pointing at desktop installers.
 #[cfg(not(target_os = "android"))]
 pub async fn check_for_update(current_version: &str) -> Result<UpdateInfo, String> {
     let url = format!("https://api.github.com/repos/{GUI_REPO}/releases/latest");
@@ -71,7 +62,6 @@ pub async fn check_for_update(current_version: &str) -> Result<UpdateInfo, Strin
         .unwrap_or("v0.0.0")
         .trim_start_matches('v');
 
-    // Find download URL — prefer .exe, then .msi, then fall back to release page
     let download_url = find_download_url(&release)
         .unwrap_or_else(|| release["html_url"].as_str().unwrap_or("").to_string());
 
@@ -95,10 +85,8 @@ pub async fn check_for_update(_current_version: &str) -> Result<UpdateInfo, Stri
     })
 }
 
-/// Search release assets for an .exe or .msi installer.
 fn find_download_url(release: &serde_json::Value) -> Option<String> {
     let assets = release["assets"].as_array()?;
-    // Prefer .exe, then .msi
     for ext in &[".exe", ".msi"] {
         if let Some(asset) = assets.iter().find(|a| {
             a["name"]
@@ -112,22 +100,6 @@ fn find_download_url(release: &serde_json::Value) -> Option<String> {
     None
 }
 
-/// Install the pinned engine release into a caller-selected, versioned
-/// directory (convention: app_data/binaries/engine-{expected_version()}).
-///
-/// Runtime layout on success:
-///   dest/aether.exe (aether on Unix)
-///   dest/pt/lyrebird.exe (pt/lyrebird on Unix)
-///   dest/pt/psiphon-tunnel-core.exe (pt/psiphon-tunnel-core on Unix)
-///
-/// The download is SHA-256 verified against the pinned manifest, the archive is
-/// restricted to the three required payloads (plus the upstream launcher, which
-/// is not installed), each executable is checked against the target
-/// architecture, and extraction happens in a hidden staging directory next to
-/// `dest`. The directory is activated with a rename only after complete,
-/// validated extraction; a previously installed directory is preserved as a
-/// sibling backup and rolled back on activation failure. Callers must stop the
-/// engine before repair and only resolve `dest` after this function succeeds.
 #[cfg(not(target_os = "android"))]
 pub async fn download_aether_binary(dest_dir: &Path) -> Result<PathBuf, String> {
     use std::time::Duration;
@@ -241,10 +213,6 @@ struct PayloadWriter<'a> {
 }
 
 impl PayloadWriter<'_> {
-    /// Validate one archive member against a strict allowlist and, when it is
-    /// one of the three required payloads, verify its architecture and write it
-    /// out. Rejects traversal, absolute paths, backslashes, non-regular files,
-    /// duplicates and anything outside the expected payload set.
     fn entry(
         &mut self,
         raw: &str,
@@ -298,7 +266,7 @@ impl PayloadWriter<'_> {
             return Err("Truncated archive member".into());
         }
         if name != engine && name != pt && name != psiphon {
-            return Ok(()); // known upstream launcher: validated, not installed
+            return Ok(());
         }
         check_architecture(&bytes, self.target)?;
         let path = self.dest.join(name);
@@ -322,9 +290,6 @@ impl PayloadWriter<'_> {
 }
 
 fn reject_duplicate_zip_entries(bytes: &[u8], indexed_count: usize) -> Result<(), String> {
-    // Pinned archives are small, single-disk, non-ZIP64. zip 2.x indexes
-    // entries by name and silently collapses duplicates, so validate the raw
-    // end-of-central-directory record before trusting that index.
     let start = bytes.len().saturating_sub(65_557);
     let footer = (start..bytes.len().saturating_sub(21))
         .rev()
@@ -391,7 +356,6 @@ fn extract_payload(bytes: &[u8], target: &str, dest: &std::path::Path) -> Result
                 &mut entry,
             )?;
         }
-        // Consume the gzip trailer to detect truncated/checksum-invalid streams.
         archive
             .into_inner()
             .read_to_end(&mut Vec::new())
@@ -414,7 +378,6 @@ fn install_archive(
     verify_checksum(bytes, &asset.sha256)?;
     let parent = dest.parent().ok_or("Engine destination has no parent")?;
     std::fs::create_dir_all(parent).map_err(|e| e.to_string())?;
-    // One repair at a time; RAII removes this lock even after extraction errors.
     let name = dest
         .file_name()
         .ok_or("Engine destination has no name")?
@@ -431,7 +394,6 @@ fn install_archive(
     }
     impl Drop for Lock {
         fn drop(&mut self) {
-            // Close the handle before unlinking so Windows removal succeeds.
             drop(self.file.take());
             let _ = std::fs::remove_file(&self.path);
         }
@@ -471,8 +433,6 @@ fn install_archive(
             }
             return Err(format!("Engine activation failed: {error}"));
         }
-        // The previous directory is kept intact as a sibling backup, including
-        // any unknown state; old installs and private files are never deleted.
         Ok(dest.join(payload_names(target).0))
     })();
     if stage.exists() {
@@ -481,8 +441,6 @@ fn install_archive(
     result
 }
 
-/// The aether binary is bundled in the APK per-ABI — never downloaded on
-/// Android.
 #[cfg(target_os = "android")]
 pub async fn download_aether_binary(_dest_dir: &Path) -> Result<PathBuf, String> {
     Err("Aether is bundled in the APK on Android".into())
@@ -500,7 +458,6 @@ mod tests {
     use super::*;
     use std::io::Write;
 
-    /// Unique temp directory, removed on drop. Tests never touch the repo.
     struct Temp(PathBuf);
     impl Temp {
         fn new() -> Self {
@@ -524,7 +481,6 @@ mod tests {
         }
     }
 
-    /// Minimal but valid x86_64 PE image.
     fn pe() -> Vec<u8> {
         let mut bytes = vec![0; 80];
         bytes[..2].copy_from_slice(b"MZ");
@@ -604,10 +560,9 @@ mod tests {
         let dest = temp.0.join("engine");
         std::fs::create_dir(&dest).unwrap();
         std::fs::write(dest.join("aether.exe"), b"old").unwrap();
-        let archive = zip(&[("aether.exe", &pe())]); // PT companion missing
+        let archive = zip(&[("aether.exe", &pe())]);
         assert!(install_archive(&archive, &asset(&archive), "windows-x86_64", &dest).is_err());
         assert_eq!(std::fs::read(dest.join("aether.exe")).unwrap(), b"old");
-        // No staging/lock/backup leftovers next to the intact old install.
         assert_eq!(std::fs::read_dir(&temp.0).unwrap().count(), 1);
     }
 
@@ -636,7 +591,6 @@ mod tests {
                 "{name}"
             );
         }
-        // Non-regular entries, wrong kinds and directory/file conflicts.
         assert!(writer
             .entry("aether.exe", false, false, 0, &mut std::io::empty())
             .is_err());
@@ -689,7 +643,6 @@ mod tests {
         let temp = Temp::new();
         let pe = pe();
         let mut bytes = zip(&[("aether.exe", &pe), ("bother.exe", &pe)]);
-        // Corrupt one central-directory name into a duplicate of the other.
         for index in 0..bytes.len() - 10 {
             if &bytes[index..index + 10] == b"bother.exe" {
                 bytes[index..index + 10].copy_from_slice(b"aether.exe");

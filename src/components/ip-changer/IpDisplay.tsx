@@ -11,8 +11,6 @@ function formatRotated(t: number | null): string {
   return mins < 60 ? `rotated ${mins} min ago` : `rotated ${Math.round(mins / 60)}h ago`;
 }
 
-/** Big mono egress IP + geo, or a live progress indicator while Tor is still
- * bootstrapping (no exit circuit exists until it completes). */
 export function IpDisplay() {
   const status = useIpChangerStore((s) => s.status);
   const currentIp = useIpChangerStore((s) => s.currentIp);

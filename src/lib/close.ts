@@ -23,10 +23,6 @@ function getSavedChoice(): CloseChoice {
   return null;
 }
 
-/**
- * Called by TitleBar close button. Shows dialog if no choice saved, otherwise acts directly.
- * The dialog is opened via the window event, keeping this module collection-of-functions pure.
- */
 export function handleClose() {
   const choice = getSavedChoice();
   if (choice === "tray") {
@@ -38,12 +34,10 @@ export function handleClose() {
   }
 }
 
-/** Called by CloseToTrayToggle to sync the saved choice. */
 export function syncCloseChoice(enabled: boolean) {
   localStorage.setItem(CLOSE_CHOICE_KEY, enabled ? "tray" : "close");
 }
 
-/** Set the close-to-tray behavior on the backend. */
 export async function setCloseToTray(enabled: boolean): Promise<void> {
   await invoke("set_close_to_tray", { enabled });
 }

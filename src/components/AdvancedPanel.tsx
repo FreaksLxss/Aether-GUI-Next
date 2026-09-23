@@ -82,8 +82,6 @@ export function AdvancedPanelContent({
   const deferredFilter = useDeferredValue(logFilter);
   const scanModeRef = useRef<HTMLDivElement>(null);
 
-  // Banner mirrors connect-time validation so every blocking issue surfaces here
-  // (listener collisions, bridge-policy conflicts, legacy paths, numeric bounds).
   const profileValidationError = useMemo(
     () => validateActiveProfile(profile),
     [profile],
@@ -453,7 +451,6 @@ export function AdvancedPanelContent({
   );
 }
 
-// Back-compat: old accordion wrapper (unused — kept for reference)
 export function AdvancedPanel(props: { open: boolean; onToggle: () => void; highlightScanMode?: boolean }) {
   return <AdvancedPanelContent highlightScanMode={props.highlightScanMode} />;
 }

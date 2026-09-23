@@ -13,11 +13,6 @@ pub fn clear_pid(data_dir: &Path) {
     let _ = fs::remove_file(pid_file(data_dir));
 }
 
-/// On startup, if a pid file survives from a prior crash and that process is
-/// still alive, kill it before the user can click Connect — otherwise a
-/// leftover Aether would just fail to bind the SOCKS port for the new one.
-/// This is a defensive backstop; `connect()`'s own port-in-use check (see
-/// aether/mod.rs) covers the case where this file is missing or stale.
 pub fn reap_orphan(data_dir: &Path) {
     let path = pid_file(data_dir);
     let Ok(contents) = fs::read_to_string(&path) else {

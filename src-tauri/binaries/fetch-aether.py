@@ -78,12 +78,11 @@ def extract_payload(data, target, dest):
 
     def accept(name, directory, regular, size, reader):
         nonlocal total
-        # Match raw archive names, not normalized paths or suffixes.
         if directory:
             name = name.removesuffix("/")
         allowed = {engine, pt, psiphon, "pt"}
         if windows:
-            allowed.add("run-aether.bat")  # known upstream launcher, not installed
+            allowed.add("run-aether.bat")
         if name not in allowed or name in seen or directory != (name == "pt") or not regular:
             raise ValueError(f"Unsafe, duplicate or unexpected archive member: {name!r}")
         seen.add(name)
@@ -163,7 +162,6 @@ def main():
     stage = Path(tempfile.mkdtemp(prefix=".engine-stage-", dir=ROOT))
     try:
         engine = extract_payload(data, target, stage)
-        # Native non-network smoke test (skip execution of cross-build payloads).
         native_arch = {"AMD64": "x86_64", "x86_64": "x86_64", "arm64": "aarch64", "aarch64": "aarch64"}.get(platform.machine())
         if target.endswith(f"-{native_arch}"):
             result = subprocess.run([str(stage / engine), "--version"], cwd=stage,
@@ -174,7 +172,6 @@ def main():
         activate(stage, ROOT / "engine")
         print(f"Complete engine ready at {ROOT / 'engine' / engine}")
     finally:
-        # Only our freshly-created staging folder, never an existing install.
         if stage.exists():
             shutil.rmtree(stage)
 

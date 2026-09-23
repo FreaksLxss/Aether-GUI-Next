@@ -19,11 +19,8 @@ const DESCRIPTIONS: Record<CaptureMode, string> = {
     "Enables both system proxy and TUN adapter simultaneously for maximum coverage.",
 };
 
-/** TUN modes are temporarily disabled while not yet supported in the UI. */
 const DISABLED_MODES: CaptureMode[] = ["tun", "both"];
 
-/** Selects how network traffic is captured: system proxy, TUN, or both.
- * Locked outside Idle/Error since capture mode can't change mid-session. */
 export function CaptureModeSelect() {
   const status = useConnectionStore((s) => s.status);
   const captureMode = useConnectionStore((s) => s.profile.capture_mode);

@@ -1,7 +1,6 @@
 use super::adapter::TunAdapter;
 use std::net::Ipv4Addr;
 
-/// Manages the Windows routing table when TUN mode is active.
 pub struct RouteManager {
     original_default_gateway: Option<Ipv4Addr>,
     original_interface_index: Option<u32>,
@@ -29,8 +28,6 @@ impl RouteManager {
         if let Some(gw) = self.original_default_gateway {
             let gw_str = gw.to_string();
 
-            // Add bypass routes for private ranges through the original gateway
-            // (so local network traffic doesn't go through TUN)
             for prefix in &["10.0.0.0/8", "172.16.0.0/12", "192.168.0.0/16"] {
                 let parts: Vec<&str> = prefix.split('/').collect();
                 let _ = run_cmd(&[
@@ -51,7 +48,6 @@ impl RouteManager {
                 ]);
             }
 
-            // Add bypass route for loopback
             let _ = run_cmd(&[
                 "route",
                 "add",
@@ -63,11 +59,8 @@ impl RouteManager {
                 "5",
             ]);
 
-            // Add bypass for the original gateway itself
             let _ = run_cmd(&["route", "add", &gw_str, &gw_str, "metric", "5"]);
 
-            // Add bypass routes for Cloudflare WARP/edge IPs (Aether connects here)
-            // These are the known Cloudflare anycast ranges
             for cf_prefix in &[
                 "162.159.192.0/20",
                 "162.159.198.0/24",
@@ -87,7 +80,6 @@ impl RouteManager {
             }
         }
 
-        // Now change the default route to go through TUN
         run_cmd(&[
             "route", "change", "0.0.0.0", "mask", "0.0.0.0", &tun_ip, "metric", "1",
         ])?;
@@ -117,7 +109,6 @@ impl RouteManager {
             }
         }
 
-        // Flush DNS cache
         let _ = run_cmd(&["ipconfig", "/flushdns"]);
 
         Ok(())
@@ -159,8 +150,6 @@ fn get_default_gateway() -> Result<(Option<Ipv4Addr>, Option<u32>), String> {
 }
 
 fn get_tun_gateway(tun_adapter: &TunAdapter) -> Result<String, String> {
-    // The TUN adapter's IP was configured during creation
-    // Read it from the adapter's network configuration
     let name = tun_adapter.name();
     let output = crate::childproc::hidden(&mut std::process::Command::new("netsh"))
         .args(["interface", "ip", "show", "addresses", &name])

@@ -1,8 +1,6 @@
 import { Toaster as SonnerToaster } from "sonner";
 
 export function Toaster() {
-  // Theme follows html.dark / html.light class; sonner reads data-theme but we delegate
-  // to CSS vars so dark/light both look native. Position offset below TitleBar (32px).
   return (
     <SonnerToaster
       position="top-center"

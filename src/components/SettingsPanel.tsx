@@ -62,7 +62,6 @@ export function SettingsContent() {
   );
 }
 
-// Back-compat shim
 export function SettingsPanel(props: { open: boolean; onToggle: () => void }) {
   void props;
   return <SettingsContent />;

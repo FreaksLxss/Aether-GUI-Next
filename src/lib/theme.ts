@@ -172,7 +172,6 @@ function resetColors() {
   ]) root.style.removeProperty(p);
 }
 
-/** Re-apply saved colors when the theme class toggles (e.g. light/dark). */
 export function initThemeColors() {
   if (typeof MutationObserver !== "undefined") {
     const observer = new MutationObserver(() => {

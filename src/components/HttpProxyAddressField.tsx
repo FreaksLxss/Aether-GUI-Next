@@ -3,8 +3,6 @@ import { Input } from "@/components/ui/input";
 import { useConnectionStore } from "@/state/connectionStore";
 import { validateDnsServers } from "@/lib/validators";
 
-/** Aether ≥1.6.0: local HTTP CONNECT proxy address, next to the SOCKS5 one
- * for clients that can't speak SOCKS. Empty input stores null (door off). */
 export function HttpProxyAddressField({ id }: { id?: string }) {
   const addr = useConnectionStore((s) => s.profile.http_proxy_address);
   const setAddr = useConnectionStore((s) => s.setHttpProxyAddress);
@@ -13,9 +11,7 @@ export function HttpProxyAddressField({ id }: { id?: string }) {
   const [err, setErr] = useState<string | null>(null);
   const timerRef = useRef<ReturnType<typeof setTimeout>>(null);
   const validate = (v: string | null) => {
-    const e = validateDnsServers(v); // reuse host:port check — same shape as TunnelDns single entry (no commas needed but tolerated)
-    // stricter: if it contains : it must be host:port else bare host ok? Mirror Bind logic
-    // keep DnsServers check (spaces) as minimal bar
+    const e = validateDnsServers(v);
     setErr(e);
     if (e) {
       if (timerRef.current) clearTimeout(timerRef.current);

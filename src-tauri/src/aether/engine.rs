@@ -7,7 +7,6 @@ use std::sync::Mutex;
 use std::time::{Duration, Instant};
 use tauri::{AppHandle, Manager};
 
-// Serializes installation and connection startup, not the lifetime of a tunnel.
 pub static INSTALLING: Mutex<bool> = Mutex::new(false);
 
 pub fn expected_version() -> &'static str {
@@ -93,9 +92,6 @@ fn parse_version(text: &str) -> Option<String> {
     })
 }
 
-/// Informational invocation only: no profile flags, tunnel, or system proxy.
-/// Drain a bounded amount of stdout concurrently so a broken executable cannot
-/// stall on a full pipe. Kill and reap on every timeout/error path.
 pub fn probe_version(path: &Path) -> Result<String, String> {
     let mut command = Command::new(path);
     command
@@ -274,7 +270,6 @@ mod tests {
         assert_eq!(info.path, Some(current.display().to_string()));
         assert_eq!(info.source.as_deref(), Some("downloaded"));
         assert!(info.transports_available);
-        // A stale candidate must not prevent a later compatible bundle either.
         let fallback = inspect_candidates(vec![
             (binaries.join("aether.exe"), "legacy bundle"),
             (current, "bundled"),

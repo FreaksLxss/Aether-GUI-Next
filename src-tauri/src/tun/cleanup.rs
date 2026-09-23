@@ -63,7 +63,7 @@ fn is_process_alive(pid: u32) -> bool {
             let mut exit_code = 0u32;
             let success = GetExitCodeProcess(handle, &mut exit_code);
             CloseHandle(handle);
-            success != 0 && exit_code == 259 // STILL_ACTIVE
+            success != 0 && exit_code == 259
         }
     }
 

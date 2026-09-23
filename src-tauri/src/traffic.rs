@@ -1,12 +1,3 @@
-//! In-memory traffic counters — upload / download / rates.
-//! Counts bytes actually carried through the tunnel: the HTTP proxy relay
-//! (`httpproxy.rs`) and the TUN forwarder (`tun/forwarder.rs`) feed the
-//! atomics once per payload byte — a 330 MB download shows ≈330 MB, nothing
-//! else on the NIC (background, retries, wire overhead) leaks in. ponytail:
-//! in proxy mode, apps that ignore the system proxy aren't counted — switch
-//! to per-NIC OS counters (`GetBestInterface` + `GetIfEntry2`) if system-wide
-//! totals are ever wanted. Totals are in-memory: `reset()` on
-//! connect/disconnect, gone on exit.
 
 use serde::Serialize;
 use std::sync::{
@@ -26,7 +17,6 @@ pub struct TrafficStats {
 static TX_BYTES: AtomicU64 = AtomicU64::new(0);
 static RX_BYTES: AtomicU64 = AtomicU64::new(0);
 
-/// Previous snapshot used to compute B/s rate.
 static PREV: Mutex<(u64, u64, Option<Instant>)> = Mutex::new((0, 0, None));
 
 pub fn record_tx(n: u64) {
@@ -43,7 +33,6 @@ pub fn record_rx(n: u64) {
     RX_BYTES.fetch_add(n, Ordering::Relaxed);
 }
 
-/// Totals + rates from the last observation window.
 fn rates(tx: u64, rx: u64) -> TrafficStats {
     let mut prev = PREV.lock().unwrap();
     let now = Instant::now();
@@ -70,7 +59,6 @@ fn rates(tx: u64, rx: u64) -> TrafficStats {
     }
 }
 
-/// Snapshot current totals + rates — tunnel-scoped atomics only.
 pub fn snapshot() -> TrafficStats {
     rates(
         TX_BYTES.load(Ordering::Relaxed),
@@ -119,7 +107,6 @@ fn pid_exe(pid: u32) -> String {
             return String::new();
         }
         let full = String::from_utf16_lossy(&buf[..size as usize]);
-        // basename
         let base = full.rsplit(['\\', '/']).next().unwrap_or(&full);
         base.to_string()
     }
@@ -146,11 +133,7 @@ fn tcp_state_label(s: u32) -> &'static str {
 
 #[cfg(windows)]
 fn fmt_ipv4(addr: u32, port_net: u32) -> String {
-    // dwAddr is host-order? Actually network order in MIB rows. Empirically GetExtendedTcpTable stores in network byte order.
-    // Convert: addr as u32 -> bytes in network order already, decode as big-endian IP.
     let ip = std::net::Ipv4Addr::from(u32::from_be(addr));
-    // dwPort is in network byte order in low 16 bits shifted? MIB stores port in network byte order in dwLocalPort.
-    // In MIB_TCPROW_OWNER_PID dwLocalPort is network byte order. So ntohs.
     let port = u16::from_be((port_net & 0xFFFF) as u16);
     if port == 0 {
         ip.to_string()
@@ -170,10 +153,8 @@ pub fn active_connections() -> Vec<ActiveConn> {
             GetExtendedTcpTable, GetExtendedUdpTable,
         };
         let mut out: Vec<ActiveConn> = Vec::new();
-        // TCP
         {
             let mut size: u32 = 0;
-            // first call to get size
             GetExtendedTcpTable(std::ptr::null_mut(), &mut size, 0, 2, 5, 0);
             if size > 0 && size < 8 * 1024 * 1024 {
                 let mut buf: Vec<u8> = vec![0u8; size as usize];
@@ -189,7 +170,6 @@ pub fn active_connections() -> Vec<ActiveConn> {
                             break;
                         }
                         let row = &*(base.add(i * row_size) as *const windows_sys::Win32::NetworkManagement::IpHelper::MIB_TCPROW_OWNER_PID);
-                        // skip loopback remote? keep all but could filter
                         let exe = pid_exe(row.dwOwningPid);
                         out.push(ActiveConn {
                             pid: row.dwOwningPid,
@@ -206,7 +186,6 @@ pub fn active_connections() -> Vec<ActiveConn> {
                 }
             }
         }
-        // UDP (no remote/state)
         {
             let mut size: u32 = 0;
             GetExtendedUdpTable(std::ptr::null_mut(), &mut size, 0, 2, 1, 0);
@@ -240,7 +219,6 @@ pub fn active_connections() -> Vec<ActiveConn> {
                 }
             }
         }
-        // Sort: ESTABLISHED first, then by exe
         out.sort_by(|a, b| {
             let ak = if a.state == "ESTABLISHED" { 0 } else { 1 };
             let bk = if b.state == "ESTABLISHED" { 0 } else { 1 };
@@ -248,7 +226,6 @@ pub fn active_connections() -> Vec<ActiveConn> {
                 .then_with(|| a.exe.cmp(&b.exe))
                 .then_with(|| a.pid.cmp(&b.pid))
         });
-        // dedup pid+local+remote to keep list short, cap 64 rows
         out.truncate(64);
         out
     }

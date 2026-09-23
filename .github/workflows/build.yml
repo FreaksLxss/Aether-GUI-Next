@@ -1,8 +1,5 @@
 name: build
 
-# Tauri can't cross-bundle from one OS to another, so each platform builds on
-# its own runner. Manual dispatch uploads the bundles as run artifacts (for
-# testing); pushing a v* tag additionally attaches them to a draft release.
 on:
   workflow_dispatch:
   push:
@@ -62,12 +59,6 @@ jobs:
           AETHER_ASSET: ${{ matrix.aether_asset }}
         run: bash src-tauri/binaries/fetch-aether.sh
 
-      # The same pinned manifest (src-tauri/aether-release.json) drives every
-      # platform: fetch-aether.py verifies the archive SHA-256, extracts only
-      # aether + pt/lyrebird + pt/psiphon-tunnel-core into
-      # src-tauri/binaries/engine/, and validates each executable's
-      # architecture. The PowerShell wrapper handles the Windows zip asset;
-      # bash handles the tar.gz assets.
       - name: Fetch Aether core (Windows)
         if: runner.os == 'Windows'
         shell: pwsh
@@ -76,10 +67,6 @@ jobs:
       - name: Test safe engine archive installation
         run: python -m unittest discover -s src-tauri/binaries -p "test_fetch_aether.py"
 
-      # Only this platform's Tor bundle is needed at runtime (ip_changer.rs
-      # resolves binaries/tor/<os>/<arch>/). Pruning the rest stops linuxdeploy
-      # from choking on foreign/32-bit ELF during AppImage bundling, and keeps
-      # every installer/AppImage small.
       - name: Prune other-platform Tor bundles
         shell: bash
         env:
@@ -109,10 +96,6 @@ jobs:
       - uses: tauri-apps/tauri-action@v0
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          # linuxdeploy applies system `strip` to every ELF it bundles, including
-          # the tor side-library/binaries in resources/. Ubuntu 22.04's old strip
-          # chokes on their RELR/RELRO sections ("unknown type [0x13] .relr.dyn"),
-          # so skip stripping. Also force extract-and-run so no FUSE is required.
           NO_STRIP: "true"
           APPIMAGE_EXTRACT_AND_RUN: "1"
         with:
@@ -121,11 +104,6 @@ jobs:
           releaseDraft: true
           args: ${{ matrix.target != '' && format('--target {0}', matrix.target) || '' }}
 
-      # Windows Authenticode sign the built binaries, then re-upload over the
-      # (unsigned) bundle tauri-action attached to the draft release. This job
-      # is skipped until a code-signing cert is configured in repository
-      # secrets (WINDOWS_CERT_BASE64 + WINDOWS_CERT_PASSWORD) — supplying the
-      # cert is what actually kills Defender ML false-positives.
       - name: Sign Windows binaries
         if: runner.os == 'Windows' && env.WINDOWS_CERT_BASE64 != ''
         shell: pwsh

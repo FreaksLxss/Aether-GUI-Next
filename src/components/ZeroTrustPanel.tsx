@@ -6,10 +6,6 @@ import { Switch } from "@/components/ui/switch";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { useConnectionStore } from "@/state/connectionStore";
 
-/** Aether ≥1.5.0: Zero Trust (WARP for organizations) enrolment settings.
- *  `--team <name>` enrols as a managed device. The access fields are three
- *  mutually-exclusive sign-in methods; the matching flag is only emitted when
- *  its value is set (see ConnectionProfile::as_args). */
 export function ZeroTrustPanel() {
   const p = useConnectionStore((s) => s.profile);
   const setTeam = useConnectionStore((s) => s.setZtTeam);
@@ -20,7 +16,6 @@ export function ZeroTrustPanel() {
   const setGateway = useConnectionStore((s) => s.setZtGateway);
   const status = useConnectionStore((s) => s.status);
   const locked = status.state !== "Idle" && status.state !== "Error";
-  // The one-time code can only reach Aether while a session is live.
   const sessionActive =
     status.state !== "Idle" && status.state !== "Error";
   const [code, setCode] = useState("");

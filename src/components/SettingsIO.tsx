@@ -107,8 +107,6 @@ export function SettingsIO() {
       const contents = await invoke<string>("read_file", { path: selected });
       const data = JSON.parse(contents) as SettingsExport;
 
-      // Normalize and validate every profile before showing the diff or writing
-      // anything, so old imports get defaults and a bad preset cannot half-apply.
       const normalize = (value: unknown): ConnectionProfile => {
         const profile = connectionProfileSchema.parse(value);
         const error = validateActiveProfile(profile);
@@ -120,7 +118,6 @@ export function SettingsIO() {
         data.presets = data.presets.map((preset) => ({ ...preset, profile: normalize(preset.profile) }));
       }
 
-      // Build diff vs current
       try {
         const [curProfile, curPresets, curClose, curTop, curMin] = await Promise.all([
           invoke<ConnectionProfile>("get_default_profile"),
@@ -143,7 +140,6 @@ export function SettingsIO() {
           return;
         }
       } catch {
-        // diff failed — fall through to direct apply
       }
       await applyImport(data);
     } catch (e) {

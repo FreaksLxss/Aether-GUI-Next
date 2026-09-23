@@ -3,9 +3,6 @@ import { Input } from "@/components/ui/input";
 import { useConnectionStore } from "@/state/connectionStore";
 import { validateUpstream } from "@/lib/validators";
 
-/** Aether ≥1.7.0: dial out through another proxy already on the machine
- * (--upstream), chaining Aether behind e.g. a VPN or proxy app. Empty input
- * stores null so the flag is omitted (direct dial). */
 export function UpstreamProxyField({ id }: { id?: string }) {
   const url = useConnectionStore((s) => s.profile.upstream_proxy);
   const setUrl = useConnectionStore((s) => s.setUpstreamProxy);

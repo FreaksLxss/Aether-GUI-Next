@@ -2,7 +2,6 @@ import { z } from "zod";
 import type { ConnectionProfile } from "@/types/connection";
 import { defaultConnectionProfile, supportsFirewallMark } from "./profile-defaults";
 
-// ── helpers ──────────────────────────────────────────────────────────
 
 export const hostPortRegex = /^\S+:\d+$/;
 export const hostRegex = /^\S+$/;
@@ -29,8 +28,6 @@ function hostHasSpaces(s: string): boolean {
   return /\s/.test(s);
 }
 
-// URL's IPv6 parser canonicalizes equivalent spellings. Require brackets and
-// reject DNS names, zone IDs and IPv4 shorthand before using it.
 function canonicalIp(host: string): string | null {
   if (isValidIPv4(host)) return host;
   if (!host.startsWith("[") || !host.endsWith("]") || !host.includes(":")) return null;
@@ -38,7 +35,6 @@ function canonicalIp(host: string): string | null {
   if (host.includes(".") && !isValidIPv4(host.slice(host.lastIndexOf(":") + 1, -1))) return null;
   try {
     const ip = new URL(`http://${host}/`).hostname;
-    // Match Rust IpAddr::to_canonical for IPv4-mapped IPv6.
     const mapped = ip.match(/^\[::ffff:([0-9a-f]+):([0-9a-f]+)\]$/);
     if (mapped) {
       const high = parseInt(mapped[1], 16), low = parseInt(mapped[2], 16);
@@ -64,7 +60,6 @@ function validPeers(value: string | null, allowAuto: boolean): boolean {
     && new Set(entries.map((e) => e?.ip)).size === entries.length;
 }
 
-// ── zod schemas ──────────────────────────────────────────────────────
 const socketMessage = "Use numeric IP:port (bracket IPv6), port 1–65535";
 export const bindAddressSchema = z.string().refine((v) => numericSocket(v) !== null, socketMessage);
 export const httpProxyAddressSchema = z.string().nullable().refine(
@@ -145,7 +140,6 @@ export const ztTeamSchema = z
     { message: "Team name must not contain spaces" },
   );
 
-// ── Aether ≥2.0.0 ─────────────────────────────────────────────
 export const mimPeersSchema = z.string().nullable().refine(
   (v) => validPeers(v, true),
   "Use 'auto' or one or two numeric IP:port endpoints with different IP addresses",
@@ -181,7 +175,6 @@ export const countrySchema = z
     { message: "Country must be 2-letter code" },
   );
 
-// ── imperative validators (return error string or null) ─────────────
 
 export function validateBindAddress(v: string): string | null {
   const res = bindAddressSchema.safeParse(v);
@@ -250,7 +243,6 @@ export function validateCountry(v: string | null): string | null {
   return res.error.issues[0]?.message ?? "Invalid country";
 }
 
-// ── connectionProfileSchema for SettingsIO import ──────────────────
 
 const profileShape = z
   .object({
@@ -319,8 +311,6 @@ const profileShape = z
   })
   .passthrough();
 
-// Old imports must contain the three original choices; later fields receive
-// the same defaults as serde. Explicit null/invalid values are never replaced.
 export const connectionProfileSchema = z.preprocess((value) => {
   if (!value || typeof value !== "object" || Array.isArray(value)) return value;
   const { protocol: _protocol, scan_mode: _scan, ip_version: _ip, ...defaults } = defaultConnectionProfile();
@@ -333,13 +323,11 @@ export function validateUint32(value: number | null): string | null {
     ? null : "Must be an integer from 0 to 4294967295";
 }
 
-/** Every --exit-loc token: two-letter country, optional leading `!`. */
 function exitLocOk(value: string): boolean {
   if (!value.trim()) return false;
   return value.split(",").every((raw) => /^[A-Za-z]{2}$/.test(raw.trim().replace(/^!/, "")));
 }
 
-/** Shared active-field validation for Connect, presets and the advanced banner. */
 export function validateActiveProfile(p: ConnectionProfile): string | null {
   const listeners: [string, string][] = [["bind_address", p.bind_address]];
   if (p.http_proxy_address?.trim()) listeners.push(["http_proxy_address", p.http_proxy_address]);
@@ -371,7 +359,6 @@ export function validateActiveProfile(p: ConnectionProfile): string | null {
   if (p.engine_psiphon_mode === "psiphon-reverse" && !masque) {
     return "psiphon-reverse requires MASQUE (forces HTTP/2, incompatible with WireGuard/gool)";
   }
-  // Primary-listener exclusivity (mirrors src-tauri profiles::validate).
   if (p.engine_psiphon_mode === "psiphon-only" && p.engine_tor_mode !== "disabled") {
     return "psiphon-only cannot be combined with engine Tor — both claim the primary listener";
   }
@@ -396,7 +383,6 @@ export function validateActiveProfile(p: ConnectionProfile): string | null {
     if (!canonicalIp(p.tun_dns.includes(":") ? `[${p.tun_dns}]` : p.tun_dns)) return "tun_dns: invalid IP";
   }
   if (p.engine_tor_mode !== "disabled") {
-    // A non-empty bridges file counts as a manual bridge source (Aether ≥2.1.0).
     const manual = p.engine_tor_bridges.some((s) => s.trim()) || !!p.engine_tor_bridges_file?.trim();
     if ((p.engine_tor_force_bridges && (manual || p.engine_tor_no_bridges)) || (manual && p.engine_tor_no_bridges)) {
       return "Tor bridge policies conflict: choose automatic fallback, force automatic, manual lines, or disabled";
@@ -413,7 +399,6 @@ export function validateActiveProfile(p: ConnectionProfile): string | null {
   if (p.exit_loc?.trim() && !exitLocOk(p.exit_loc)) {
     return 'exit_loc: comma-separated two-letter country codes, optional leading ! (e.g. "DE,SE,!IR")';
   }
-  // serde stores these as Option<u32>, including inactive saved values.
   for (const key of ["route_sniff_ms", "engine_tor_direct_secs", "engine_tor_stall_secs", "exit_loc_secs", "stats_secs", "max_clients", "half_close_secs", "tcp_keepalive_secs", "tcp_connect_secs"] as const) {
     fieldChecks.push([key, validateUint32(p[key])]);
   }

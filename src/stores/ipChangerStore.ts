@@ -33,8 +33,6 @@ function mapStatus(s: TorStatus): {
 
 const BOOT_RE = /Bootstrapped (\d+)% \((\w+)(?::|\))/;
 
-/** Parse Tor's own bootstrap progress out of its stdout ("Bootstrapped 30%
- * (loading_status): ..."). Returns null for non-bootstrap lines. */
 function bootstrapFromLine(line: string): { percent: number; phase: string } | null {
   const m = BOOT_RE.exec(line);
   if (!m) return null;
@@ -44,38 +42,22 @@ function bootstrapFromLine(line: string): { percent: number; phase: string } | n
 interface IpChangerState {
   status: "stopped" | "starting" | "running" | "stopping" | "error";
   error: string | null;
-  /** Current egress IP seen through Tor's SOCKS5 proxy (null while stopped
-   * or before the first successful lookup). */
   currentIp: PublicInfo | null;
-  /** Tor's reported bootstrap progress, parsed live from its log. null when
-   * not running or fully bootstrapped. */
   bootstrapPercent: number | null;
-  /** Human phase name of the current bootstrap step. */
   bootstrapPhase: string | null;
-  /** Last probe-diagnosis string we emitted, so repeated identical failures
-   * don't spam the log on every poll. */
   _lastProbeNote: string | null;
   ipChecking: boolean;
   binaryAvailable: boolean;
   logs: LogLine[];
-  /** True while the NEWNYM command is in flight. */
   rotating: boolean;
-  /** True while a start/stop command blocks the backend worker. */
   transitioning: boolean;
-  /** ms epoch of the last successful IP rotation, or null before any. */
   lastRotatedAt: number | null;
-  /** Cumulative NEWNYM count this session, for the little rotation counter. */
   rotationCount: number;
   autoRotateEnabled: boolean;
   autoRotateIntervalSecs: number;
-  /** Effective SOCKS host+port shown in the copyable chip. */
   socksAddr: TorSocksAddr;
-  /** Bind the SOCKS listener to all interfaces (LAN access) vs loopback. */
   lanEnabled: boolean;
-  /** True when the IP-changer owns the Windows system proxy right now. */
   ipProxyEnabled: boolean;
-  /** Whether we run the OS-installed `tor` instead of the app-bundled one,
-   * plus the availability of each engine so the UI can gate the switch. */
   torEngine: TorSourceInfo;
   logLine: (line: string) => void;
   start: () => Promise<void>;
@@ -84,14 +66,8 @@ interface IpChangerState {
   refreshIp: () => Promise<void>;
   setAutoRotate: (enabled: boolean, intervalSecs?: number) => Promise<void>;
   setLan: (enabled: boolean) => Promise<void>;
-  /** Turn the system proxy on/off for the IP-changeer. Returns the error
-   * message on conflict (another proxy already owned) so the UI can warn. */
   setIpProxy: (enabled: boolean) => Promise<string | null>;
-  /** Switch Tor between the app-bundled binary and the OS package. Returns
-   * the error message when the choice is rejected (system Tor missing). */
   setTorEngine: (useSystem: boolean) => Promise<string | null>;
-  /** Re-read status + config from the backend the first time the section is
-   * opened, and resolve the bundled Tor binary. */
   refreshAll: () => Promise<void>;
   clearLogs: () => void;
 }
@@ -161,8 +137,6 @@ export const useIpChangerStore = create<IpChangerState>((set, get) => ({
         rotationCount: s.rotationCount + 1,
         error: null,
       }));
-      // NEWNYM takes a few seconds to complete — poll the new exit IP after
-      // a short delay so the displayed address actually changes.
       setTimeout(() => void get().refreshIp(), 4000);
     } catch (e) {
       set({ error: String(e) });
@@ -180,12 +154,8 @@ export const useIpChangerStore = create<IpChangerState>((set, get) => ({
     try {
       const info = await invoke<PublicInfo | null>("get_current_ip");
       if (info) {
-        // Successful — the exit is reachable. Clear the generic hint.
         set({ currentIp: info, error: null, _lastProbeNote: null });
       } else {
-        // No exit IP yet: Tor is almost certainly still bootstrapping or the
-        // probe raced a NEWNYM. Surface a log line *once per distinct
-        // diagnosis* (not every 10s poll) so the user sees what's blocking.
         const { bootstrapPercent } = get();
         const note =
           bootstrapPercent !== null && bootstrapPercent < 100
@@ -197,7 +167,6 @@ export const useIpChangerStore = create<IpChangerState>((set, get) => ({
         }
       }
     } catch {
-      // Transient (API hiccup) — keep last value; poller retries.
     } finally {
       set({ ipChecking: false });
     }
@@ -283,8 +252,6 @@ export const useIpChangerStore = create<IpChangerState>((set, get) => ({
   clearLogs: () => set({ logs: [] }),
 }));
 
-/** Subscribes to the backend's Tor status + log events for the app's whole
- * life (the events don't depend on the panel being open). */
 export async function initIpChangerListeners(): Promise<() => void> {
   if (!isTauriEnvStore()) return () => {};
   const [unlistenStatus, unlistenLog] = await Promise.all([
@@ -301,15 +268,9 @@ export async function initIpChangerListeners(): Promise<() => void> {
       const boot = bootstrapFromLine(e.payload.line);
       useIpChangerStore.setState({
         logs: [...s.logs, e.payload].slice(-MAX_LOG_LINES),
-        // Progress line from Tor itself — mirror it into the state so the
-        // panel can render a live bootstrap bar.
         ...(boot ? { bootstrapPercent: boot.percent, bootstrapPhase: boot.phase } : {}),
-        // With bootstrap handshake/guard steps reported by Tor, the exit IP
-        // probe competing against them should hang tight and just poll.
         ...(boot ? { _lastProbeNote: null } : {}),
       });
-      // The moment Tor flips to 100%, an exit circuit is usable — kick a
-      // probe right away instead of waiting the whole poll interval.
       if (boot && boot.percent >= 100) {
         const g = useIpChangerStore.getState();
         if (g.status === "running") {
