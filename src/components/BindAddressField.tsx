@@ -63,7 +63,7 @@ export function BindAddressField({ id }: { id?: string }) {
               }, 2500);
             }
           }}
-          className={`h-9 w-20 rounded-xl bg-black/20 text-center font-mono text-[11px] ring-1 ring-inset ${
+          className={`h-9 w-20 rounded-[35px] bg-black/20 text-center font-mono text-[11px] ring-1 ring-inset ${
             invalid
               ? "ring-status-error focus-visible:ring-status-error"
               : "ring-white/[0.07] focus-visible:ring-primary"

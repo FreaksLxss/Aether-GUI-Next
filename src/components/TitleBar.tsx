@@ -40,11 +40,11 @@ export function TitleBar() {
             </span>
           )}
         </div>
-        <div className="glass flex h-9 items-center gap-0.5 rounded-[50px] px-1 ring-1 ring-border">
+        <div className="glass flex h-9 items-center gap-0.5 rounded-[20px] px-0.5 ring-1 ring-border">
           <Button
             variant="ghost"
             size="icon"
-            className="size-8 rounded-full text-muted-foreground hover:bg-foreground/[0.06] hover:text-foreground active:scale-95 transition"
+            className="size-8 rounded-[14px] text-muted-foreground hover:bg-foreground/[0.06] hover:text-foreground active:scale-95 transition"
             aria-label="Minimize"
             onClick={() => {
               cue("droplet");
@@ -56,7 +56,7 @@ export function TitleBar() {
           <Button
             variant="ghost"
             size="icon"
-            className="size-8 rounded-full text-muted-foreground hover:bg-foreground/[0.06] hover:text-foreground active:scale-95 transition"
+            className="size-8 rounded-[14px] text-muted-foreground hover:bg-foreground/[0.06] hover:text-foreground active:scale-95 transition"
             aria-label="Maximize"
             onClick={() => void tauriWindow()?.toggleMaximize()}
           >
@@ -65,7 +65,7 @@ export function TitleBar() {
           <Button
             variant="ghost"
             size="icon"
-            className="size-8 rounded-full text-muted-foreground hover:bg-destructive/10 hover:text-destructive active:scale-95 transition"
+            className="size-8 rounded-[14px] text-muted-foreground hover:bg-destructive/10 hover:text-destructive active:scale-95 transition"
             aria-label="Close"
             onClick={handleClose}
           >

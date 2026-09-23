@@ -56,9 +56,9 @@ export function PsiphonPanel() {
           <SelectTrigger className="w-full justify-start gap-2 rounded-[35px] bg-black/20 px-3 py-5 text-xs font-medium text-foreground ring-1 ring-white/[0.07] disabled:opacity-50 [&>span]:flex-1 [&>span]:text-left [&>svg]:ml-auto" aria-label="Engine Psiphon mode">
             <SelectValue />
           </SelectTrigger>
-          <SelectContent className="rounded-[35px] bg-surface-2 p-1 ring-1 ring-white/10">
+          <SelectContent className="rounded-[35px] [--select-item-radius:31px] bg-surface-2 p-1 ring-1 ring-white/10">
             {MODE_OPTIONS.map((opt) => (
-              <SelectItem key={opt.value} value={opt.value} className="cursor-pointer rounded-lg px-2.5 py-2 text-xs focus:bg-primary/15 data-[highlighted]:bg-primary/15">
+              <SelectItem key={opt.value} value={opt.value} className="cursor-pointer rounded-[31px] px-2.5 py-2 text-xs focus:bg-primary/15 data-[highlighted]:bg-primary/15">
                 <div className="flex flex-col gap-0.5">
                   <span className="font-medium">{opt.label}</span>
                   <span className="text-[11px] text-muted-foreground">{opt.desc}</span>
@@ -81,12 +81,12 @@ export function PsiphonPanel() {
         <p className="text-[11px] text-muted-foreground">Psiphon-Reverse forces MASQUE over HTTP/2. Your saved transport and QUIC choices are preserved for other modes.</p>
       )}
       {reverseConflict && (
-        <div className="flex items-center gap-1.5 rounded-lg bg-destructive/10 px-2.5 py-2 text-[11px] text-status-error ring-1 ring-destructive/15">
+        <div className="flex items-center gap-1.5 rounded-[35px] bg-destructive/10 px-2.5 py-2 text-[11px] text-status-error ring-1 ring-destructive/15">
           <TriangleAlert size={12} /> Psiphon-Reverse requires MASQUE (runs over HTTP/2, incompatible with WireGuard/gool).
         </div>
       )}
       {primaryConflict && (
-        <div className="flex items-center gap-1.5 rounded-lg bg-destructive/10 px-2.5 py-2 text-[11px] text-status-error ring-1 ring-destructive/15">
+        <div className="flex items-center gap-1.5 rounded-[35px] bg-destructive/10 px-2.5 py-2 text-[11px] text-status-error ring-1 ring-destructive/15">
           <TriangleAlert size={12} /> Only-modes can&apos;t combine with the other tool — each needs the primary listener, and reverse+reverse both need MASQUE as their outer tunnel.
         </div>
       )}
@@ -103,7 +103,7 @@ export function PsiphonPanel() {
                 onBlur={() => { const e = validateEngineTorBind(profile.engine_psiphon_bind); setBindErr(e); }}
                 placeholder="127.0.0.1:1821"
                 aria-invalid={!!bindErr}
-                className={`h-9 rounded-xl bg-black/20 font-mono text-[11px] ring-1 ring-inset focus-visible:ring-primary ${bindErr ? "ring-status-error" : "ring-white/[0.07]"}`}
+                className={`h-9 rounded-[35px] bg-black/20 font-mono text-[11px] ring-1 ring-inset focus-visible:ring-primary ${bindErr ? "ring-status-error" : "ring-white/[0.07]"}`}
               />
               {bindErr && <p className="text-[11px] text-status-error">{bindErr}</p>}
             </FieldRow>
@@ -114,9 +114,9 @@ export function PsiphonPanel() {
               <SelectTrigger className="w-full justify-start gap-2 rounded-[35px] bg-black/20 px-3 py-5 text-xs font-medium text-foreground ring-1 ring-white/[0.07] disabled:opacity-50 [&>span]:flex-1 [&>span]:text-left [&>svg]:ml-auto" aria-label="Psiphon transport shape">
                 <SelectValue />
               </SelectTrigger>
-              <SelectContent className="rounded-[35px] bg-surface-2 p-1 ring-1 ring-white/10">
+              <SelectContent className="rounded-[35px] [--select-item-radius:31px] bg-surface-2 p-1 ring-1 ring-white/10">
                 {SHAPE_OPTIONS.map((opt) => (
-                  <SelectItem key={opt.value} value={opt.value} className="cursor-pointer rounded-lg px-2.5 py-2 text-xs focus:bg-primary/15 data-[highlighted]:bg-primary/15">
+                  <SelectItem key={opt.value} value={opt.value} className="cursor-pointer rounded-[31px] px-2.5 py-2 text-xs focus:bg-primary/15 data-[highlighted]:bg-primary/15">
                     <div className="flex flex-col gap-0.5">
                       <span className="font-medium">{opt.label}</span>
                       <span className="text-[11px] text-muted-foreground">{opt.desc}</span>
@@ -137,7 +137,7 @@ export function PsiphonPanel() {
               placeholder="US"
               aria-invalid={!!regionErr}
               maxLength={2}
-              className={`h-9 rounded-xl bg-black/20 font-mono text-[11px] ring-1 ring-inset ${regionErr ? "ring-status-error" : "ring-white/[0.07]"}`}
+              className={`h-9 rounded-[35px] bg-black/20 font-mono text-[11px] ring-1 ring-inset ${regionErr ? "ring-status-error" : "ring-white/[0.07]"}`}
             />
             {regionErr && <p className="text-[11px] text-status-error">{regionErr}</p>}
           </FieldRow>

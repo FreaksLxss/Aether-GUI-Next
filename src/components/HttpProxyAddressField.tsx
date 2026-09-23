@@ -35,7 +35,7 @@ export function HttpProxyAddressField({ id }: { id?: string }) {
         placeholder="127.0.0.1:1818 (off)"
         aria-invalid={!!err}
         aria-describedby={err ? "http-proxy-error" : undefined}
-        className={`h-9 rounded-xl bg-black/20 font-mono text-[11px] ring-1 ring-inset focus-visible:ring-primary ${err ? "ring-status-error focus-visible:ring-status-error" : "ring-white/[0.07]"}`}
+        className={`h-9 rounded-[35px] bg-black/20 font-mono text-[11px] ring-1 ring-inset focus-visible:ring-primary ${err ? "ring-status-error focus-visible:ring-status-error" : "ring-white/[0.07]"}`}
         aria-label="HTTP CONNECT proxy address"
       />
       {err && <p id="http-proxy-error" className="text-[11px] text-status-error">{err}</p>}

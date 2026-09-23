@@ -127,7 +127,7 @@ export function AdvancedPanelContent({
             <div
               ref={scanModeRef}
               className={cn(
-                "rounded-[35px] p-1.5 transition-all duration-500",
+                "rounded-[41px] p-1.5 transition-all duration-500",
                 highlightScanMode
                   ? "bg-primary/[0.08] ring-1 ring-primary/25"
                   : "bg-black/10 ring-1 ring-white/[0.04] light:bg-black/[0.03] light:ring-black/[0.04]",
@@ -246,7 +246,7 @@ export function AdvancedPanelContent({
                 <RouteSniffMsField id="aether-field-sniff-ms" />
               </FieldRow>
             )}
-            <p className="rounded-md bg-amber-500/[0.06] px-2.5 py-2 text-[11px] leading-relaxed text-muted-foreground/70 ring-1 ring-amber-500/10">
+            <p className="rounded-[35px] bg-amber-500/[0.06] px-2.5 py-2 text-[11px] leading-relaxed text-muted-foreground/70 ring-1 ring-amber-500/10">
               <span className="font-medium text-amber-500/80">Syntax —</span>{" "}
               <code className="text-foreground/60">example.com</code> (and subdomains),{" "}
               <code className="text-foreground/60">full:example.com</code>,{" "}
@@ -294,7 +294,7 @@ export function AdvancedPanelContent({
                 disabled={locked}
                 onChange={(e) => setExitLoc(e.target.value.trim() || null)}
                 placeholder="DE,SE or !IR,AZ,RU"
-                className="h-9 rounded-xl bg-black/20 font-mono text-[11px] ring-1 ring-white/[0.07]"
+                className="h-9 rounded-[35px] bg-black/20 font-mono text-[11px] ring-1 ring-white/[0.07]"
               />
             </FieldRow>
             <FieldRow
@@ -310,7 +310,7 @@ export function AdvancedPanelContent({
                 disabled={locked || !profile.exit_loc?.trim()}
                 onChange={(e) => setExitLocSecs(e.target.value.trim() ? Number(e.target.value) : null)}
                 placeholder="auto"
-                className="h-9 rounded-xl bg-black/20 font-mono text-[11px] ring-1 ring-white/[0.07]"
+                className="h-9 rounded-[35px] bg-black/20 font-mono text-[11px] ring-1 ring-white/[0.07]"
               />
             </FieldRow>
             <SwitchRow
@@ -329,7 +329,7 @@ export function AdvancedPanelContent({
                   disabled={locked}
                   onChange={(e) => setStatsSecs(e.target.value.trim() ? Number(e.target.value) : null)}
                   placeholder="auto"
-                  className="h-9 rounded-xl bg-black/20 font-mono text-[11px] ring-1 ring-white/[0.07]"
+                  className="h-9 rounded-[35px] bg-black/20 font-mono text-[11px] ring-1 ring-white/[0.07]"
                 />
               </FieldRow>
             )}
@@ -384,16 +384,16 @@ export function AdvancedPanelContent({
               <p className="mt-1 text-[11px] leading-relaxed text-muted-foreground/60">Env-only, no flag. Fixes fd limit / half-close / keepalive timeouts. Leave empty for defaults.</p>
               <div className="mt-2 flex flex-col gap-2">
                 <FieldRow label="Max clients" tooltip="AETHER_MAX_CLIENTS — concurrent proxy clients (fd budget).">
-                  <Input type="number" value={profile.max_clients ?? ""} disabled={locked} onChange={(e) => setMaxClients(e.target.value.trim() ? Number(e.target.value) : null)} placeholder="auto" className="h-9 rounded-xl bg-black/20 font-mono text-[11px] ring-1 ring-white/[0.07]" />
+                  <Input type="number" value={profile.max_clients ?? ""} disabled={locked} onChange={(e) => setMaxClients(e.target.value.trim() ? Number(e.target.value) : null)} placeholder="auto" className="h-9 rounded-[35px] bg-black/20 font-mono text-[11px] ring-1 ring-white/[0.07]" />
                 </FieldRow>
                 <FieldRow label="Half-close secs" tooltip="AETHER_HALF_CLOSE_SECS — how long to keep half-closed connections.">
-                  <Input type="number" value={profile.half_close_secs ?? ""} disabled={locked} onChange={(e) => setHalfCloseSecs(e.target.value.trim() ? Number(e.target.value) : null)} placeholder="auto" className="h-9 rounded-xl bg-black/20 font-mono text-[11px] ring-1 ring-white/[0.07]" />
+                  <Input type="number" value={profile.half_close_secs ?? ""} disabled={locked} onChange={(e) => setHalfCloseSecs(e.target.value.trim() ? Number(e.target.value) : null)} placeholder="auto" className="h-9 rounded-[35px] bg-black/20 font-mono text-[11px] ring-1 ring-white/[0.07]" />
                 </FieldRow>
                 <FieldRow label="TCP keepalive secs" tooltip="AETHER_TCP_KEEPALIVE_SECS">
-                  <Input type="number" value={profile.tcp_keepalive_secs ?? ""} disabled={locked} onChange={(e) => setTcpKeepaliveSecs(e.target.value.trim() ? Number(e.target.value) : null)} placeholder="auto" className="h-9 rounded-xl bg-black/20 font-mono text-[11px] ring-1 ring-white/[0.07]" />
+                  <Input type="number" value={profile.tcp_keepalive_secs ?? ""} disabled={locked} onChange={(e) => setTcpKeepaliveSecs(e.target.value.trim() ? Number(e.target.value) : null)} placeholder="auto" className="h-9 rounded-[35px] bg-black/20 font-mono text-[11px] ring-1 ring-white/[0.07]" />
                 </FieldRow>
                 <FieldRow label="TCP connect secs" tooltip="AETHER_TCP_CONNECT_SECS">
-                  <Input type="number" value={profile.tcp_connect_secs ?? ""} disabled={locked} onChange={(e) => setTcpConnectSecs(e.target.value.trim() ? Number(e.target.value) : null)} placeholder="auto" className="h-9 rounded-xl bg-black/20 font-mono text-[11px] ring-1 ring-white/[0.07]" />
+                  <Input type="number" value={profile.tcp_connect_secs ?? ""} disabled={locked} onChange={(e) => setTcpConnectSecs(e.target.value.trim() ? Number(e.target.value) : null)} placeholder="auto" className="h-9 rounded-[35px] bg-black/20 font-mono text-[11px] ring-1 ring-white/[0.07]" />
                 </FieldRow>
               </div>
             </details>

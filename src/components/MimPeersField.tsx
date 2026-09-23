@@ -35,7 +35,7 @@ export function MimPeersField({ id }: { id?: string }) {
         placeholder="auto or 203.0.113.1:2408, 198.51.100.1:2408"
         aria-invalid={!!err}
         aria-describedby={err ? "mim-error" : undefined}
-        className={`h-9 rounded-xl bg-black/20 font-mono text-[11px] ring-1 ring-inset focus-visible:ring-primary ${err ? "ring-status-error focus-visible:ring-status-error" : "ring-white/[0.07]"}`}
+        className={`h-9 rounded-[35px] bg-black/20 font-mono text-[11px] ring-1 ring-inset focus-visible:ring-primary ${err ? "ring-status-error focus-visible:ring-status-error" : "ring-white/[0.07]"}`}
         aria-label="MiM peers"
       />
       {err && <p id="mim-error" className="text-[11px] text-status-error">{err}</p>}

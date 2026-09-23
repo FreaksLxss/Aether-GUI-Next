@@ -66,7 +66,7 @@ function HistoryEntry({ entry, index }: { entry: ConnectionHistoryEntry; index: 
       initial={{ opacity: 0, y: 6 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ ...SPRING_FAST, delay: Math.min(index * 0.04, 0.24) }}
-      className="flex items-center justify-between gap-2 rounded-[35px] border border-white/[0.04] bg-black/15 px-3 py-2.5 ring-1 ring-white/[0.03] light:border-black/[0.04] light:bg-black/[0.02] light:ring-black/[0.04]"
+      className="flex items-center justify-between gap-2 rounded-[23px] border border-white/[0.04] bg-black/15 px-3 py-2.5 ring-1 ring-white/[0.03] light:border-black/[0.04] light:bg-black/[0.02] light:ring-black/[0.04]"
       aria-label={`${entry.success ? "Connected" : "Failed"} via ${entry.protocol}, ${entry.scan_mode} mode, lasted ${formatDuration(entry.duration_secs)}`}
     >
       <div className="flex min-w-0 items-center gap-2">
@@ -180,19 +180,19 @@ export function ConnectionHistoryContent() {
           ))}
         </ul>
       </div>
-      <div className="flex items-center justify-between gap-2 rounded-xl border-0 bg-card px-3 py-2 shadow-[0_8px_24px_-14px_rgba(0,0,0,0.6),0_2px_8px_rgba(0,0,0,0.35),inset_0_1px_0_rgba(255,255,255,0.06)] light:border light:border-black/[0.06] light:shadow-none">
+      <div className="flex items-center justify-between gap-2 rounded-[24px] border-0 bg-card px-3 py-3 shadow-[0_8px_24px_-14px_rgba(0,0,0,0.6),0_2px_8px_rgba(0,0,0,0.35),inset_0_1px_0_rgba(255,255,255,0.06)] light:border light:border-black/[0.06] light:shadow-none">
         {confirmingClear ? (
           <>
             <span className="text-[11px] font-medium text-destructive">Delete all history?</span>
             <div className="flex gap-1">
-              <Button variant="destructive" size="sm" onClick={() => { void clearHistory(); setConfirmingClear(false); }} className="h-7 gap-1 rounded-lg text-xs" aria-label="Confirm clear history"><Trash2 size={12} />Yes, clear</Button>
-              <Button variant="ghost" size="sm" onClick={() => setConfirmingClear(false)} className="h-7 rounded-lg text-xs text-muted-foreground">Cancel</Button>
+              <Button variant="destructive" size="sm" onClick={() => { void clearHistory(); setConfirmingClear(false); }} className="h-7 gap-1 rounded-[12px] text-xs" aria-label="Confirm clear history"><Trash2 size={12} />Yes, clear</Button>
+              <Button variant="ghost" size="sm" onClick={() => setConfirmingClear(false)} className="h-7 rounded-[12px] text-xs text-muted-foreground">Cancel</Button>
             </div>
           </>
         ) : (
           <>
-            <Button variant="ghost" size="sm" onClick={() => setConfirmingClear(true)} className="h-7 gap-1 rounded-lg text-xs text-muted-foreground hover:text-destructive" aria-label="Clear history"><Trash2 size={12} />Clear</Button>
-            <Button variant="outline" size="sm" onClick={() => void exportCsv()} className="h-7 gap-1 rounded-lg text-xs"><Download size={12} />Export CSV</Button>
+            <Button variant="ghost" size="sm" onClick={() => setConfirmingClear(true)} className="h-7 gap-1 rounded-[12px] text-xs text-muted-foreground hover:text-destructive" aria-label="Clear history"><Trash2 size={12} />Clear</Button>
+            <Button variant="outline" size="sm" onClick={() => void exportCsv()} className="h-7 gap-1 rounded-[12px] text-xs"><Download size={12} />Export CSV</Button>
           </>
         )}
       </div>

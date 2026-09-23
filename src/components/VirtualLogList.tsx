@@ -145,7 +145,7 @@ export function VirtualLogList({
           onScroll={handleScroll}
           role="log"
           aria-label="Aether connection logs"
-          className="max-h-52 overflow-y-auto rounded-b-xl p-2.5 font-mono text-[10px] leading-relaxed [scrollbar-width:thin]"
+          className="max-h-52 overflow-y-auto rounded-b-[35px] p-2.5 font-mono text-[10px] leading-relaxed [scrollbar-width:thin]"
           style={{ scrollbarGutter: "stable" }}
         >
         {logs.length === 0 ? (

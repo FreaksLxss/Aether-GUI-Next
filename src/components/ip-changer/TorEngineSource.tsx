@@ -20,7 +20,7 @@ export function TorEngineSource() {
   return (
     <div className="flex flex-col gap-1.5">
       <div
-        className="flex w-full items-center justify-between gap-2 rounded-lg bg-black/15 px-3 py-2.5 ring-1 ring-white/[0.04] transition-opacity light:bg-black/[0.03] light:ring-black/[0.05]"
+        className="flex w-full items-center justify-between gap-2 rounded-[35px] bg-black/15 px-3 py-2.5 ring-1 ring-white/[0.04] transition-opacity light:bg-black/[0.03] light:ring-black/[0.05]"
         title={running ? "Takes effect on next start" : undefined}
       >
         <div className="flex items-center gap-1.5 text-[11px] font-medium text-foreground/80">
@@ -34,14 +34,14 @@ export function TorEngineSource() {
           aria-label="Run the system Tor package instead of the bundled app Tor"
         />
       </div>
-      <p className="rounded-lg bg-white/[0.03] px-2.5 py-2 text-[11px] leading-relaxed text-muted-foreground/70 ring-1 ring-white/[0.04] light:bg-black/[0.02] light:ring-black/[0.04]">
+      <p className="rounded-[35px] bg-white/[0.03] px-2.5 py-2 text-[11px] leading-relaxed text-muted-foreground/70 ring-1 ring-white/[0.04] light:bg-black/[0.02] light:ring-black/[0.04]">
         {engine.using_system
           ? "Running the OS-provided Tor"
           : "Bundled with the app — switch to the system Tor if it fails here"}
         {engine.system_path ? ` (${engine.system_path})` : ""}
       </p>
       {warning && (
-        <p className="rounded-lg bg-red-500/10 px-2.5 py-2 text-[11px] leading-relaxed text-red-400 ring-1 ring-red-500/15">{warning}</p>
+        <p className="rounded-[35px] bg-red-500/10 px-2.5 py-2 text-[11px] leading-relaxed text-red-400 ring-1 ring-red-500/15">{warning}</p>
       )}
     </div>
   );

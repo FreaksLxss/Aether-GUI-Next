@@ -54,7 +54,7 @@ export function Section({
           {title}
         </span>
       </span>
-      <div className="flex flex-col gap-3 overflow-hidden rounded-2xl border-0 bg-card p-3.5 shadow-[0_16px_48px_-20px_rgba(0,0,0,0.75),0_8px_24px_-12px_rgba(0,0,0,0.55),inset_0_1px_0_0_rgba(255,255,255,0.06)] light:border light:border-black/[0.08] light:shadow-none">
+      <div className="flex flex-col gap-3 overflow-hidden rounded-[49px] border-0 bg-card p-3.5 shadow-[0_16px_48px_-20px_rgba(0,0,0,0.75),0_8px_24px_-12px_rgba(0,0,0,0.55),inset_0_1px_0_0_rgba(255,255,255,0.06)] light:border light:border-black/[0.08] light:shadow-none">
         {children}
       </div>
     </div>
@@ -75,7 +75,7 @@ export function SwitchRow({
   disabled?: boolean;
 }) {
   return (
-    <div className="flex items-center justify-between rounded-lg bg-black/15 px-3 py-2.5 ring-1 ring-white/[0.04] light:bg-black/[0.03] light:ring-black/[0.05]">
+    <div className="flex items-center justify-between rounded-[35px] bg-black/15 px-3 py-2.5 ring-1 ring-white/[0.04] light:bg-black/[0.03] light:ring-black/[0.05]">
       <div className="flex items-center gap-1.5 text-[11px] font-medium text-foreground/80">
         {label}
         <Tooltip>

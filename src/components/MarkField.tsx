@@ -38,7 +38,7 @@ export function MarkField({ id }: { id?: string }) {
         placeholder={markSupported ? "100 or 0x64" : "Linux/Android only"}
         aria-invalid={!!err}
         aria-describedby={err ? "mark-error" : undefined}
-        className={`h-9 rounded-xl bg-black/20 font-mono text-[11px] ring-1 ring-inset focus-visible:ring-primary ${err ? "ring-status-error focus-visible:ring-status-error" : "ring-white/[0.07]"}`}
+        className={`h-9 rounded-[35px] bg-black/20 font-mono text-[11px] ring-1 ring-inset focus-visible:ring-primary ${err ? "ring-status-error focus-visible:ring-status-error" : "ring-white/[0.07]"}`}
         aria-label="Firewall mark"
       />
       {!markSupported && <p className="text-[11px] text-muted-foreground/50">Linux/Android only — needs CAP_NET_ADMIN (SO_MARK).</p>}

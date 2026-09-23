@@ -25,7 +25,7 @@ export function RotationControls() {
               onClick={() => void stop()}
               disabled={transitioning}
               aria-label="Stop Tor"
-              className="flex-1 rounded-xl bg-white/[0.06] ring-1 ring-white/[0.06] hover:bg-white/[0.10] light:bg-black/[0.06] light:ring-black/5 light:hover:bg-black/10"
+              className="flex-1 rounded-[35px] bg-white/[0.06] ring-1 ring-white/[0.06] hover:bg-white/[0.10] light:bg-black/[0.06] light:ring-black/5 light:hover:bg-black/10"
             >
               <Power size={13} />
               Stop
@@ -36,7 +36,7 @@ export function RotationControls() {
                 onClick={() => void rotate()}
                 disabled={rotating}
                 aria-label="Rotate IP address"
-                className="w-full rounded-xl shadow-[0_2px_10px_-4px_rgba(234,88,12,0.4)]"
+                className="w-full rounded-[35px] shadow-[0_2px_10px_-4px_rgba(234,88,12,0.4)]"
               >
                 {rotating ? <Loader2 size={13} className="anim-spin" /> : <Shuffle size={13} />}
                 {rotating ? "Rotating…" : "Rotate IP"}
@@ -49,7 +49,7 @@ export function RotationControls() {
             onClick={() => void start()}
             disabled={transitioning || !binaryAvailable}
             aria-label="Start Tor"
-            className="flex-1 rounded-xl shadow-[0_2px_10px_-4px_rgba(234,88,12,0.4)]"
+            className="flex-1 rounded-[35px] shadow-[0_2px_10px_-4px_rgba(234,88,12,0.4)]"
           >
             {transitioning ? <Loader2 size={13} className="anim-spin" /> : <Power size={13} />}
             {transitioning ? "Starting…" : "Start Tor"}
@@ -58,7 +58,7 @@ export function RotationControls() {
       </div>
 
       {error && status === "error" && (
-        <div className="flex items-center gap-1.5 rounded-lg bg-red-500/10 px-2.5 py-2 text-[11px] leading-relaxed text-red-400 ring-1 ring-red-500/15">
+        <div className="flex items-center gap-1.5 rounded-[35px] bg-red-500/10 px-2.5 py-2 text-[11px] leading-relaxed text-red-400 ring-1 ring-red-500/15">
           <AlertTriangle size={11} className="shrink-0" />
           <span className="min-w-0 break-words">{error}</span>
         </div>

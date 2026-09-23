@@ -64,9 +64,9 @@ export function EngineTorPanel() {
           <SelectTrigger className="w-full justify-start gap-2 rounded-[35px] bg-black/20 px-3 py-5 text-xs font-medium text-foreground ring-1 ring-white/[0.07] disabled:opacity-50 [&>span]:flex-1 [&>span]:text-left [&>svg]:ml-auto" aria-label="Engine Tor mode">
             <SelectValue />
           </SelectTrigger>
-          <SelectContent className="rounded-[35px] bg-surface-2 p-1 ring-1 ring-white/10">
+          <SelectContent className="rounded-[35px] [--select-item-radius:31px] bg-surface-2 p-1 ring-1 ring-white/10">
             {MODE_OPTIONS.map((opt) => (
-              <SelectItem key={opt.value} value={opt.value} className="cursor-pointer rounded-lg px-2.5 py-2 text-xs focus:bg-primary/15 data-[highlighted]:bg-primary/15">
+              <SelectItem key={opt.value} value={opt.value} className="cursor-pointer rounded-[31px] px-2.5 py-2 text-xs focus:bg-primary/15 data-[highlighted]:bg-primary/15">
                 <div className="flex flex-col gap-0.5">
                   <span className="font-medium">{opt.label}</span>
                   <span className="text-[11px] text-muted-foreground">{opt.desc}</span>
@@ -89,7 +89,7 @@ export function EngineTorPanel() {
         <p className="text-[11px] text-muted-foreground">Tor-Reverse forces MASQUE over HTTP/2. Your saved transport and QUIC choices are preserved for other modes.</p>
       )}
       {reverseConflict && (
-        <div className="flex items-center gap-1.5 rounded-lg bg-destructive/10 px-2.5 py-2 text-[11px] text-status-error ring-1 ring-destructive/15">
+        <div className="flex items-center gap-1.5 rounded-[35px] bg-destructive/10 px-2.5 py-2 text-[11px] text-status-error ring-1 ring-destructive/15">
           <TriangleAlert size={12} /> Tor-Reverse requires MASQUE (runs over HTTP/2, incompatible with WireGuard/gool).
         </div>
       )}
@@ -106,14 +106,14 @@ export function EngineTorPanel() {
                 onBlur={() => { const e = validateEngineTorBind(profile.engine_tor_bind); setBindErr(e); if (e) { if (timerRef.current) clearTimeout(timerRef.current); timerRef.current = setTimeout(() => setBindErr(null), 2500); } }}
                 placeholder="127.0.0.1:1820"
                 aria-invalid={!!bindErr}
-                className={`h-9 rounded-xl bg-black/20 font-mono text-[11px] ring-1 ring-inset focus-visible:ring-primary ${bindErr ? "ring-status-error" : "ring-white/[0.07]"}`}
+                className={`h-9 rounded-[35px] bg-black/20 font-mono text-[11px] ring-1 ring-inset focus-visible:ring-primary ${bindErr ? "ring-status-error" : "ring-white/[0.07]"}`}
               />
               {bindErr && <p className="text-[11px] text-status-error">{bindErr}</p>}
             </FieldRow>
           )}
 
           <FieldRow label="Tor Dir" tooltip="Directory for Tor state (--tor-dir). Leave empty for default.">
-            <Input type="text" value={profile.engine_tor_dir ?? ""} disabled={locked} onChange={(e) => setEngineTorDir(e.target.value.trim() || null)} placeholder="/path/to/tor-dir" className="h-9 rounded-xl bg-black/20 font-mono text-[11px] ring-1 ring-white/[0.07]" />
+            <Input type="text" value={profile.engine_tor_dir ?? ""} disabled={locked} onChange={(e) => setEngineTorDir(e.target.value.trim() || null)} placeholder="/path/to/tor-dir" className="h-9 rounded-[35px] bg-black/20 font-mono text-[11px] ring-1 ring-white/[0.07]" />
           </FieldRow>
 
           <FieldRow label="Country" tooltip="Country for bridgedb fetch (AETHER_TOR_COUNTRY), 2-letter code.">
@@ -125,7 +125,7 @@ export function EngineTorPanel() {
               onBlur={() => { const e = validateCountry(profile.engine_tor_country); setCountryErr(e); if (e) { if (timerRef.current) clearTimeout(timerRef.current); timerRef.current = setTimeout(() => setCountryErr(null), 2500); } }}
               placeholder="DE"
               aria-invalid={!!countryErr}
-              className={`h-9 rounded-xl bg-black/20 font-mono text-[11px] ring-1 ring-inset ${countryErr ? "ring-status-error" : "ring-white/[0.07]"}`}
+              className={`h-9 rounded-[35px] bg-black/20 font-mono text-[11px] ring-1 ring-inset ${countryErr ? "ring-status-error" : "ring-white/[0.07]"}`}
               maxLength={2}
             />
             {countryErr && <p className="text-[11px] text-status-error">{countryErr}</p>}
@@ -138,7 +138,7 @@ export function EngineTorPanel() {
               disabled={locked}
               onChange={(e) => setEngineTorRelays(e.target.value.trim() || null)}
               placeholder="auto"
-              className="h-9 rounded-xl bg-black/20 font-mono text-[11px] ring-1 ring-white/[0.07]"
+              className="h-9 rounded-[35px] bg-black/20 font-mono text-[11px] ring-1 ring-white/[0.07]"
             />
           </FieldRow>
 
@@ -151,9 +151,9 @@ export function EngineTorPanel() {
               <SelectTrigger className="w-full justify-start gap-2 rounded-[35px] bg-black/20 px-3 py-5 text-xs font-medium text-foreground ring-1 ring-white/[0.07] disabled:opacity-50 [&>span]:flex-1 [&>span]:text-left [&>svg]:ml-auto" aria-label="Tor relay ports">
                 <SelectValue />
               </SelectTrigger>
-              <SelectContent className="rounded-[35px] bg-surface-2 p-1 ring-1 ring-white/10">
-                <SelectItem value="web" className="cursor-pointer rounded-lg px-2.5 py-2 text-xs focus:bg-primary/15 data-[highlighted]:bg-primary/15">Web ports (80, 443) — default</SelectItem>
-                <SelectItem value="any" className="cursor-pointer rounded-lg px-2.5 py-2 text-xs focus:bg-primary/15 data-[highlighted]:bg-primary/15">Any port</SelectItem>
+              <SelectContent className="rounded-[35px] [--select-item-radius:31px] bg-surface-2 p-1 ring-1 ring-white/10">
+                <SelectItem value="web" className="cursor-pointer rounded-[31px] px-2.5 py-2 text-xs focus:bg-primary/15 data-[highlighted]:bg-primary/15">Web ports (80, 443) — default</SelectItem>
+                <SelectItem value="any" className="cursor-pointer rounded-[31px] px-2.5 py-2 text-xs focus:bg-primary/15 data-[highlighted]:bg-primary/15">Any port</SelectItem>
               </SelectContent>
             </Select>
           </FieldRow>
@@ -180,26 +180,26 @@ export function EngineTorPanel() {
               <SelectTrigger className="w-full justify-start gap-2 rounded-[35px] bg-black/20 px-3 py-5 text-xs font-medium text-foreground ring-1 ring-white/[0.07] disabled:opacity-50 [&>span]:flex-1 [&>span]:text-left [&>svg]:ml-auto" aria-label="Tor bridge policy">
                 <SelectValue />
               </SelectTrigger>
-              <SelectContent className="rounded-[35px] bg-surface-2 p-1 ring-1 ring-white/10">
-                <SelectItem value="auto" className="cursor-pointer rounded-lg px-2.5 py-2 text-xs focus:bg-primary/15 data-[highlighted]:bg-primary/15">
+              <SelectContent className="rounded-[35px] [--select-item-radius:31px] bg-surface-2 p-1 ring-1 ring-white/10">
+                <SelectItem value="auto" className="cursor-pointer rounded-[31px] px-2.5 py-2 text-xs focus:bg-primary/15 data-[highlighted]:bg-primary/15">
                   <div className="flex flex-col gap-0.5">
                     <span className="font-medium">Automatic</span>
                     <span className="text-[11px] text-muted-foreground">try plain Tor first, fetch bridges if blocked</span>
                   </div>
                 </SelectItem>
-                <SelectItem value="force" className="cursor-pointer rounded-lg px-2.5 py-2 text-xs focus:bg-primary/15 data-[highlighted]:bg-primary/15">
+                <SelectItem value="force" className="cursor-pointer rounded-[31px] px-2.5 py-2 text-xs focus:bg-primary/15 data-[highlighted]:bg-primary/15">
                   <div className="flex flex-col gap-0.5">
                     <span className="font-medium">Force automatic</span>
                     <span className="text-[11px] text-muted-foreground">use fetched bridges immediately</span>
                   </div>
                 </SelectItem>
-                <SelectItem value="manual" className="cursor-pointer rounded-lg px-2.5 py-2 text-xs focus:bg-primary/15 data-[highlighted]:bg-primary/15">
+                <SelectItem value="manual" className="cursor-pointer rounded-[31px] px-2.5 py-2 text-xs focus:bg-primary/15 data-[highlighted]:bg-primary/15">
                   <div className="flex flex-col gap-0.5">
                     <span className="font-medium">Manual</span>
                     <span className="text-[11px] text-muted-foreground">only your bridge lines below</span>
                   </div>
                 </SelectItem>
-                <SelectItem value="none" className="cursor-pointer rounded-lg px-2.5 py-2 text-xs focus:bg-primary/15 data-[highlighted]:bg-primary/15">
+                <SelectItem value="none" className="cursor-pointer rounded-[31px] px-2.5 py-2 text-xs focus:bg-primary/15 data-[highlighted]:bg-primary/15">
                   <div className="flex flex-col gap-0.5">
                     <span className="font-medium">Disabled</span>
                     <span className="text-[11px] text-muted-foreground">never use bridges</span>
@@ -218,12 +218,12 @@ export function EngineTorPanel() {
               disabled={locked}
               onChange={(e) => setManualDraft(e.target.value)}
               placeholder="obfs4 1.2.3.4:443 ..."
-              className="min-h-[64px] rounded-xl bg-black/20 font-mono text-[11px] ring-1 ring-white/[0.07] disabled:opacity-50"
+              className="min-h-[64px] rounded-[35px] bg-black/20 font-mono text-[11px] ring-1 ring-white/[0.07] disabled:opacity-50"
             />
           </FieldRow>
 
           <FieldRow label="PT binary" tooltip="Pluggable transport binary for manual bridges (--tor-pt [name=]path), e.g. /usr/bin/lyrebird or snowflake=/usr/bin/snowflake-client. Leave empty to let the engine find one.">
-            <Input type="text" value={profile.engine_tor_pt ?? ""} disabled={locked} onChange={(e) => setEngineTorPt(e.target.value.trim() || null)} placeholder="/path/to/lyrebird" className="h-9 rounded-xl bg-black/20 font-mono text-[11px] ring-1 ring-white/[0.07]" />
+            <Input type="text" value={profile.engine_tor_pt ?? ""} disabled={locked} onChange={(e) => setEngineTorPt(e.target.value.trim() || null)} placeholder="/path/to/lyrebird" className="h-9 rounded-[35px] bg-black/20 font-mono text-[11px] ring-1 ring-white/[0.07]" />
           </FieldRow>
 
           <FieldRow label="Bridge file" tooltip="Obfs4 bridge lines from a file (--tor-bridge-file, Aether ≥2.1.0). The engine reads the path itself — the GUI never opens it. Counts as manual bridges for policy conflicts.">
@@ -233,22 +233,22 @@ export function EngineTorPanel() {
               disabled={locked}
               onChange={(e) => setEngineTorBridgesFile(e.target.value.trim() || null)}
               placeholder="/path/to/bridges.txt"
-              className="h-9 rounded-xl bg-black/20 font-mono text-[11px] ring-1 ring-white/[0.07]"
+              className="h-9 rounded-[35px] bg-black/20 font-mono text-[11px] ring-1 ring-white/[0.07]"
             />
           </FieldRow>
 
           <FieldRow label="PT dirs" tooltip="Extra folders to look in for transport binaries (--tor-pt-dir).">
-            <Input type="text" value={profile.engine_tor_pt_dir ?? ""} disabled={locked} onChange={(e) => setEngineTorPtDir(e.target.value.trim() || null)} placeholder="/path/to/pt" className="h-9 rounded-xl bg-black/20 font-mono text-[11px] ring-1 ring-white/[0.07]" />
+            <Input type="text" value={profile.engine_tor_pt_dir ?? ""} disabled={locked} onChange={(e) => setEngineTorPtDir(e.target.value.trim() || null)} placeholder="/path/to/pt" className="h-9 rounded-[35px] bg-black/20 font-mono text-[11px] ring-1 ring-white/[0.07]" />
           </FieldRow>
 
-          <details className="rounded-lg bg-black/10 px-3 py-2 ring-1 ring-white/[0.04]">
+          <details className="rounded-[35px] bg-black/10 px-3 py-2 ring-1 ring-white/[0.04]">
             <summary className="cursor-pointer text-[11px] font-medium text-muted-foreground">Advanced (direct/stall secs)</summary>
             <div className="mt-2 flex flex-col gap-2">
               <FieldRow label="Direct secs" tooltip="AETHER_TOR_DIRECT_SECS — how long to try Tor plainly before bridges (default 75). 0 forces bridges immediately.">
-                <Input type="number" min={0} value={profile.engine_tor_direct_secs ?? ""} disabled={locked} onChange={(e) => setEngineTorDirectSecs(e.target.value.trim() ? Number(e.target.value) : null)} placeholder="auto" className="h-9 rounded-xl bg-black/20 font-mono text-[11px] ring-1 ring-white/[0.07]" />
+                <Input type="number" min={0} value={profile.engine_tor_direct_secs ?? ""} disabled={locked} onChange={(e) => setEngineTorDirectSecs(e.target.value.trim() ? Number(e.target.value) : null)} placeholder="auto" className="h-9 rounded-[35px] bg-black/20 font-mono text-[11px] ring-1 ring-white/[0.07]" />
               </FieldRow>
               <FieldRow label="Stall secs" tooltip="AETHER_TOR_STALL_SECS — give up on a bridge after this long with no headway (default 75).">
-                <Input type="number" min={0} value={profile.engine_tor_stall_secs ?? ""} disabled={locked} onChange={(e) => setEngineTorStallSecs(e.target.value.trim() ? Number(e.target.value) : null)} placeholder="auto" className="h-9 rounded-xl bg-black/20 font-mono text-[11px] ring-1 ring-white/[0.07]" />
+                <Input type="number" min={0} value={profile.engine_tor_stall_secs ?? ""} disabled={locked} onChange={(e) => setEngineTorStallSecs(e.target.value.trim() ? Number(e.target.value) : null)} placeholder="auto" className="h-9 rounded-[35px] bg-black/20 font-mono text-[11px] ring-1 ring-white/[0.07]" />
               </FieldRow>
             </div>
           </details>

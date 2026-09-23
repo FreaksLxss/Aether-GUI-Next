@@ -224,7 +224,7 @@ export function SettingsIO() {
                 {diffRows.slice(0, 80).map((r) => (
                   <li
                     key={r.key}
-                    className={`flex flex-col gap-0.5 rounded-lg px-2 py-1.5 text-[11px] ${r.kind === "added" ? "bg-emerald-500/10" : r.kind === "removed" ? "bg-red-500/10" : "bg-white/5"}`}
+                    className={`flex flex-col gap-0.5 rounded-[26px] px-2 py-1.5 text-[11px] ${r.kind === "added" ? "bg-emerald-500/10" : r.kind === "removed" ? "bg-red-500/10" : "bg-white/5"}`}
                   >
                     <span className="font-mono text-[11px] font-medium text-foreground">{r.key}</span>
                     <span className="break-all font-mono text-[11px] leading-relaxed text-muted-foreground">

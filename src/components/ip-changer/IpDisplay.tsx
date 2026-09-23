@@ -29,7 +29,7 @@ export function IpDisplay() {
     : null;
 
   return (
-    <div className="flex flex-col gap-1.5 overflow-hidden rounded-xl border border-white/[0.06] bg-black/20 px-3 py-3 ring-1 ring-white/[0.04] light:border-black/5 light:bg-black/[0.02] light:ring-black/[0.03]">
+    <div className="flex flex-col gap-1.5 overflow-hidden rounded-[35px] border border-white/[0.06] bg-black/20 px-3 py-3 ring-1 ring-white/[0.04] light:border-black/5 light:bg-black/[0.02] light:ring-black/[0.03]">
       <div className="flex items-center gap-2">
         <span className="min-w-0 truncate font-mono text-[16px] font-semibold tracking-tight text-foreground tabular-nums">
           {currentIp?.ip ?? "–"}

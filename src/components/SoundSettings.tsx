@@ -14,7 +14,7 @@ export function SoundSettings() {
         onCheckedChange={setSoundEnabled}
       />
 
-      <div className="flex flex-col gap-2 rounded-lg bg-black/15 px-3 py-2.5 ring-1 ring-white/[0.04] light:bg-black/[0.03] light:ring-black/[0.05]">
+      <div className="flex flex-col gap-2 rounded-[35px] bg-black/15 px-3 py-2.5 ring-1 ring-white/[0.04] light:bg-black/[0.03] light:ring-black/[0.05]">
         <div className="flex items-center justify-between text-[11px] font-medium text-foreground/80">
           <span>Volume</span>
           <span className="tabular-nums text-muted-foreground">

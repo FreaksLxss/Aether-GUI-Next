@@ -36,7 +36,7 @@ export function RouteSniffMsField({ id }: { id?: string }) {
         placeholder="auto"
         aria-invalid={!!err}
         aria-describedby={err ? "sniff-error" : undefined}
-        className={`h-9 rounded-xl bg-black/20 font-mono text-[11px] ring-1 ring-inset focus-visible:ring-primary ${err ? "ring-status-error focus-visible:ring-status-error" : "ring-white/[0.07]"}`}
+        className={`h-9 rounded-[35px] bg-black/20 font-mono text-[11px] ring-1 ring-inset focus-visible:ring-primary ${err ? "ring-status-error focus-visible:ring-status-error" : "ring-white/[0.07]"}`}
         aria-label="Route sniff wait in milliseconds"
       />
       {err && <p id="sniff-error" className="text-[11px] text-status-error">{err}</p>}

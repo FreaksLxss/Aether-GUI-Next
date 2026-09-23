@@ -49,7 +49,7 @@ export function CaptureModeSelect() {
                   size="sm"
                   aria-label={LABELS[mode]}
                   disabled={disabled}
-                  className="relative w-full rounded-lg py-1.5 text-[10px] font-medium tracking-wide text-muted-foreground transition-colors duration-150 hover:text-foreground data-[state=on]:font-semibold data-[state=on]:text-primary-foreground disabled:cursor-not-allowed disabled:opacity-40 disabled:hover:text-muted-foreground"
+                  className="relative w-full rounded-[31px] py-1.5 text-[10px] font-medium tracking-wide text-muted-foreground transition-colors duration-150 hover:text-foreground data-[state=on]:font-semibold data-[state=on]:text-primary-foreground disabled:cursor-not-allowed disabled:opacity-40 disabled:hover:text-muted-foreground"
                 >
                   <SegIndicator active={mode === captureMode} groupId="capture-mode" />
                   <span className="relative z-10">{LABELS[mode]}</span>

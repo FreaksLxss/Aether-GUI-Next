@@ -51,7 +51,7 @@ export function RouteRulesField({ id, kind }: { id?: string; kind: "block" | "di
             : "full:bank.example.com, private"
         }
         aria-invalid={invalid}
-        className={`h-9 rounded-xl bg-black/20 font-mono text-[11px] ring-1 ring-inset focus-visible:ring-primary ${
+        className={`h-9 rounded-[35px] bg-black/20 font-mono text-[11px] ring-1 ring-inset focus-visible:ring-primary ${
           invalid
             ? "ring-status-error focus-visible:ring-status-error"
             : "ring-white/[0.07] focus-visible:ring-primary"

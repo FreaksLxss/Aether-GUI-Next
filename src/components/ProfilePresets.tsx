@@ -87,7 +87,7 @@ export function ProfilePresetsContent() {
     <div className="flex flex-col gap-4">
       {error && <InlineErrorBanner message={error} onRetry={() => void loadPresets()} />}
       {}
-      <div className="flex flex-col gap-3 rounded-2xl bg-card p-3.5 shadow-[0_16px_48px_-20px_rgba(0,0,0,0.75),0_8px_24px_-12px_rgba(0,0,0,0.55),inset_0_1px_0_0_rgba(255,255,255,0.06)] light:border light:border-black/[0.08] light:shadow-none">
+      <div className="flex flex-col gap-3 rounded-[49px] bg-card p-3.5 shadow-[0_16px_48px_-20px_rgba(0,0,0,0.75),0_8px_24px_-12px_rgba(0,0,0,0.55),inset_0_1px_0_0_rgba(255,255,255,0.06)] light:border light:border-black/[0.08] light:shadow-none">
         <div className="flex items-center gap-2">
           <span className="flex size-6 items-center justify-center rounded-lg bg-white/[0.06] ring-1 ring-white/[0.06] light:bg-black/5 light:ring-black/5">
             <Sparkles size={12} className="text-muted-foreground" />
@@ -135,7 +135,7 @@ export function ProfilePresetsContent() {
             {presets.map((p) => (
               <div
                 key={p.name}
-                className="group flex items-center justify-between gap-2 rounded-[35px] border border-white/[0.04] bg-black/15 px-3 py-2.5 ring-1 ring-white/[0.03] transition-colors hover:border-white/[0.07] hover:bg-black/20 light:border-black/[0.04] light:bg-black/[0.02] light:ring-black/[0.04] light:hover:bg-black/[0.04]"
+                className="group flex items-center justify-between gap-2 rounded-[23px] border border-white/[0.04] bg-black/15 px-3 py-2.5 ring-1 ring-white/[0.03] transition-colors hover:border-white/[0.07] hover:bg-black/20 light:border-black/[0.04] light:bg-black/[0.02] light:ring-black/[0.04] light:hover:bg-black/[0.04]"
               >
                 <button
                   onClick={() => applyPreset(p)}
@@ -152,7 +152,7 @@ export function ProfilePresetsContent() {
                       size="icon"
                       onClick={() => void deletePreset(p.name)}
                       aria-label={`Confirm delete preset "${p.name}"`}
-                      className="size-7 rounded-lg bg-destructive/10 text-status-error hover:bg-destructive/15 hover:text-destructive"
+                      className="size-7 rounded-[12px] bg-destructive/10 text-status-error hover:bg-destructive/15 hover:text-destructive"
                     >
                       <Trash2 size={12} />
                     </Button>
@@ -164,7 +164,7 @@ export function ProfilePresetsContent() {
                         if (deleteTimerRef.current) clearTimeout(deleteTimerRef.current);
                       }}
                       aria-label={`Cancel delete preset "${p.name}"`}
-                      className="size-7 rounded-lg text-muted-foreground/80 hover:text-foreground"
+                      className="size-7 rounded-[12px] text-muted-foreground/80 hover:text-foreground"
                     >
                       <X size={12} />
                     </Button>
@@ -182,7 +182,7 @@ export function ProfilePresetsContent() {
                     }}
                     title="Delete preset"
                     aria-label={`Delete preset "${p.name}"`}
-                    className="size-7 shrink-0 rounded-lg text-muted-foreground/50 opacity-40 transition-opacity hover:opacity-100 hover:text-destructive group-hover:opacity-100 focus:opacity-100 [@media(pointer:coarse)]:opacity-70"
+                    className="size-7 shrink-0 rounded-[12px] text-muted-foreground/50 opacity-40 transition-opacity hover:opacity-100 hover:text-destructive group-hover:opacity-100 focus:opacity-100 [@media(pointer:coarse)]:opacity-70"
                   >
                     <Trash2 size={12} />
                   </Button>

@@ -45,7 +45,7 @@ export function TrafficStats({ onOpenActive }: { onOpenActive?: () => void }) {
     <div
       style={{ borderRadius: 35 }}
       className={cn(
-        "flex w-full max-w-[320px] flex-col gap-3 bg-surface-2 px-5 py-4 ring-1 ring-border overflow-hidden",
+        "flex w-full max-w-[320px] flex-col gap-3 bg-surface-2 px-5 py-5 ring-1 ring-border overflow-hidden",
         !isConnected && "opacity-60",
       )}
       role="status"
@@ -111,7 +111,7 @@ export function TrafficStats({ onOpenActive }: { onOpenActive?: () => void }) {
                     type="button"
                     onClick={onOpenActive}
                     aria-label="Show active apps"
-                    className="inline-flex size-7 shrink-0 items-center justify-center rounded-lg bg-white/[0.06] ring-1 ring-white/[0.06] transition-colors hover:bg-white/[0.10] hover:text-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring light:bg-black/[0.06] light:ring-black/5 light:hover:bg-black/10"
+                    className="inline-flex size-7 shrink-0 items-center justify-center rounded-[15px] bg-white/[0.06] ring-1 ring-white/[0.06] transition-colors hover:bg-white/[0.10] hover:text-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring light:bg-black/[0.06] light:ring-black/5 light:hover:bg-black/10"
                   >
                     <AppWindow size={12} className="text-muted-foreground" aria-hidden />
                   </button>

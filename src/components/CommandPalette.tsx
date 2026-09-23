@@ -229,13 +229,13 @@ export function CommandPalette({
                         onClick={() => choose(it)}
                         onMouseEnter={() => setActive(flatIndex)}
                         className={cn(
-                          "flex w-full items-center gap-2.5 rounded-md px-2.5 py-2 text-left transition-colors",
+                          "flex w-full items-center gap-2.5 rounded-[16px] px-2.5 py-2 text-left transition-colors",
                           isActive ? "bg-foreground/[0.07] ring-1 ring-border" : "hover:bg-foreground/[0.04]",
                         )}
                       >
                         <span
                           className={cn(
-                            "flex size-7 shrink-0 items-center justify-center rounded-md ring-1",
+                            "flex size-7 shrink-0 items-center justify-center rounded-[8px] ring-1",
                             isActive ? "bg-foreground text-background ring-foreground/15" : "bg-surface-3 ring-border",
                           )}
                         >

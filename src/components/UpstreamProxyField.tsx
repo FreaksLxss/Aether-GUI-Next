@@ -37,7 +37,7 @@ export function UpstreamProxyField({ id }: { id?: string }) {
         placeholder="socks5://127.0.0.1:1080 (off)"
         aria-invalid={!!err}
         aria-describedby={err ? "upstream-error" : undefined}
-        className={`h-9 rounded-xl bg-black/20 font-mono text-[11px] ring-1 ring-inset focus-visible:ring-primary ${err ? "ring-status-error focus-visible:ring-status-error" : "ring-white/[0.07]"}`}
+        className={`h-9 rounded-[35px] bg-black/20 font-mono text-[11px] ring-1 ring-inset focus-visible:ring-primary ${err ? "ring-status-error focus-visible:ring-status-error" : "ring-white/[0.07]"}`}
         aria-label="Upstream proxy URL"
       />
       {err && <p id="upstream-error" className="text-[11px] text-status-error">{err}</p>}

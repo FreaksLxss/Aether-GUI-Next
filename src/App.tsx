@@ -130,7 +130,7 @@ function MainScreen() {
               transition={SPRING}
               className="flex flex-col items-center gap-3"
             >
-              <div className="flex flex-col gap-1.5 rounded-[35px] bg-surface-2 px-3 py-2.5 ring-1 ring-border">
+              <div className="flex flex-col gap-1.5 rounded-[24px] bg-surface-2 px-3 py-3 ring-1 ring-border">
                 <div className="flex flex-wrap items-center gap-1.5">
                   <CopyProxyButton />
                   <PacUrl />

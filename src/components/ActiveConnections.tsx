@@ -16,11 +16,10 @@ export function ActiveConnections({ compact }: { compact?: boolean }) {
     <div
       className={cn(
         compact
-          ? "flex w-full flex-col gap-2"
+          ? "flex w-full flex-col gap-2 rounded-[19px]"
           : "flex w-full max-w-[320px] flex-col gap-2 rounded-[35px] bg-surface-2 px-3 py-2.5 ring-1 ring-border",
         !compact && !isConnected && "opacity-60",
       )}
-      style={{ borderRadius: 35 }}
       role="status"
       aria-label="Active connections"
     >
@@ -49,7 +48,10 @@ export function ActiveConnections({ compact }: { compact?: boolean }) {
           {visible.map((c, i) => (
             <div
               key={`${c.pid}-${c.local}-${c.remote}-${i}`}
-              className="flex items-center gap-2 rounded-lg bg-surface-3 px-2 py-1.5 light:bg-black/[0.04]"
+              className={cn(
+                "flex items-center gap-2 bg-surface-3 px-2 py-1.5 light:bg-black/[0.04]",
+                compact ? "rounded-[19px]" : "rounded-[23px]",
+              )}
             >
               <span className="min-w-0 flex-1 truncate font-mono text-[11px] tabular-nums text-foreground/80">
                 {c.exe || "unknown"}

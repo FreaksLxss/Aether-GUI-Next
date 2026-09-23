@@ -35,12 +35,12 @@ export function PerfSelect({ id }: { id?: string }) {
       >
         <SelectValue />
       </SelectTrigger>
-      <SelectContent className="rounded-[35px] bg-surface-2 p-1 ring-1 ring-white/10">
+      <SelectContent className="rounded-[35px] [--select-item-radius:31px] bg-surface-2 p-1 ring-1 ring-white/10">
         {OPTIONS.map((opt) => (
           <SelectItem
             key={opt.value}
             value={opt.value}
-            className="cursor-pointer rounded-lg px-2.5 py-2 text-xs outline-none transition-colors focus:bg-primary/15 focus:text-foreground data-[highlighted]:bg-primary/15"
+            className="cursor-pointer rounded-[31px] px-2.5 py-2 text-xs outline-none transition-colors focus:bg-primary/15 focus:text-foreground data-[highlighted]:bg-primary/15"
           >
             <div className="flex flex-col gap-0.5">
               <span className="font-medium">{opt.label}</span>

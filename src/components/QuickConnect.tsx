@@ -89,7 +89,7 @@ export function QuickConnect({ onMoreOptions }: { onMoreOptions: () => void }) {
                     aria-label={tip}
                     whileTap={{ scale: 0.97 }}
                     transition={SPRING_FAST}
-                    className={`relative flex min-w-0 flex-1 flex-col items-center justify-center gap-1.5 overflow-hidden rounded-[35px] px-1.5 pb-3 pt-2.5 text-[10px] leading-none outline-none select-none disabled:opacity-50 disabled:pointer-events-none focus-visible:ring-1 focus-visible:ring-primary focus-visible:ring-inset ${
+                    className={`relative flex min-w-0 flex-1 flex-col items-center justify-center gap-1.5 overflow-hidden rounded-[29px] px-1.5 pb-3 pt-2.5 text-[10px] leading-none outline-none select-none disabled:opacity-50 disabled:pointer-events-none focus-visible:ring-1 focus-visible:ring-primary focus-visible:ring-inset ${
                       active
                         ? "font-semibold text-foreground"
                         : "font-medium text-muted-foreground hover:bg-foreground/[0.04] hover:text-foreground"

@@ -53,9 +53,9 @@ export function AppMenu({
                 key={id}
                 onClick={() => onOpen(id)}
                 data-cuelume-press="press"
-                className="flex w-full items-center gap-2.5 rounded-md px-2.5 py-2 text-left transition-colors hover:bg-foreground/[0.06] active:bg-foreground/[0.08]"
+                className="flex w-full items-center gap-2.5 rounded-[16px] px-2.5 py-2 text-left transition-colors hover:bg-foreground/[0.06] active:bg-foreground/[0.08]"
               >
-                <span className="flex size-7 shrink-0 items-center justify-center rounded-md bg-surface-3 ring-1 ring-border">
+                <span className="flex size-7 shrink-0 items-center justify-center rounded-[8px] bg-surface-3 ring-1 ring-border">
                   <Icon size={13} className="text-muted-foreground" />
                 </span>
                 <span className="min-w-0 flex-1">
@@ -82,7 +82,7 @@ export function AppMenu({
               size="icon-sm"
               onClick={onOpenPalette}
               aria-label="Open command palette"
-              className="size-7 rounded-md text-muted-foreground"
+              className="size-7 rounded-[8px] text-muted-foreground"
             >
               <Search size={12} />
             </Button>

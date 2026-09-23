@@ -35,7 +35,7 @@ export function WiwPeersField({ id }: { id?: string }) {
         placeholder="162.159.192.1:2408, 188.114.96.1:2408"
         aria-invalid={!!err}
         aria-describedby={err ? "wiw-error" : undefined}
-        className={`h-9 rounded-xl bg-black/20 font-mono text-[11px] ring-1 ring-inset focus-visible:ring-primary ${err ? "ring-status-error focus-visible:ring-status-error" : "ring-white/[0.07]"}`}
+        className={`h-9 rounded-[35px] bg-black/20 font-mono text-[11px] ring-1 ring-inset focus-visible:ring-primary ${err ? "ring-status-error focus-visible:ring-status-error" : "ring-white/[0.07]"}`}
         aria-label="WARP-in-WARP peers"
       />
       {err && <p id="wiw-error" className="text-[11px] text-status-error">{err}</p>}

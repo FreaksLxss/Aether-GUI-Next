@@ -65,7 +65,7 @@ export function LogViewer() {
           stickToBottom.current =
             el.scrollHeight - el.scrollTop - el.clientHeight < 24;
         }}
-        className="h-36 overflow-y-auto rounded-xl bg-[#0a0a0c] px-3 py-2.5 font-mono text-[11px] leading-[1.45] text-muted-foreground ring-1 ring-white/[0.06] light:bg-[#f6f6f5] light:ring-black/10"
+        className="h-36 overflow-y-auto rounded-[35px] bg-[#0a0a0c] px-3 py-2.5 font-mono text-[11px] leading-[1.45] text-muted-foreground ring-1 ring-white/[0.06] light:bg-[#f6f6f5] light:ring-black/10"
       >
         {logs.length === 0 ? (
           <div className="flex flex-col items-center gap-2 py-8 text-center" role="status">

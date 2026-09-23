@@ -54,7 +54,7 @@ export function ScanModeToggle() {
                     value={mode}
                     size="sm"
                     aria-label={LABELS[mode]}
-                    className="relative w-full rounded-[35px] py-1.5 text-[10px] font-medium text-muted-foreground/80 transition-colors duration-150 hover:text-foreground data-[state=on]:font-semibold data-[state=on]:text-primary-foreground"
+                    className="relative w-full rounded-[31px] py-1.5 text-[10px] font-medium text-muted-foreground/80 transition-colors duration-150 hover:text-foreground data-[state=on]:font-semibold data-[state=on]:text-primary-foreground"
                   >
                     <SegIndicator active={mode === scanMode} groupId="scan-mode" />
                     <span className="relative z-10 tracking-wide">{LABELS[mode]}</span>
