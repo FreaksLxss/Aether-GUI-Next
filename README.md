@@ -41,7 +41,7 @@ If the engine is missing, incompatible or missing its `pt/lyrebird` companion, s
   - **Upstream proxy**: chain Aether behind another proxy or VPN app already running on the machine (`--upstream`) — SOCKS5 upstreams carry every transport, HTTP ones carry MASQUE over HTTP/2 only
   - **Routing**: block-list and direct-list rules (domains, networks, ports) to refuse destinations outright or send them straight out, bypassing the tunnel
   - **Zero Trust**: enrol into a Cloudflare Zero Trust organization by team name, with email, service-token, or JWT sign-in, plus optional Gateway routing
-  
+
   Each option has an explanation on hover.
 - **Live progress** — while Aether searches for a working route, the GUI shows real elapsed time and, once Aether reports its own scan budget, an actual percentage and progress bar — not just a spinner.
 - **Automatic reconnect** — if the tunnel drops unexpectedly mid-session (observed occasionally with WARP-in-WARP, but handled the same way for every protocol), the GUI retries automatically with backoff, shown as a visible "Reconnecting… (attempt N of 3)" rather than silently dying or dumping you back to a bare error. A user-requested disconnect is never retried.
