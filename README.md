@@ -13,6 +13,8 @@ A one-click desktop GUI for [**Aether**](https://github.com/CluvexStudio/Aether)
 
 This project does not reimplement any of Aether's tunneling logic. It drives the real `aether` binary in a pseudo-terminal, answers its interactive setup prompts on your behalf, and watches its output to tell you what's happening. All the actual censorship-circumvention work — MASQUE/QUIC obfuscation, WireGuard, route probing — is [Aether's](https://github.com/CluvexStudio/Aether), not this repo's.
 
+For a complete source-level map of this repository — architecture, IPC commands, state machine, ports, test inventory and known quirks — see [PROJECT_RUNDOWN.md](PROJECT_RUNDOWN.md).
+
 ## Versions and engine repair
 
 **Aether-GUI 1.18.0** is the desktop app version; **Aether 2.1.0** is the separately versioned engine it requires. [`src-tauri/aether-release.json`](src-tauri/aether-release.json) pins the upstream repository, version, asset names and SHA-256 checksums for development fetches, CI and in-app engine repair. Engine repair installs that approved release, not whatever upstream labels `latest`.
