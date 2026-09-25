@@ -753,20 +753,20 @@ All three version statements in README/README_fa/AGENTS.md (`1.18.0` / `2.1.0`) 
 
 ## Appendix — provenance report index
 
-This document was assembled from 12 deep-read slice reports (plus Main's firsthand verification, §1–§8). Report files live in the session `local/` dir; read `local://<name>` to re-open them.
+This document was assembled from 12 deep-read slice reports (plus Main's firsthand verification, §1–§8). Full copies of every report are committed alongside this document in [`docs/rundown/`](docs/rundown/).
 
 | report | covers |
 |---|---|
-| `rundown-00-overview.md` | Part A skeleton (this document's §1–§7 base) |
-| `rundown-01-frontend-shell.md` | §9 shell & entry points |
-| `rundown-02-frontend-lib-hooks.md` | §10 lib, hooks, validators, types |
-| `rundown-03-frontend-conn-ui.md` | §11 connection UI & stores |
-| `rundown-04-frontend-chrome-ui.md` | §12 chrome & settings UI |
-| `rundown-05-frontend-visual-ui.md` | §13 visual system, theme, index.css |
-| `rundown-06-backend-lifecycle-ipc.md` | §14 lifecycle, state & core IPC |
-| `rundown-07-backend-proxy-net.md` | §15 local proxy, system proxy, net & traffic |
-| `rundown-08-backend-aether-core.md` | §16 aether status/engine/prompts/orphan |
-| `rundown-09-backend-profiles-pty.md` | §17 profiles & PTY pipeline |
-| `rundown-10-backend-tun-ipchanger.md` | §18 TUN mode & IP Changer |
-| `rundown-11-build-packaging.md` | §19 build, packaging & CI |
-| `rundown-12-docs-product.md` | §20 documentation & product context |
+| [`rundown-00-overview.md`](docs/rundown/rundown-00-overview.md) | Part A skeleton (this document's §1–§7 base) |
+| [`rundown-01-frontend-shell.md`](docs/rundown/rundown-01-frontend-shell.md) | §9 shell & entry points |
+| [`rundown-02-frontend-lib-hooks.md`](docs/rundown/rundown-02-frontend-lib-hooks.md) | §10 lib, hooks, validators, types |
+| [`rundown-03-frontend-conn-ui.md`](docs/rundown/rundown-03-frontend-conn-ui.md) | §11 connection UI & stores |
+| [`rundown-04-frontend-chrome-ui.md`](docs/rundown/rundown-04-frontend-chrome-ui.md) | §12 chrome & settings UI |
+| [`rundown-05-frontend-visual-ui.md`](docs/rundown/rundown-05-frontend-visual-ui.md) | §13 visual system, theme, index.css |
+| [`rundown-06-backend-lifecycle-ipc.md`](docs/rundown/rundown-06-backend-lifecycle-ipc.md) | §14 lifecycle, state & core IPC |
+| [`rundown-07-backend-proxy-net.md`](docs/rundown/rundown-07-backend-proxy-net.md) | §15 local proxy, system proxy, net & traffic |
+| [`rundown-08-backend-aether-core.md`](docs/rundown/rundown-08-backend-aether-core.md) | §16 aether status/engine/prompts/orphan |
+| [`rundown-09-backend-profiles-pty.md`](docs/rundown/rundown-09-backend-profiles-pty.md) | §17 profiles & PTY pipeline |
+| [`rundown-10-backend-tun-ipchanger.md`](docs/rundown/rundown-10-backend-tun-ipchanger.md) | §18 TUN mode & IP Changer |
+| [`rundown-11-build-packaging.md`](docs/rundown/rundown-11-build-packaging.md) | §19 build, packaging & CI |
+| [`rundown-12-docs-product.md`](docs/rundown/rundown-12-docs-product.md) | §20 documentation & product context |
