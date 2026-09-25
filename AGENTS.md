@@ -7,9 +7,10 @@ Aether-GUI is a Tauri 2 desktop GUI wrapper for the [Aether](https://github.com/
 ## Stack & layout
 
 - Frontend `src/`: React 19 + TypeScript + Tailwind v4 + Zustand + Motion. Aliased as `@/*` → `src/*`.
-- Backend `src-tauri/src/`: Rust, drives the real `aether` binary via `portable-pty`. Tauri IPC commands are registered in `src-tauri/src/main.rs`.
+- Backend `src-tauri/src/`: Rust, drives the real `aether` binary via `portable-pty`. Tauri IPC commands are registered in `src-tauri/src/lib.rs` (the `invoke_handler` list; `main.rs` is a 7-line shim).
 - The GUI bundles the prebuilt `aether` binary; it does not build it. TUN mode (`src-tauri/src/tun/`) is Windows-only.
 - Docs are bilingual: changes to `README.md` must be mirrored in `README_fa.md`.
+- **Read [`PROJECT_RUNDOWN.md`](PROJECT_RUNDOWN.md) first** — verified source-level map of the whole codebase (startup/shutdown flow, every IPC command, events, state machine, ports, cadences, test inventory, known quirks/dead code). Its 13 source reports live in `docs/rundown/`.
 
 ## Commands
 
